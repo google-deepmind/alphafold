@@ -1,0 +1,12 @@
+absl-py==0.13.0
+biopython==1.79
+chex==0.0.7
+dm-haiku==0.0.4
+dm-tree==0.1.6
+docker==5.0.0
+immutabledict==2.0.0
+jax==0.2.14
+ml-collections==0.1.0
+numpy==1.19.5
+scipy==1.7.0
+tensorflow==2.5.0
