@@ -21,59 +21,70 @@ from alphafold.model import lddt
 
 
 class LddtTest(parameterized.TestCase, absltest.TestCase):
+    @parameterized.named_parameters(
+        (
+            "same",
+            [[0, 0, 0], [5, 0, 0], [10, 0, 0]],
+            [[0, 0, 0], [5, 0, 0], [10, 0, 0]],
+            [1, 1, 1],
+        ),
+        (
+            "all_shifted",
+            [[0, 0, 0], [5, 0, 0], [10, 0, 0]],
+            [[-1, 0, 0], [4, 0, 0], [9, 0, 0]],
+            [1, 1, 1],
+        ),
+        (
+            "all_rotated",
+            [[0, 0, 0], [5, 0, 0], [10, 0, 0]],
+            [[0, 0, 0], [0, 5, 0], [0, 10, 0]],
+            [1, 1, 1],
+        ),
+        (
+            "half_a_dist",
+            [[0, 0, 0], [5, 0, 0]],
+            [[0, 0, 0], [5.5 - 1e-5, 0, 0]],
+            [1, 1],
+        ),
+        (
+            "one_a_dist",
+            [[0, 0, 0], [5, 0, 0]],
+            [[0, 0, 0], [6 - 1e-5, 0, 0]],
+            [0.75, 0.75],
+        ),
+        (
+            "two_a_dist",
+            [[0, 0, 0], [5, 0, 0]],
+            [[0, 0, 0], [7 - 1e-5, 0, 0]],
+            [0.5, 0.5],
+        ),
+        (
+            "four_a_dist",
+            [[0, 0, 0], [5, 0, 0]],
+            [[0, 0, 0], [9 - 1e-5, 0, 0]],
+            [0.25, 0.25],
+        ),
+        (
+            "five_a_dist",
+            [[0, 0, 0], [16 - 1e-5, 0, 0]],
+            [[0, 0, 0], [11, 0, 0]],
+            [0, 0],
+        ),
+        ("no_pairs", [[0, 0, 0], [20, 0, 0]], [[0, 0, 0], [25 - 1e-5, 0, 0]], [1, 1]),
+    )
+    def test_lddt(self, predicted_pos, true_pos, exp_lddt):
+        predicted_pos = np.array([predicted_pos], dtype=np.float32)
+        true_points_mask = np.array([[[1]] * len(true_pos)], dtype=np.float32)
+        true_pos = np.array([true_pos], dtype=np.float32)
+        cutoff = 15.0
+        per_residue = True
 
-  @parameterized.named_parameters(
-      ('same',
-       [[0, 0, 0], [5, 0, 0], [10, 0, 0]],
-       [[0, 0, 0], [5, 0, 0], [10, 0, 0]],
-       [1, 1, 1]),
-      ('all_shifted',
-       [[0, 0, 0], [5, 0, 0], [10, 0, 0]],
-       [[-1, 0, 0], [4, 0, 0], [9, 0, 0]],
-       [1, 1, 1]),
-      ('all_rotated',
-       [[0, 0, 0], [5, 0, 0], [10, 0, 0]],
-       [[0, 0, 0], [0, 5, 0], [0, 10, 0]],
-       [1, 1, 1]),
-      ('half_a_dist',
-       [[0, 0, 0], [5, 0, 0]],
-       [[0, 0, 0], [5.5-1e-5, 0, 0]],
-       [1, 1]),
-      ('one_a_dist',
-       [[0, 0, 0], [5, 0, 0]],
-       [[0, 0, 0], [6-1e-5, 0, 0]],
-       [0.75, 0.75]),
-      ('two_a_dist',
-       [[0, 0, 0], [5, 0, 0]],
-       [[0, 0, 0], [7-1e-5, 0, 0]],
-       [0.5, 0.5]),
-      ('four_a_dist',
-       [[0, 0, 0], [5, 0, 0]],
-       [[0, 0, 0], [9-1e-5, 0, 0]],
-       [0.25, 0.25],),
-      ('five_a_dist',
-       [[0, 0, 0], [16-1e-5, 0, 0]],
-       [[0, 0, 0], [11, 0, 0]],
-       [0, 0]),
-      ('no_pairs',
-       [[0, 0, 0], [20, 0, 0]],
-       [[0, 0, 0], [25-1e-5, 0, 0]],
-       [1, 1]),
-  )
-  def test_lddt(
-      self, predicted_pos, true_pos, exp_lddt):
-    predicted_pos = np.array([predicted_pos], dtype=np.float32)
-    true_points_mask = np.array([[[1]] * len(true_pos)], dtype=np.float32)
-    true_pos = np.array([true_pos], dtype=np.float32)
-    cutoff = 15.0
-    per_residue = True
+        result = lddt.lddt(
+            predicted_pos, true_pos, true_points_mask, cutoff, per_residue
+        )
 
-    result = lddt.lddt(
-        predicted_pos, true_pos, true_points_mask, cutoff,
-        per_residue)
-
-    np.testing.assert_almost_equal(result, [exp_lddt], decimal=4)
+        np.testing.assert_almost_equal(result, [exp_lddt], decimal=4)
 
 
-if __name__ == '__main__':
-  absltest.main()
+if __name__ == "__main__":
+    absltest.main()

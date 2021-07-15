@@ -18,20 +18,22 @@ import jax.numpy as jnp
 
 
 class Linear(hk.Module):
-  """Protein folding specific Linear Module.
+    """Protein folding specific Linear Module.
 
   This differs from the standard Haiku Linear in a few ways:
     * It supports inputs of arbitrary rank
     * Initializers are specified by strings
   """
 
-  def __init__(self,
-               num_output: int,
-               initializer: str = 'linear',
-               use_bias: bool = True,
-               bias_init: float = 0.,
-               name: str = 'linear'):
-    """Constructs Linear Module.
+    def __init__(
+        self,
+        num_output: int,
+        initializer: str = "linear",
+        use_bias: bool = True,
+        bias_init: float = 0.0,
+        name: str = "linear",
+    ):
+        """Constructs Linear Module.
 
     Args:
       num_output: number of output channels.
@@ -42,14 +44,14 @@ class Linear(hk.Module):
       name: name of module, used for name scopes.
     """
 
-    super().__init__(name=name)
-    self.num_output = num_output
-    self.initializer = initializer
-    self.use_bias = use_bias
-    self.bias_init = bias_init
+        super().__init__(name=name)
+        self.num_output = num_output
+        self.initializer = initializer
+        self.use_bias = use_bias
+        self.bias_init = bias_init
 
-  def __call__(self, inputs: jnp.ndarray) -> jnp.ndarray:
-    """Connects Module.
+    def __call__(self, inputs: jnp.ndarray) -> jnp.ndarray:
+        """Connects Module.
 
     Args:
       inputs: Tensor of shape [..., num_channel]
@@ -57,28 +59,31 @@ class Linear(hk.Module):
     Returns:
       output of shape [..., num_output]
     """
-    n_channels = int(inputs.shape[-1])
+        n_channels = int(inputs.shape[-1])
 
-    weight_shape = [n_channels, self.num_output]
-    if self.initializer == 'linear':
-      weight_init = hk.initializers.VarianceScaling(mode='fan_in', scale=1.)
-    elif self.initializer == 'relu':
-      weight_init = hk.initializers.VarianceScaling(mode='fan_in', scale=2.)
-    elif self.initializer == 'zeros':
-      weight_init = hk.initializers.Constant(0.0)
+        weight_shape = [n_channels, self.num_output]
+        if self.initializer == "linear":
+            weight_init = hk.initializers.VarianceScaling(mode="fan_in", scale=1.0)
+        elif self.initializer == "relu":
+            weight_init = hk.initializers.VarianceScaling(mode="fan_in", scale=2.0)
+        elif self.initializer == "zeros":
+            weight_init = hk.initializers.Constant(0.0)
 
-    weights = hk.get_parameter('weights', weight_shape, inputs.dtype,
-                               weight_init)
+        weights = hk.get_parameter("weights", weight_shape, inputs.dtype, weight_init)
 
-    # this is equivalent to einsum('...c,cd->...d', inputs, weights)
-    # but turns out to be slightly faster
-    inputs = jnp.swapaxes(inputs, -1, -2)
-    output = jnp.einsum('...cb,cd->...db', inputs, weights)
-    output = jnp.swapaxes(output, -1, -2)
+        # this is equivalent to einsum('...c,cd->...d', inputs, weights)
+        # but turns out to be slightly faster
+        inputs = jnp.swapaxes(inputs, -1, -2)
+        output = jnp.einsum("...cb,cd->...db", inputs, weights)
+        output = jnp.swapaxes(output, -1, -2)
 
-    if self.use_bias:
-      bias = hk.get_parameter('bias', [self.num_output], inputs.dtype,
-                              hk.initializers.Constant(self.bias_init))
-      output += bias
+        if self.use_bias:
+            bias = hk.get_parameter(
+                "bias",
+                [self.num_output],
+                inputs.dtype,
+                hk.initializers.Constant(self.bias_init),
+            )
+            output += bias
 
-    return output
+        return output

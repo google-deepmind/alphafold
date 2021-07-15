@@ -20,24 +20,25 @@ from typing import Sequence
 from absl import logging
 
 from alphafold.data.tools import utils
+
 # Internal import (7716).
 
 
 def _to_a3m(sequences: Sequence[str]) -> str:
-  """Converts sequences to an a3m file."""
-  names = ['sequence %d' % i for i in range(1, len(sequences) + 1)]
-  a3m = []
-  for sequence, name in zip(sequences, names):
-    a3m.append(u'>' + name + u'\n')
-    a3m.append(sequence + u'\n')
-  return ''.join(a3m)
+    """Converts sequences to an a3m file."""
+    names = ["sequence %d" % i for i in range(1, len(sequences) + 1)]
+    a3m = []
+    for sequence, name in zip(sequences, names):
+        a3m.append(u">" + name + u"\n")
+        a3m.append(sequence + u"\n")
+    return "".join(a3m)
 
 
 class Kalign:
-  """Python wrapper of the Kalign binary."""
+    """Python wrapper of the Kalign binary."""
 
-  def __init__(self, *, binary_path: str):
-    """Initializes the Python Kalign wrapper.
+    def __init__(self, *, binary_path: str):
+        """Initializes the Python Kalign wrapper.
 
     Args:
       binary_path: The path to the Kalign binary.
@@ -45,10 +46,10 @@ class Kalign:
     Raises:
       RuntimeError: If Kalign binary not found within the path.
     """
-    self.binary_path = binary_path
+        self.binary_path = binary_path
 
-  def align(self, sequences: Sequence[str]) -> str:
-    """Aligns the sequences and returns the alignment in A3M string.
+    def align(self, sequences: Sequence[str]) -> str:
+        """Aligns the sequences and returns the alignment in A3M string.
 
     Args:
       sequences: A list of query sequence strings. The sequences have to be at
@@ -63,42 +64,53 @@ class Kalign:
       RuntimeError: If Kalign fails.
       ValueError: If any of the sequences is less than 6 residues long.
     """
-    logging.info('Aligning %d sequences', len(sequences))
+        logging.info("Aligning %d sequences", len(sequences))
 
-    for s in sequences:
-      if len(s) < 6:
-        raise ValueError('Kalign requires all sequences to be at least 6 '
-                         'residues long. Got %s (%d residues).' % (s, len(s)))
+        for s in sequences:
+            if len(s) < 6:
+                raise ValueError(
+                    "Kalign requires all sequences to be at least 6 "
+                    "residues long. Got %s (%d residues)." % (s, len(s))
+                )
 
-    with utils.tmpdir_manager(base_dir='/tmp') as query_tmp_dir:
-      input_fasta_path = os.path.join(query_tmp_dir, 'input.fasta')
-      output_a3m_path = os.path.join(query_tmp_dir, 'output.a3m')
+        with utils.tmpdir_manager(base_dir="/tmp") as query_tmp_dir:
+            input_fasta_path = os.path.join(query_tmp_dir, "input.fasta")
+            output_a3m_path = os.path.join(query_tmp_dir, "output.a3m")
 
-      with open(input_fasta_path, 'w') as f:
-        f.write(_to_a3m(sequences))
+            with open(input_fasta_path, "w") as f:
+                f.write(_to_a3m(sequences))
 
-      cmd = [
-          self.binary_path,
-          '-i', input_fasta_path,
-          '-o', output_a3m_path,
-          '-format', 'fasta',
-      ]
+            cmd = [
+                self.binary_path,
+                "-i",
+                input_fasta_path,
+                "-o",
+                output_a3m_path,
+                "-format",
+                "fasta",
+            ]
 
-      logging.info('Launching subprocess "%s"', ' '.join(cmd))
-      process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+            logging.info('Launching subprocess "%s"', " ".join(cmd))
+            process = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
 
-      with utils.timing('Kalign query'):
-        stdout, stderr = process.communicate()
-        retcode = process.wait()
-        logging.info('Kalign stdout:\n%s\n\nstderr:\n%s\n',
-                     stdout.decode('utf-8'), stderr.decode('utf-8'))
+            with utils.timing("Kalign query"):
+                stdout, stderr = process.communicate()
+                retcode = process.wait()
+                logging.info(
+                    "Kalign stdout:\n%s\n\nstderr:\n%s\n",
+                    stdout.decode("utf-8"),
+                    stderr.decode("utf-8"),
+                )
 
-      if retcode:
-        raise RuntimeError('Kalign failed\nstdout:\n%s\n\nstderr:\n%s\n'
-                           % (stdout.decode('utf-8'), stderr.decode('utf-8')))
+            if retcode:
+                raise RuntimeError(
+                    "Kalign failed\nstdout:\n%s\n\nstderr:\n%s\n"
+                    % (stdout.decode("utf-8"), stderr.decode("utf-8"))
+                )
 
-      with open(output_a3m_path) as f:
-        a3m = f.read()
+            with open(output_a3m_path) as f:
+                a3m = f.read()
 
-      return a3m
+            return a3m
