@@ -310,6 +310,7 @@ and packages:
 
 We thank all their contributors and maintainers!
 
+
 ## License and Disclaimer
 
 This is not an officially supported Google product.
@@ -342,3 +343,9 @@ terms and conditions or license provisions. Your use of the third-party
 software, libraries or code is subject to any such terms and you should check
 that you can comply with any applicable restrictions or terms and conditions
 before use.
+
+### Mirrored Databases
+
+The following databases have been mirrored by DeepMind, and are available with reference to the following:
+
+*   [BFD](https://bfd.mmseqs.com/) (unmodified), by Steinegger M. and Söding J., available under a [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
