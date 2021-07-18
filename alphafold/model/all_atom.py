@@ -582,7 +582,7 @@ def extreme_ca_ca_distance_violations(
     ) -> jnp.ndarray:
   """Counts residues whose Ca is a large distance from its neighbor.
 
-  Measures the fraction of CA-CA pairs between consectutive amino acids that
+  Measures the fraction of CA-CA pairs between consecutive amino acids that
   are more than 'max_angstrom_tolerance' apart.
 
   Args:
