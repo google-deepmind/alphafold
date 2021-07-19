@@ -25,61 +25,6 @@ import docker
 from docker import types
 
 
-#### USER CONFIGURATION ####
-
-# Set to target of scripts/download_all_databases.sh
-DOWNLOAD_DIR = 'SET ME'
-
-# Name of the AlphaFold Docker image.
-docker_image_name = 'alphafold'
-
-# Path to a directory that will store the results.
-output_dir = '/tmp/alphafold'
-
-# Names of models to use.
-model_names = [
-    'model_1',
-    'model_2',
-    'model_3',
-    'model_4',
-    'model_5',
-]
-
-# You can individually override the following paths if you have placed the
-# data in locations other than the DOWNLOAD_DIR.
-
-# Path to directory of supporting data, contains 'params' dir.
-data_dir = DOWNLOAD_DIR
-
-# Path to the Uniref90 database for use by JackHMMER.
-uniref90_database_path = os.path.join(
-    DOWNLOAD_DIR, 'uniref90', 'uniref90.fasta')
-
-# Path to the MGnify database for use by JackHMMER.
-mgnify_database_path = os.path.join(
-    DOWNLOAD_DIR, 'mgnify', 'mgy_clusters.fa')
-
-# Path to the BFD database for use by HHblits.
-bfd_database_path = os.path.join(
-    DOWNLOAD_DIR, 'bfd',
-    'bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt')
-
-# Path to the Uniclust30 database for use by HHblits.
-uniclust30_database_path = os.path.join(
-    DOWNLOAD_DIR, 'uniclust30', 'uniclust30_2018_08', 'uniclust30_2018_08')
-
-# Path to the PDB70 database for use by HHsearch.
-pdb70_database_path = os.path.join(DOWNLOAD_DIR, 'pdb70', 'pdb70')
-
-# Path to a directory with template mmCIF structures, each named <pdb_id>.cif')
-template_mmcif_dir = os.path.join(DOWNLOAD_DIR, 'pdb_mmcif', 'mmcif_files')
-
-# Path to a file mapping obsolete PDB IDs to their replacements.
-obsolete_pdbs_path = os.path.join(DOWNLOAD_DIR, 'pdb_mmcif', 'obsolete.dat')
-
-#### END OF USER CONFIGURATION ####
-
-
 flags.DEFINE_bool('use_gpu', True, 'Enable NVIDIA runtime to run with GPUs.')
 flags.DEFINE_string('gpu_devices', 'all', 'Comma separated list of devices to '
                     'pass to NVIDIA_VISIBLE_DEVICES.')
@@ -101,6 +46,12 @@ flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
                      'to obtain a timing that excludes the compilation time, '
                      'which should be more indicative of the time required for '
                      'inferencing many proteins.')
+flags.DEFINE_string('download_dir', None, 'AlphaFold data and params directory.'
+                    ' Set to target of scripts/download_all_databases.sh.')
+flags.DEFINE_string('docker_image_name', 'alphafold', 
+                    'Name of AlphaFold docker image.')
+flags.DEFINE_string('output_dir', '/tmp/alphafold', 
+                    'Path to a directory that will store the results.')
 
 FLAGS = flags.FLAGS
 
@@ -119,6 +70,51 @@ def _create_mount(mount_name: str, path: str) -> Tuple[types.Mount, str]:
 def main(argv):
   if len(argv) > 1:
     raise app.UsageError('Too many command-line arguments.')
+
+  #### USER CONFIGURATION ####
+
+  # Names of models to use.
+  model_names = [
+      'model_1',
+      'model_2',
+      'model_3',
+      'model_4',
+      'model_5',
+  ]
+
+  # You can individually override the following paths if you have placed the
+  # data in locations other than the FLAGS.download_dir.
+
+  # Path to directory of supporting data, contains 'params' dir.
+  data_dir = FLAGS.download_dir
+
+  # Path to the Uniref90 database for use by JackHMMER.
+  uniref90_database_path = os.path.join(
+      FLAGS.download_dir, 'uniref90', 'uniref90.fasta')
+
+  # Path to the MGnify database for use by JackHMMER.
+  mgnify_database_path = os.path.join(
+      FLAGS.download_dir, 'mgnify', 'mgy_clusters.fa')
+
+  # Path to the BFD database for use by HHblits.
+  bfd_database_path = os.path.join(
+      FLAGS.download_dir, 'bfd',
+      'bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt')
+
+  # Path to the Uniclust30 database for use by HHblits.
+  uniclust30_database_path = os.path.join(
+      FLAGS.download_dir, 'uniclust30', 'uniclust30_2018_08', 'uniclust30_2018_08')
+
+  # Path to the PDB70 database for use by HHsearch.
+  pdb70_database_path = os.path.join(FLAGS.download_dir, 'pdb70', 'pdb70')
+
+  # Path to a directory with template mmCIF structures, each named <pdb_id>.cif')
+  template_mmcif_dir = os.path.join(FLAGS.download_dir, 'pdb_mmcif', 'mmcif_files')
+
+  # Path to a file mapping obsolete PDB IDs to their replacements.
+  obsolete_pdbs_path = os.path.join(FLAGS.download_dir, 'pdb_mmcif', 'obsolete.dat')
+
+  #### END OF USER CONFIGURATION ####
 
   mounts = []
   command_args = []
@@ -145,7 +141,7 @@ def main(argv):
       command_args.append(f'--{name}={target_path}')
 
   output_target_path = os.path.join(_ROOT_MOUNT_DIRECTORY, 'output')
-  mounts.append(types.Mount(output_target_path, output_dir, type='bind'))
+  mounts.append(types.Mount(output_target_path, FLAGS.output_dir, type='bind'))
 
   command_args.extend([
       f'--output_dir={output_target_path}',
@@ -155,10 +151,10 @@ def main(argv):
       f'--benchmark={FLAGS.benchmark}',
       '--logtostderr',
   ])
-
+    
   client = docker.from_env()
   container = client.containers.run(
-      image=docker_image_name,
+      image=FLAGS.docker_image_name,
       command=command_args,
       runtime='nvidia' if FLAGS.use_gpu else None,
       remove=True,
@@ -184,5 +180,6 @@ if __name__ == '__main__':
   flags.mark_flags_as_required([
       'fasta_paths',
       'max_template_date',
+      'download_dir',
   ])
   app.run(main)
