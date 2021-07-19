@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG CUDA=11.0
+ARG CUDA=11.1
 FROM nvidia/cuda:${CUDA}-base
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
@@ -29,6 +29,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
       hmmer \
       kalign \
       tzdata \
+      software-properties-common \
       wget \
     && rm -rf /var/lib/apt/lists/*
 
@@ -47,12 +48,20 @@ RUN wget -q -P /tmp \
     && bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
     && rm /tmp/Miniconda3-latest-Linux-x86_64.sh
 
+ARG OS=ubuntu2004
+RUN wget -q https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/cuda-${OS}.pin \
+  -O /etc/apt/preferences.d/cuda-repository-pin-600 \
+  && apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/7fa2af80.pub \
+  && add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/${OS}/x86_64/ /" \
+  && apt-get update \
+  && apt-get install libcudnn8 libcusolver-${CUDA/./-}
+
 # Install conda packages.
 ENV PATH="/opt/conda/bin:$PATH"
 RUN conda update -qy conda \
     && conda install -y -c conda-forge \
       openmm=7.5.1 \
-      cudatoolkit==${CUDA}.3 \
+      cudatoolkit==${CUDA}.1 \
       pdbfixer \
       pip
 
