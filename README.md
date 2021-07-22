@@ -9,7 +9,15 @@ of this document.
 
 Any publication that discloses findings arising from using this source code or
 the model parameters should [cite](#citing-this-work) the
-[AlphaFold paper](https://doi.org/10.1038/s41586-021-03819-2).
+[AlphaFold paper](https://doi.org/10.1038/s41586-021-03819-2). Please also refer
+to the
+[Supplementary Information](https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-021-03819-2/MediaObjects/41586_2021_3819_MOESM1_ESM.pdf)
+for a detailed description of the method.
+
+**You can use a slightly simplified version of AlphaFold with
+[this Colab
+notebook](https://colab.research.google.com/github/deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb)**
+or community-supported versions (see below).
 
 ![CASP14 predictions](imgs/casp14_predictions.gif)
 
@@ -39,7 +47,7 @@ The following steps are required in order to run AlphaFold:
 
 ### Genetic databases
 
-This step requires `rsync` and `aria2c` to be installed on your machine.
+This step requires `aria2c` to be installed on your machine.
 
 AlphaFold needs multiple genetic (sequence) databases to run:
 
@@ -51,21 +59,43 @@ AlphaFold needs multiple genetic (sequence) databases to run:
 *   [PDB](https://www.rcsb.org/) (structures in the mmCIF format).
 
 We provide a script `scripts/download_all_data.sh` that can be used to download
-and set up all of these databases. This should take 8–12 hours.
+and set up all of these databases:
 
-:ledger: **Note: The total download size is around 428 GB and the total size
-when unzipped is 2.2 TB. Please make sure you have a large enough hard drive
-space, bandwidth and time to download.**
+*   Default:
+
+    ```bash
+    scripts/download_all_data.sh <DOWNLOAD_DIR>
+    ```
+
+    will download the full databases.
+
+*   With `reduced_dbs`:
+
+    ```bash
+    scripts/download_all_data.sh <DOWNLOAD_DIR> reduced_dbs
+    ```
+
+    will download a reduced version of the databases to be used with the
+    `reduced_dbs` preset.
+
+We don't provide exactly the versions used in CASP14 -- see the [note on
+reproducibility](#note-on-reproducibility). Some of the databases are mirrored
+for speed, see [mirrored databases](#mirrored-databases).
+
+:ledger: **Note: The total download size for the full databases is around 415 GB
+and the total size when unzipped is 2.2 TB. Please make sure you have a large
+enough hard drive space, bandwidth and time to download. We recommend using an
+SSD for better genetic search performance.**
 
 This script will also download the model parameter files. Once the script has
 finished, you should have the following directory structure:
 
 ```
-$DOWNLOAD_DIR/                             # Total: ~ 2.2 TB (download: 428 GB)
-    bfd/                                   # ~ 1.8 TB (download: 271.6 GB)
+$DOWNLOAD_DIR/                             # Total: ~ 2.2 TB (download: 438 GB)
+    bfd/                                   # ~ 1.7 TB (download: 271.6 GB)
         # 6 files.
     mgnify/                                # ~ 64 GB (download: 32.9 GB)
-        mgy_clusters.fa
+        mgy_clusters_2018_08.fa
     params/                                # ~ 3.5 GB (download: 3.5 GB)
         # 5 CASP14 models,
         # 5 pTM models,
@@ -77,12 +107,17 @@ $DOWNLOAD_DIR/                             # Total: ~ 2.2 TB (download: 428 GB)
         mmcif_files/
             # About 180,000 .cif files.
         obsolete.dat
-    uniclust30/                            # ~ 87 GB (download: 24.9 GB)
+    small_fbd/                             # ~ 17 GB (download: 9.6 GB)
+        bfd-first_non_consensus_sequences.fasta
+    uniclust30/                            # ~ 86 GB (download: 24.9 GB)
         uniclust30_2018_08/
             # 13 files.
-    uniref90/                              # ~ 59 GB (download: 29.7 GB)
+    uniref90/                              # ~ 58 GB (download: 29.7 GB)
         uniref90.fasta
 ```
+
+`bfd/` is only downloaded if you download the full databasees, and `small_bfd/`
+is only downloaded if you download the reduced databases.
 
 ### Model parameters
 
@@ -149,16 +184,20 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
     [GPU enumeration](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html#gpu-enumeration)
     for more details.
 
-1.  You can control AlphaFold speed / quality tradeoff by adding either
-    `--preset=full_dbs` or `--preset=casp14` to the run command. We provide the
-    following presets:
+1.  You can control AlphaFold speed / quality tradeoff by adding
+    `--preset=reduced_dbs`, `--preset=full_dbs` or `--preset=casp14` to the run
+    command. We provide the following presets:
 
-    *   **casp14**: This preset uses the same settings as were used in CASP14.
-        It runs with all genetic databases and with 8 ensemblings.
+    *   **reduced_dbs**: This preset is optimized for speed and lower hardware
+        requirements. It runs with a reduced version of the BFD database and
+        with no ensembling. It requires 8 CPU cores (vCPUs), 8 GB of RAM, and
+        600 GB of disk space.
     *   **full_dbs**: The model in this preset is 8 times faster than the
         `casp14` preset with a very minor quality drop (-0.1 average GDT drop on
         CASP14 domains). It runs with all genetic databases and with no
         ensembling.
+    *   **casp14**: This preset uses the same settings as were used in CASP14.
+        It runs with all genetic databases and with 8 ensemblings.
 
     Running the command above with the `casp14` preset would look like this:
 
@@ -174,7 +213,7 @@ structures, raw model outputs, prediction metadata, and section timings. The
 `output_dir` directory will have the following structure:
 
 ```
-output_dir/
+<target_name>/
     features.pkl
     ranked_{0,1,2,3,4}.pdb
     ranking_debug.json
@@ -190,20 +229,20 @@ output_dir/
 
 The contents of each output file are as follows:
 
-*   `features.pkl` – A `pickle` file containing the input feature Numpy arrays
+*   `features.pkl` – A `pickle` file containing the input feature NumPy arrays
     used by the models to produce the structures.
 *   `unrelaxed_model_*.pdb` – A PDB format text file containing the predicted
     structure, exactly as outputted by the model.
 *   `relaxed_model_*.pdb` – A PDB format text file containing the predicted
     structure, after performing an Amber relaxation procedure on the unrelaxed
-    structure prediction, see Jumper et al. 2021, Suppl. Methods 1.8.6 for
-    details.
+    structure prediction (see Jumper et al. 2021, Suppl. Methods 1.8.6 for
+    details).
 *   `ranked_*.pdb` – A PDB format text file containing the relaxed predicted
     structures, after reordering by model confidence. Here `ranked_0.pdb` should
     contain the prediction with the highest confidence, and `ranked_4.pdb` the
     prediction with the lowest confidence. To rank model confidence, we use
-    predicted LDDT (pLDDT), see Jumper et al. 2021, Suppl. Methods 1.9.6 for
-    details.
+    predicted LDDT (pLDDT) scores (see Jumper et al. 2021, Suppl. Methods 1.9.6
+    for details).
 *   `ranking_debug.json` – A JSON format text file containing the pLDDT values
     used to perform the model ranking, and a mapping back to the original model
     names.
@@ -212,10 +251,27 @@ The contents of each output file are as follows:
 *   `msas/` - A directory containing the files describing the various genetic
     tool hits that were used to construct the input MSA.
 *   `result_model_*.pkl` – A `pickle` file containing a nested dictionary of the
-    various Numpy arrays directly produced by the model. In addition to the
-    output of the structure module, this includes auxiliary outputs such as
-    distograms and pLDDT scores. If using the pTM models then the pTM logits
-    will also be contained in this file.
+    various NumPy arrays directly produced by the model. In addition to the
+    output of the structure module, this includes auxiliary outputs such as:
+
+    *   Distograms (`distogram/logits` contains a NumPy array of shape [N_res,
+        N_res, N_bins] and `distogram/bin_edges` contains the definition of the
+        bins).
+    *   Per-residue pLDDT scores (`plddt` contains a NumPy array of shape
+        [N_res] with the range of possible values from `0` to `100`, where `100`
+        means most confident). This can serve to identify sequence regions
+        predicted with high confidence or as an overall per-target confidence
+        score when averaged across residues.
+    *   Present only if using pTM models: predicted TM-score (`ptm` field
+        contains a scalar). As a predictor of a global superposition metric,
+        this score is designed to also assess whether the model is confident in
+        the overall domain packing.
+    *   Present only if using pTM models: predicted pairwise aligned errors
+        (`predicted_aligned_error` contains a NumPy array of shape [N_res,
+        N_res] with the range of possible values from `0` to
+        `max_predicted_aligned_error`, where `0` means most confident). This can
+        serve for a visualisation of domain packing confidence within the
+        structure.
 
 This code has been tested to match mean top-1 accuracy on a CASP14 test set with
 pLDDT ranking over 5 model predictions (some CASP targets were run with earlier
@@ -284,6 +340,17 @@ If you use the code or data in this package, please cite:
 }
 ```
 
+## Community contributions
+
+Colab notebooks provided by the community (please note that these notebooks may
+vary from our full AlphaFold system and we did not validate their accuracy):
+
+*   The [ColabFold AlphaFold2 notebook](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/AlphaFold2.ipynb)
+    by Martin Steinegger, Sergey Ovchinnikov and Milot Mirdita, which uses an
+    API hosted at the Södinglab based on the MMseqs2 server [(Mirdita et al.
+    2019, Bioinformatics)](https://academic.oup.com/bioinformatics/article/35/16/2856/5280135)
+    for the multiple sequence alignment creation.
+
 ## Acknowledgements
 
 AlphaFold communicates with and/or references the following separate libraries
@@ -292,6 +359,7 @@ and packages:
 *   [Abseil](https://github.com/abseil/abseil-py)
 *   [Biopython](https://biopython.org)
 *   [Chex](https://github.com/deepmind/chex)
+*   [Colab](https://research.google.com/colaboratory/)
 *   [Docker](https://www.docker.com)
 *   [HH Suite](https://github.com/soedinglab/hh-suite)
 *   [HMMER Suite](http://eddylab.org/software/hmmer)
@@ -299,17 +367,19 @@ and packages:
 *   [Immutabledict](https://github.com/corenting/immutabledict)
 *   [JAX](https://github.com/google/jax/)
 *   [Kalign](https://msa.sbc.su.se/cgi-bin/msa.cgi)
+*   [matplotlib](https://matplotlib.org/)
 *   [ML Collections](https://github.com/google/ml_collections)
 *   [NumPy](https://numpy.org)
 *   [OpenMM](https://github.com/openmm/openmm)
 *   [OpenStructure](https://openstructure.org)
+*   [pymol3d](https://github.com/avirshup/py3dmol)
 *   [SciPy](https://scipy.org)
 *   [Sonnet](https://github.com/deepmind/sonnet)
 *   [TensorFlow](https://github.com/tensorflow/tensorflow)
 *   [Tree](https://github.com/deepmind/tree)
+*   [tqdm](https://github.com/tqdm/tqdm)
 
 We thank all their contributors and maintainers!
-
 
 ## License and Disclaimer
 
@@ -349,3 +419,10 @@ before use.
 The following databases have been mirrored by DeepMind, and are available with reference to the following:
 
 *   [BFD](https://bfd.mmseqs.com/) (unmodified), by Steinegger M. and Söding J., available under a [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
+
+*   [BFD](https://bfd.mmseqs.com/) (modified), by Steinegger M. and Söding J., modified by DeepMind, available under a [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/). See the Methods section of the [AlphaFold proteome paper]
+(https://www.nature.com/articles/s41586-021-03828-1) for details.
+
+*   [Uniclust30: v2018_08](http://wwwuser.gwdg.de/~compbiol/uniclust/2018_08/) (unmodified), by Mirdita M. et al., available under a [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
+
+*   [MGnify: v2018_12](http://ftp.ebi.ac.uk/pub/databases/metagenomics/peptide_database/current_release/README.txt) (unmodified), by Mitchell AL et al., available free of all copyright restrictions and made fully and freely available for both non-commercial and commercial use under [CC0 1.0 Universal (CC0 1.0) Public Domain Dedication](https://creativecommons.org/publicdomain/zero/1.0/).

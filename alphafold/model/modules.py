@@ -237,6 +237,10 @@ class AlphaFoldIteration(hk.Module):
         continue
       else:
         ret[name] = module(representations, batch, is_training)
+        if 'representations' in ret[name]:
+          # Extra representations from the head. Used by the structure module
+          # to provide activations for the PredictedLDDTHead.
+          representations.update(ret[name].pop('representations'))
       if compute_loss:
         total_loss += loss(module, head_config, ret, name)
 

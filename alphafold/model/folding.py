@@ -492,7 +492,7 @@ class StructureModule(hk.Module):
         is_training=is_training,
         safe_key=safe_key)
 
-    representations['structure_module'] = output['act']
+    ret['representations'] = {'structure_module': output['act']}
 
     ret['traj'] = output['affine'] * jnp.array([1.] * 4 +
                                                [c.position_scale] * 3)
@@ -514,7 +514,8 @@ class StructureModule(hk.Module):
     if self.compute_loss:
       return ret
     else:
-      no_loss_features = ['final_atom_positions', 'final_atom_mask']
+      no_loss_features = ['final_atom_positions', 'final_atom_mask',
+                          'representations']
       no_loss_ret = {k: ret[k] for k in no_loss_features}
       return no_loss_ret
 

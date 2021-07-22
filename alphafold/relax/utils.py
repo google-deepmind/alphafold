@@ -48,7 +48,7 @@ def overwrite_b_factors(pdb_str: str, bfactors: np.ndarray) -> str:
     raise ValueError(
         f'Invalid final dimension size for bfactors: {bfactors.shape[-1]}.')
 
-  parser = PDB.PDBParser()
+  parser = PDB.PDBParser(QUIET=True)
   handle = io.StringIO(pdb_str)
   structure = parser.get_structure('', handle)
 

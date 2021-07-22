@@ -146,13 +146,13 @@ def process_tensors_from_config(tensors, data_config):
     num_ensemble *= data_config.common.num_recycle + 1
 
   if isinstance(num_ensemble, tf.Tensor) or num_ensemble > 1:
-    dtype = tree.map_structure(lambda x: x.dtype,
-                               tensors_0)
+    fn_output_signature = tree.map_structure(
+        tf.TensorSpec.from_tensor, tensors_0)
     tensors = tf.map_fn(
         lambda x: wrap_ensemble_fn(tensors, x),
         tf.range(num_ensemble),
         parallel_iterations=1,
-        dtype=dtype)
+        fn_output_signature=fn_output_signature)
   else:
     tensors = tree.map_structure(lambda x: x[None],
                                  tensors_0)

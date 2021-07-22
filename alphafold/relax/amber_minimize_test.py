@@ -54,7 +54,6 @@ class AmberMinimizeTest(absltest.TestCase):
                                   max_attempts=1)
 
   def test_iterative_relax(self):
-    # This test can occasionally fail because of nondeterminism in OpenMM.
     prot = _load_test_protein(
         'alphafold/relax/testdata/with_violations.pdb'
         )

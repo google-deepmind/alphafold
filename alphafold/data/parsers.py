@@ -16,7 +16,7 @@
 import collections
 import re
 import string
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence, Tuple, Dict
 
 import dataclasses
 
@@ -24,23 +24,14 @@ DeletionMatrix = Sequence[Sequence[int]]
 
 
 @dataclasses.dataclass(frozen=True)
-class HhrHit:
-  """Class representing a hit in an hhr file."""
+class TemplateHit:
+  """Class representing a template hit."""
   index: int
   name: str
-  prob_true: float
-  e_value: float
-  score: float
   aligned_cols: int
-  identity: float
-  similarity: float
   sum_probs: float
-  neff: float
   query: str
   hit_sequence: str
-  hit_dssp: str
-  column_score_code: str
-  confidence_scores: str
   indices_query: List[int]
   indices_hit: List[int]
 
@@ -75,7 +66,8 @@ def parse_fasta(fasta_string: str) -> Tuple[Sequence[str], Sequence[str]]:
 
 
 def parse_stockholm(
-    stockholm_string: str) -> Tuple[Sequence[str], DeletionMatrix]:
+    stockholm_string: str
+) -> Tuple[Sequence[str], DeletionMatrix, Sequence[str]]:
   """Parses sequences and deletion matrix from stockholm format alignment.
 
   Args:
@@ -89,6 +81,8 @@ def parse_stockholm(
       * The deletion matrix for the alignment as a list of lists. The element
         at `deletion_matrix[i][j]` is the number of residues deleted from
         the aligned sequence i at residue position j.
+      * The names of the targets matched, including the jackhmmer subsequence
+        suffix.
   """
   name_to_sequence = collections.OrderedDict()
   for line in stockholm_string.splitlines():
@@ -128,7 +122,7 @@ def parse_stockholm(
           deletion_count = 0
     deletion_matrix.append(deletion_vec)
 
-  return msa, deletion_matrix
+  return msa, deletion_matrix, list(name_to_sequence.keys())
 
 
 def parse_a3m(a3m_string: str) -> Tuple[Sequence[str], DeletionMatrix]:
@@ -242,7 +236,7 @@ def _update_hhr_residue_indices_list(
       counter += 1
 
 
-def _parse_hhr_hit(detailed_lines: Sequence[str]) -> HhrHit:
+def _parse_hhr_hit(detailed_lines: Sequence[str]) -> TemplateHit:
   """Parses the detailed HMM HMM comparison section for a single Hit.
 
   This works on .hhr files generated from both HHBlits and HHSearch.
@@ -271,7 +265,7 @@ def _parse_hhr_hit(detailed_lines: Sequence[str]) -> HhrHit:
     raise RuntimeError(
         'Could not parse section: %s. Expected this: \n%s to contain summary.' %
         (detailed_lines, detailed_lines[2]))
-  (prob_true, e_value, score, aligned_cols, identity, similarity, sum_probs,
+  (prob_true, e_value, _, aligned_cols, _, _, sum_probs,
    neff) = [float(x) for x in match.groups()]
 
   # The next section reads the detailed comparisons. These are in a 'human
@@ -280,9 +274,6 @@ def _parse_hhr_hit(detailed_lines: Sequence[str]) -> HhrHit:
   # that with a regexp in order to deduce the fixed length used for that block.
   query = ''
   hit_sequence = ''
-  hit_dssp = ''
-  column_score_code = ''
-  confidence_scores = ''
   indices_query = []
   indices_hit = []
   length_block = None
@@ -312,17 +303,10 @@ def _parse_hhr_hit(detailed_lines: Sequence[str]) -> HhrHit:
       _update_hhr_residue_indices_list(delta_query, start, indices_query)
 
     elif line.startswith('T '):
-      # Parse the hit dssp line.
-      if line.startswith('T ss_dssp'):
-        #        T ss_dssp      hit_dssp
-        patt = r'T ss_dssp[\t ]*([A-Z-]*)'
-        groups = _get_hhr_line_regex_groups(patt, line)
-        assert len(groups[0]) == length_block
-        hit_dssp += groups[0]
-
       # Parse the hit sequence.
-      elif (not line.startswith('T ss_pred') and
-            not line.startswith('T Consensus')):
+      if (not line.startswith('T ss_dssp') and
+          not line.startswith('T ss_pred') and
+          not line.startswith('T Consensus')):
         # Thus the first 17 characters must be 'T <hit_name> ', and we can
         # parse everything after that.
         #              start    sequence       end     total_sequence_length
@@ -336,38 +320,19 @@ def _parse_hhr_hit(detailed_lines: Sequence[str]) -> HhrHit:
         hit_sequence += delta_hit_sequence
         _update_hhr_residue_indices_list(delta_hit_sequence, start, indices_hit)
 
-    # Parse the column score line.
-    elif line.startswith(' ' * 22):
-      assert length_block
-      column_score_code += line[22:length_block + 22]
-
-    # Update confidence score.
-    elif line.startswith('Confidence'):
-      assert length_block
-      confidence_scores += line[22:length_block + 22]
-
-  return HhrHit(
+  return TemplateHit(
       index=number_of_hit,
       name=name_hit,
-      prob_true=prob_true,
-      e_value=e_value,
-      score=score,
       aligned_cols=int(aligned_cols),
-      identity=identity,
-      similarity=similarity,
       sum_probs=sum_probs,
-      neff=neff,
       query=query,
       hit_sequence=hit_sequence,
-      hit_dssp=hit_dssp,
-      column_score_code=column_score_code,
-      confidence_scores=confidence_scores,
       indices_query=indices_query,
       indices_hit=indices_hit,
   )
 
 
-def parse_hhr(hhr_string: str) -> Sequence[HhrHit]:
+def parse_hhr(hhr_string: str) -> Sequence[TemplateHit]:
   """Parses the content of an entire HHR file."""
   lines = hhr_string.splitlines()
 
@@ -383,3 +348,18 @@ def parse_hhr(hhr_string: str) -> Sequence[HhrHit]:
     for i in range(len(block_starts) - 1):
       hits.append(_parse_hhr_hit(lines[block_starts[i]:block_starts[i + 1]]))
   return hits
+
+
+def parse_e_values_from_tblout(tblout: str) -> Dict[str, float]:
+  """Parse target to e-value mapping parsed from Jackhmmer tblout string."""
+  e_values = {'query': 0}
+  lines = [line for line in tblout.splitlines() if line[0] != '#']
+  # As per http://eddylab.org/software/hmmer/Userguide.pdf fields are
+  # space-delimited. Relevant fields are (1) target name:  and
+  # (5) E-value (full sequence) (numbering from 1).
+  for line in lines:
+    fields = line.split()
+    e_value = fields[4]
+    target_name = fields[0]
+    e_values[target_name] = float(e_value)
+  return e_values

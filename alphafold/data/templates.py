@@ -93,19 +93,12 @@ TEMPLATE_FEATURES = {
     'template_all_atom_masks': np.float32,
     'template_all_atom_positions': np.float32,
     'template_domain_names': np.object,
-    'template_e_value': np.float32,
-    'template_neff': np.float32,
-    'template_prob_true': np.float32,
-    'template_release_date': np.object,
-    'template_score': np.float32,
-    'template_similarity': np.float32,
     'template_sequence': np.object,
     'template_sum_probs': np.float32,
-    'template_confidence_scores': np.int64
 }
 
 
-def _get_pdb_id_and_chain(hit: parsers.HhrHit) -> Tuple[str, str]:
+def _get_pdb_id_and_chain(hit: parsers.TemplateHit) -> Tuple[str, str]:
   """Returns PDB id and chain id for an HHSearch Hit."""
   # PDB ID: 4 letters. Chain ID: 1+ alphanumeric letters or "." if unknown.
   id_match = re.match(r'[a-zA-Z\d]{4}_[a-zA-Z0-9.]+', hit.name)
@@ -175,7 +168,7 @@ def _parse_release_dates(path: str) -> Mapping[str, datetime.datetime]:
 
 
 def _assess_hhsearch_hit(
-    hit: parsers.HhrHit,
+    hit: parsers.TemplateHit,
     hit_pdb_code: str,
     query_sequence: str,
     query_pdb_code: Optional[str],
@@ -487,28 +480,12 @@ def _extract_template_features(
     template_sequence: str,
     query_sequence: str,
     template_chain_id: str,
-    confidence_scores: str,
     kalign_binary_path: str) -> Tuple[Dict[str, Any], Optional[str]]:
   """Parses atom positions in the target structure and aligns with the query.
 
   Atoms for each residue in the template structure are indexed to coincide
   with their corresponding residue in the query sequence, according to the
   alignment mapping provided.
-
-  Note that we only extract at most 500 templates because of HHSearch settings.
-
-  We set missing/invalid confidence scores to the default value of -1.
-  Note: We now have 4 types of confidence scores:
-   1. Valid scores
-   2. Invalid scores of residues not in both the query sequence and template
-      sequence
-   3. Missing scores because we don't have the secondary structure, and HHAlign
-      doesn't produce the posterior probabilities in this case.
-   4. Missing scores because of a different template sequence in PDB70,
-      invalidating the previously computed confidence scores. (Though in theory
-      HHAlign can be run on these to recompute the correct confidence scores).
-   We handle invalid and missing scores by setting them to -1, but consider
-   adding masks for the different types.
 
   Args:
     mmcif_object: mmcif_parsing.MmcifObject representing the template.
@@ -521,11 +498,6 @@ def _extract_template_features(
       protein.
     template_chain_id: String ID describing which chain in the structure proto
       should be used.
-    confidence_scores: String containing per-residue confidence scores, where
-      each character represents the *TRUNCATED* posterior probability that the
-      corresponding template residue is correctly aligned with the query
-      residue, given the database match is correct (0 corresponds approximately
-      to 0-10%, 9 to 90-100%).
     kalign_binary_path: The path to a kalign executable used for template
         realignment.
 
@@ -577,8 +549,6 @@ def _extract_template_features(
     template_sequence = seqres
     # No mapping offset, the query is aligned to the actual sequence.
     mapping_offset = 0
-    # Confidence scores were based on the previous sequence, so they are invalid
-    confidence_scores = None
 
   try:
     # Essentially set to infinity - we don't want to reject templates unless
@@ -594,7 +564,6 @@ def _extract_template_features(
   all_atom_masks = np.split(all_atom_mask, all_atom_mask.shape[0])
 
   output_templates_sequence = []
-  output_confidence_scores = []
   templates_all_atom_positions = []
   templates_all_atom_masks = []
 
@@ -604,15 +573,12 @@ def _extract_template_features(
         np.zeros((residue_constants.atom_type_num, 3)))
     templates_all_atom_masks.append(np.zeros(residue_constants.atom_type_num))
     output_templates_sequence.append('-')
-    output_confidence_scores.append(-1)
 
   for k, v in mapping.items():
     template_index = v + mapping_offset
     templates_all_atom_positions[k] = all_atom_positions[template_index][0]
     templates_all_atom_masks[k] = all_atom_masks[template_index][0]
     output_templates_sequence[k] = template_sequence[v]
-    if confidence_scores and confidence_scores[v] != ' ':
-      output_confidence_scores[k] = int(confidence_scores[v])
 
   # Alanine (AA with the lowest number of atoms) has 5 atoms (C, CA, CB, N, O).
   if np.sum(templates_all_atom_masks) < 5:
@@ -627,13 +593,13 @@ def _extract_template_features(
       output_templates_sequence, residue_constants.HHBLITS_AA_TO_ID)
 
   return (
-      {'template_all_atom_positions': np.array(templates_all_atom_positions),
-       'template_all_atom_masks': np.array(templates_all_atom_masks),
-       'template_sequence': output_templates_sequence.encode(),
-       'template_aatype': np.array(templates_aatype),
-       'template_confidence_scores': np.array(output_confidence_scores),
-       'template_domain_names': f'{pdb_id.lower()}_{chain_id}'.encode(),
-       'template_release_date': mmcif_object.header['release_date'].encode()},
+      {
+          'template_all_atom_positions': np.array(templates_all_atom_positions),
+          'template_all_atom_masks': np.array(templates_all_atom_masks),
+          'template_sequence': output_templates_sequence.encode(),
+          'template_aatype': np.array(templates_aatype),
+          'template_domain_names': f'{pdb_id.lower()}_{chain_id}'.encode(),
+      },
       warning)
 
 
@@ -704,7 +670,7 @@ class SingleHitResult:
 def _process_single_hit(
     query_sequence: str,
     query_pdb_code: Optional[str],
-    hit: parsers.HhrHit,
+    hit: parsers.TemplateHit,
     mmcif_dir: str,
     max_template_date: datetime.datetime,
     release_dates: Mapping[str, datetime.datetime],
@@ -745,9 +711,6 @@ def _process_single_hit(
   # The mapping is from the query to the actual hit sequence, so we need to
   # remove gaps (which regardless have a missing confidence score).
   template_sequence = hit.hit_sequence.replace('-', '')
-  confidence_scores = ''.join(
-      [cs for t, cs in zip(hit.hit_sequence, hit.confidence_scores)
-       if t != '-'])
 
   cif_path = os.path.join(mmcif_dir, hit_pdb_code + '.cif')
   logging.info('Reading PDB entry from %s. Query: %s, template: %s',
@@ -779,14 +742,8 @@ def _process_single_hit(
         template_sequence=template_sequence,
         query_sequence=query_sequence,
         template_chain_id=hit_chain_id,
-        confidence_scores=confidence_scores,
         kalign_binary_path=kalign_binary_path)
-    features['template_e_value'] = [hit.e_value]
     features['template_sum_probs'] = [hit.sum_probs]
-    features['template_prob_true'] = [hit.prob_true]
-    features['template_score'] = [hit.score]
-    features['template_neff'] = [hit.neff]
-    features['template_similarity'] = [hit.similarity]
 
     # It is possible there were some errors when parsing the other chains in the
     # mmCIF file, but the template features for the chain we want were still
@@ -887,7 +844,7 @@ class TemplateHitFeaturizer:
       query_sequence: str,
       query_pdb_code: Optional[str],
       query_release_date: Optional[datetime.datetime],
-      hhr_hits: Sequence[parsers.HhrHit]) -> TemplateSearchResult:
+      hits: Sequence[parsers.TemplateHit]) -> TemplateSearchResult:
     """Computes the templates for given query sequence (more details above)."""
     logging.info('Searching for template for: %s', query_pdb_code)
 
@@ -909,8 +866,8 @@ class TemplateHitFeaturizer:
     errors = []
     warnings = []
 
-    for hit in sorted(hhr_hits, key=lambda x: x.sum_probs, reverse=True):
-      # We got all the templates we wanted, stop processing HHSearch hits.
+    for hit in sorted(hits, key=lambda x: x.sum_probs, reverse=True):
+      # We got all the templates we wanted, stop processing hits.
       if num_hits >= self._max_hits:
         break
 

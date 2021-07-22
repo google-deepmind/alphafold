@@ -52,7 +52,7 @@ def _add_restraints(
     stiffness: unit.Unit,
     rset: str,
     exclude_residues: Sequence[int]):
-  """Adds a harmonic potential that restrains the end-to-end distance."""
+  """Adds a harmonic potential that restrains the system to a structure."""
   assert rset in ["non_hydrogen", "c_alpha"]
 
   force = openmm.CustomExternalForce(

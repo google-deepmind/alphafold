@@ -57,12 +57,16 @@ uniref90_database_path = os.path.join(
 
 # Path to the MGnify database for use by JackHMMER.
 mgnify_database_path = os.path.join(
-    DOWNLOAD_DIR, 'mgnify', 'mgy_clusters.fa')
+    DOWNLOAD_DIR, 'mgnify', 'mgy_clusters_2018_08.fa')
 
 # Path to the BFD database for use by HHblits.
 bfd_database_path = os.path.join(
     DOWNLOAD_DIR, 'bfd',
     'bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt')
+
+# Path to the Small BFD database for use by JackHMMER.
+small_bfd_database_path = os.path.join(
+    DOWNLOAD_DIR, 'small_bfd', 'bfd-first_non_consensus_sequences.fasta')
 
 # Path to the Uniclust30 database for use by HHblits.
 uniclust30_database_path = os.path.join(
@@ -92,10 +96,11 @@ flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
                     'to consider (ISO-8601 format - i.e. YYYY-MM-DD). '
                     'Important if folding historical test sets.')
 flags.DEFINE_enum('preset', 'full_dbs',
-                  ['full_dbs', 'casp14'],
-                  'Choose preset model configuration - no ensembling with '
-                  'uniref90 + bfd + uniclust30 (full_dbs), or '
-                  '8 model ensemblings with uniref90 + bfd + uniclust30 '
+                  ['reduced_dbs', 'full_dbs', 'casp14'],
+                  'Choose preset model configuration - no ensembling and '
+                  'smaller genetic database config (reduced_dbs), no '
+                  'ensembling and full genetic database config  (full_dbs) or '
+                  'full genetic database config and 8 model ensemblings '
                   '(casp14).')
 flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
                      'to obtain a timing that excludes the compilation time, '
@@ -131,14 +136,22 @@ def main(argv):
     target_fasta_paths.append(target_path)
   command_args.append(f'--fasta_paths={",".join(target_fasta_paths)}')
 
-  for name, path in [('uniref90_database_path', uniref90_database_path),
-                     ('mgnify_database_path', mgnify_database_path),
-                     ('uniclust30_database_path', uniclust30_database_path),
-                     ('bfd_database_path', bfd_database_path),
-                     ('pdb70_database_path', pdb70_database_path),
-                     ('data_dir', data_dir),
-                     ('template_mmcif_dir', template_mmcif_dir),
-                     ('obsolete_pdbs_path', obsolete_pdbs_path)]:
+  database_paths = [
+      ('uniref90_database_path', uniref90_database_path),
+      ('mgnify_database_path', mgnify_database_path),
+      ('pdb70_database_path', pdb70_database_path),
+      ('data_dir', data_dir),
+      ('template_mmcif_dir', template_mmcif_dir),
+      ('obsolete_pdbs_path', obsolete_pdbs_path),
+  ]
+  if FLAGS.preset == 'reduced_dbs':
+    database_paths.append(('small_bfd_database_path', small_bfd_database_path))
+  else:
+    database_paths.extend([
+        ('uniclust30_database_path', uniclust30_database_path),
+        ('bfd_database_path', bfd_database_path),
+    ])
+  for name, path in database_paths:
     if path:
       mount, target_path = _create_mount(name, path)
       mounts.append(mount)

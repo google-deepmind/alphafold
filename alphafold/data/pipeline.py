@@ -15,7 +15,7 @@
 """Functions for building the input features for the AlphaFold model."""
 
 import os
-from typing import Mapping, Sequence
+from typing import Mapping, Optional, Sequence
 
 import numpy as np
 
@@ -88,19 +88,27 @@ class DataPipeline:
                hhsearch_binary_path: str,
                uniref90_database_path: str,
                mgnify_database_path: str,
-               bfd_database_path: str,
-               uniclust30_database_path: str,
+               bfd_database_path: Optional[str],
+               uniclust30_database_path: Optional[str],
+               small_bfd_database_path: Optional[str],
                pdb70_database_path: str,
                template_featurizer: templates.TemplateHitFeaturizer,
+               use_small_bfd: bool,
                mgnify_max_hits: int = 501,
                uniref_max_hits: int = 10000):
     """Constructs a feature dict for a given FASTA file."""
+    self._use_small_bfd = use_small_bfd
     self.jackhmmer_uniref90_runner = jackhmmer.Jackhmmer(
         binary_path=jackhmmer_binary_path,
         database_path=uniref90_database_path)
-    self.hhblits_bfd_uniclust_runner = hhblits.HHBlits(
-        binary_path=hhblits_binary_path,
-        databases=[bfd_database_path, uniclust30_database_path])
+    if use_small_bfd:
+      self.jackhmmer_small_bfd_runner = jackhmmer.Jackhmmer(
+          binary_path=jackhmmer_binary_path,
+          database_path=small_bfd_database_path)
+    else:
+      self.hhblits_bfd_uniclust_runner = hhblits.HHBlits(
+          binary_path=hhblits_binary_path,
+          databases=[bfd_database_path, uniclust30_database_path])
     self.jackhmmer_mgnify_runner = jackhmmer.Jackhmmer(
         binary_path=jackhmmer_binary_path,
         database_path=mgnify_database_path)
@@ -124,9 +132,9 @@ class DataPipeline:
     num_res = len(input_sequence)
 
     jackhmmer_uniref90_result = self.jackhmmer_uniref90_runner.query(
-        input_fasta_path)
+        input_fasta_path)[0]
     jackhmmer_mgnify_result = self.jackhmmer_mgnify_runner.query(
-        input_fasta_path)
+        input_fasta_path)[0]
 
     uniref90_msa_as_a3m = parsers.convert_stockholm_to_a3m(
         jackhmmer_uniref90_result['sto'], max_sequences=self.uniref_max_hits)
@@ -140,29 +148,40 @@ class DataPipeline:
     with open(mgnify_out_path, 'w') as f:
       f.write(jackhmmer_mgnify_result['sto'])
 
-    uniref90_msa, uniref90_deletion_matrix = parsers.parse_stockholm(
+    uniref90_msa, uniref90_deletion_matrix, _ = parsers.parse_stockholm(
         jackhmmer_uniref90_result['sto'])
-    mgnify_msa, mgnify_deletion_matrix = parsers.parse_stockholm(
+    mgnify_msa, mgnify_deletion_matrix, _ = parsers.parse_stockholm(
         jackhmmer_mgnify_result['sto'])
     hhsearch_hits = parsers.parse_hhr(hhsearch_result)
     mgnify_msa = mgnify_msa[:self.mgnify_max_hits]
     mgnify_deletion_matrix = mgnify_deletion_matrix[:self.mgnify_max_hits]
 
-    hhblits_bfd_uniclust_result = self.hhblits_bfd_uniclust_runner.query(
-        input_fasta_path)
+    if self._use_small_bfd:
+      jackhmmer_small_bfd_result = self.jackhmmer_small_bfd_runner.query(
+          input_fasta_path)[0]
 
-    bfd_out_path = os.path.join(msa_output_dir, 'bfd_uniclust_hits.a3m')
-    with open(bfd_out_path, 'w') as f:
-      f.write(hhblits_bfd_uniclust_result['a3m'])
+      bfd_out_path = os.path.join(msa_output_dir, 'small_bfd_hits.a3m')
+      with open(bfd_out_path, 'w') as f:
+        f.write(jackhmmer_small_bfd_result['sto'])
 
-    bfd_msa, bfd_deletion_matrix = parsers.parse_a3m(
-        hhblits_bfd_uniclust_result['a3m'])
+      bfd_msa, bfd_deletion_matrix, _ = parsers.parse_stockholm(
+          jackhmmer_small_bfd_result['sto'])
+    else:
+      hhblits_bfd_uniclust_result = self.hhblits_bfd_uniclust_runner.query(
+          input_fasta_path)
+
+      bfd_out_path = os.path.join(msa_output_dir, 'bfd_uniclust_hits.a3m')
+      with open(bfd_out_path, 'w') as f:
+        f.write(hhblits_bfd_uniclust_result['a3m'])
+
+      bfd_msa, bfd_deletion_matrix = parsers.parse_a3m(
+          hhblits_bfd_uniclust_result['a3m'])
 
     templates_result = self.template_featurizer.get_templates(
         query_sequence=input_sequence,
         query_pdb_code=None,
         query_release_date=None,
-        hhr_hits=hhsearch_hits)
+        hits=hhsearch_hits)
 
     sequence_features = make_sequence_features(
         sequence=input_sequence,

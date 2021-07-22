@@ -59,6 +59,8 @@ flags.DEFINE_string('mgnify_database_path', None, 'Path to the MGnify '
                     'database for use by JackHMMER.')
 flags.DEFINE_string('bfd_database_path', None, 'Path to the BFD '
                     'database for use by HHblits.')
+flags.DEFINE_string('small_bfd_database_path', None, 'Path to the small '
+                    'version of BFD used with the "reduced_dbs" preset.')
 flags.DEFINE_string('uniclust30_database_path', None, 'Path to the Uniclust30 '
                     'database for use by HHblits.')
 flags.DEFINE_string('pdb70_database_path', None, 'Path to the PDB70 '
@@ -70,9 +72,13 @@ flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
 flags.DEFINE_string('obsolete_pdbs_path', None, 'Path to file containing a '
                     'mapping from obsolete PDB IDs to the PDB IDs of their '
                     'replacements.')
-flags.DEFINE_enum('preset', 'full_dbs', ['full_dbs', 'casp14'],
-                  'Choose preset model configuration - no ensembling '
-                  '(full_dbs) or 8 model ensemblings (casp14).')
+flags.DEFINE_enum('preset', 'full_dbs',
+                  ['reduced_dbs', 'full_dbs', 'casp14'],
+                  'Choose preset model configuration - no ensembling and '
+                  'smaller genetic database config (reduced_dbs), no '
+                  'ensembling and full genetic database config  (full_dbs) or '
+                  'full genetic database config and 8 model ensemblings '
+                  '(casp14).')
 flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
                      'to obtain a timing that excludes the compilation time, '
                      'which should be more indicative of the time required for '
@@ -90,6 +96,12 @@ RELAX_ENERGY_TOLERANCE = 2.39
 RELAX_STIFFNESS = 10.0
 RELAX_EXCLUDE_RESIDUES = []
 RELAX_MAX_OUTER_ITERATIONS = 20
+
+
+def _check_flag(flag_name: str, preset: str, should_be_set: bool):
+  if should_be_set != bool(FLAGS[flag_name].value):
+    verb = 'be' if should_be_set else 'not be'
+    raise ValueError(f'{flag_name} must {verb} set for preset "{preset}"')
 
 
 def predict_structure(
@@ -197,7 +209,15 @@ def main(argv):
   if len(argv) > 1:
     raise app.UsageError('Too many command-line arguments.')
 
-  if FLAGS.preset == 'full_dbs':
+  use_small_bfd = FLAGS.preset == 'reduced_dbs'
+  _check_flag('small_bfd_database_path', FLAGS.preset,
+              should_be_set=use_small_bfd)
+  _check_flag('bfd_database_path', FLAGS.preset,
+              should_be_set=not use_small_bfd)
+  _check_flag('uniclust30_database_path', FLAGS.preset,
+              should_be_set=not use_small_bfd)
+
+  if FLAGS.preset in ('reduced_dbs', 'full_dbs'):
     num_ensemble = 1
   elif FLAGS.preset == 'casp14':
     num_ensemble = 8
@@ -223,8 +243,10 @@ def main(argv):
       mgnify_database_path=FLAGS.mgnify_database_path,
       bfd_database_path=FLAGS.bfd_database_path,
       uniclust30_database_path=FLAGS.uniclust30_database_path,
+      small_bfd_database_path=FLAGS.small_bfd_database_path,
       pdb70_database_path=FLAGS.pdb70_database_path,
-      template_featurizer=template_featurizer)
+      template_featurizer=template_featurizer,
+      use_small_bfd=use_small_bfd)
 
   model_runners = {}
   for model_name in FLAGS.model_names:
@@ -272,8 +294,6 @@ if __name__ == '__main__':
       'preset',
       'uniref90_database_path',
       'mgnify_database_path',
-      'uniclust30_database_path',
-      'bfd_database_path',
       'pdb70_database_path',
       'template_mmcif_dir',
       'max_template_date',

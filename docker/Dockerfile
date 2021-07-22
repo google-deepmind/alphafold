@@ -54,7 +54,8 @@ RUN conda update -qy conda \
       openmm=7.5.1 \
       cudatoolkit==${CUDA}.3 \
       pdbfixer \
-      pip
+      pip \
+      python=3.7
 
 COPY . /app/alphafold
 RUN wget -q -P /app/alphafold/alphafold/common/ \
@@ -67,7 +68,7 @@ RUN pip3 install --upgrade pip \
       https://storage.googleapis.com/jax-releases/jax_releases.html
 
 # Apply OpenMM patch.
-WORKDIR /opt/conda/lib/python3.8/site-packages
+WORKDIR /opt/conda/lib/python3.7/site-packages
 RUN patch -p0 < /app/alphafold/docker/openmm.patch
 
 # We need to run `ldconfig` first to ensure GPUs are visible, due to some quirk
