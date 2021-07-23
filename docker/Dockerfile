@@ -47,9 +47,9 @@ RUN cmake -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
 
 # Install Miniconda package manger.
 RUN wget -q -P /tmp \
-  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
-    && rm /tmp/Miniconda3-latest-Linux-x86_64.sh
+  https://repo.anaconda.com/miniconda/Miniconda3-py38_4.9.2-Linux-x86_64.sh \
+    && bash /tmp/Miniconda3-py38_4.9.2-Linux-x86_64.sh -b -p /opt/conda \
+    && rm /tmp/Miniconda3-py38_4.9.2-Linux-x86_64.sh
 
 # Install conda packages.
 ENV PATH="/opt/conda/bin:$PATH"
