@@ -95,7 +95,7 @@ $DOWNLOAD_DIR/                             # Total: ~ 2.2 TB (download: 438 GB)
     bfd/                                   # ~ 1.7 TB (download: 271.6 GB)
         # 6 files.
     mgnify/                                # ~ 64 GB (download: 32.9 GB)
-        mgy_clusters_2018_08.fa
+        mgy_clusters_2018_12.fa
     params/                                # ~ 3.5 GB (download: 3.5 GB)
         # 5 CASP14 models,
         # 5 pTM models,
