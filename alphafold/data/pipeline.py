@@ -148,6 +148,10 @@ class DataPipeline:
     with open(mgnify_out_path, 'w') as f:
       f.write(jackhmmer_mgnify_result['sto'])
 
+    pdb70_out_path = os.path.join(msa_output_dir, 'pdb70_hits.hhr')
+    with open(pdb70_out_path, 'w') as f:
+      f.write(hhsearch_result)
+
     uniref90_msa, uniref90_deletion_matrix, _ = parsers.parse_stockholm(
         jackhmmer_uniref90_result['sto'])
     mgnify_msa, mgnify_deletion_matrix, _ = parsers.parse_stockholm(
