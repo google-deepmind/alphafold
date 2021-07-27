@@ -19,10 +19,8 @@ import re
 import subprocess
 
 from absl import logging
-
-# Internal import (7716).
-
 from alphafold.data.tools import utils
+# Internal import (7716).
 
 
 class Hmmbuild(object):

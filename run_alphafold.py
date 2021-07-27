@@ -25,8 +25,6 @@ from typing import Dict
 from absl import app
 from absl import flags
 from absl import logging
-import numpy as np
-
 from alphafold.common import protein
 from alphafold.data import pipeline
 from alphafold.data import templates
@@ -34,6 +32,7 @@ from alphafold.model import data
 from alphafold.model import config
 from alphafold.model import model
 from alphafold.relax import relax
+import numpy as np
 # Internal import (7716).
 
 flags.DEFINE_list('fasta_paths', None, 'Paths to FASTA files, each containing '

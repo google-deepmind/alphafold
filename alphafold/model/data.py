@@ -17,11 +17,9 @@
 import io
 import os
 from typing import List
-
+from alphafold.model import utils
 import haiku as hk
 import numpy as np
-
-from alphafold.model import utils
 # Internal import (7716).
 
 

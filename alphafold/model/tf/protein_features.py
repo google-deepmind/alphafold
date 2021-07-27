@@ -15,10 +15,8 @@
 """Contains descriptions of various protein features."""
 import enum
 from typing import Dict, Optional, Sequence, Tuple, Union
-
-import tensorflow.compat.v1 as tf
-
 from alphafold.common import residue_constants
+import tensorflow.compat.v1 as tf
 
 # Type aliases.
 FeaturesMetadata = Dict[str, Tuple[tf.dtypes.DType, Sequence[Union[str, int]]]]
@@ -129,4 +127,3 @@ def shape(feature_name: str,
       raise ValueError("Could not parse %s (shape: %s) with values: %s" % (
           feature_name, raw_sizes, replacements))
   return sizes
-

@@ -18,10 +18,9 @@ import os
 
 from absl.testing import absltest
 from absl.testing import parameterized
+import run_alphafold
 import mock
 import numpy as np
-
-import run_alphafold
 # Internal import (7716).
 
 

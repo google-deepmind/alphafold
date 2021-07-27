@@ -13,14 +13,12 @@
 # limitations under the License.
 
 """Protein data type."""
+import dataclasses
 import io
 from typing import Any, Mapping, Optional
-
-from Bio.PDB import PDBParser
-import dataclasses
-import numpy as np
-
 from alphafold.common import residue_constants
+from Bio.PDB import PDBParser
+import numpy as np
 
 FeatureDict = Mapping[str, np.ndarray]
 ModelOutput = Mapping[str, Any]  # Is a nested dict.

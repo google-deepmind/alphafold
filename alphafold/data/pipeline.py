@@ -16,17 +16,15 @@
 
 import os
 from typing import Mapping, Optional, Sequence
-
-import numpy as np
-
-# Internal import (7716).
-
 from alphafold.common import residue_constants
 from alphafold.data import parsers
 from alphafold.data import templates
 from alphafold.data.tools import hhblits
 from alphafold.data.tools import hhsearch
 from alphafold.data.tools import jackhmmer
+import numpy as np
+
+# Internal import (7716).
 
 FeatureDict = Mapping[str, np.ndarray]
 

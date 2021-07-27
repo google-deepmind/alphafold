@@ -19,10 +19,8 @@ import subprocess
 from typing import Optional, Sequence
 
 from absl import logging
-
-# Internal import (7716).
-
 from alphafold.data.tools import utils
+# Internal import (7716).
 
 
 class Hmmsearch(object):

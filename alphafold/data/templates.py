@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Functions for getting templates and calculating template features."""
+import dataclasses
 import datetime
 import glob
 import os
@@ -20,15 +21,13 @@ import re
 from typing import Any, Dict, Mapping, Optional, Sequence, Tuple
 
 from absl import logging
-import dataclasses
-import numpy as np
-
-# Internal import (7716).
-
 from alphafold.common import residue_constants
 from alphafold.data import mmcif_parsing
 from alphafold.data import parsers
 from alphafold.data.tools import kalign
+import numpy as np
+
+# Internal import (7716).
 
 
 class Error(Exception):

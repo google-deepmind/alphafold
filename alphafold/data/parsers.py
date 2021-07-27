@@ -14,11 +14,10 @@
 
 """Functions for parsing various file formats."""
 import collections
+import dataclasses
 import re
 import string
-from typing import Iterable, List, Optional, Sequence, Tuple, Dict
-
-import dataclasses
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 DeletionMatrix = Sequence[Sequence[int]]
 

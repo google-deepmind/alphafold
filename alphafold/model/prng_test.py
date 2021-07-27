@@ -15,9 +15,8 @@
 """Tests for prng."""
 
 from absl.testing import absltest
-import jax
-
 from alphafold.model import prng
+import jax
 
 
 class PrngTest(absltest.TestCase):

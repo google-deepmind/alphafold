@@ -18,10 +18,9 @@ import os
 
 from absl.testing import absltest
 from absl.testing import parameterized
-import numpy as np
-
 from alphafold.common import protein
 from alphafold.common import residue_constants
+import numpy as np
 # Internal import (7716).
 
 TEST_DATA_DIR = 'alphafold/common/testdata/'

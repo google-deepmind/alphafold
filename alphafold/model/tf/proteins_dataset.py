@@ -14,11 +14,9 @@
 
 """Datasets consisting of proteins."""
 from typing import Dict, Mapping, Optional, Sequence
-
+from alphafold.model.tf import protein_features
 import numpy as np
 import tensorflow.compat.v1 as tf
-
-from alphafold.model.tf import protein_features
 
 TensorDict = Dict[str, tf.Tensor]
 

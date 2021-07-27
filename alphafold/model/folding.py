@@ -16,13 +16,6 @@
 
 import functools
 from typing import Dict
-
-import haiku as hk
-import jax
-import jax.numpy as jnp
-import ml_collections
-import numpy as np
-
 from alphafold.common import residue_constants
 from alphafold.model import all_atom
 from alphafold.model import common_modules
@@ -30,6 +23,11 @@ from alphafold.model import prng
 from alphafold.model import quat_affine
 from alphafold.model import r3
 from alphafold.model import utils
+import haiku as hk
+import jax
+import jax.numpy as jnp
+import ml_collections
+import numpy as np
 
 
 def squared_difference(x, y):

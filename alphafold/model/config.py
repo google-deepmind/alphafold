@@ -14,9 +14,8 @@
 """Model config."""
 
 import copy
-import ml_collections
-
 from alphafold.model.tf import shape_placeholders
+import ml_collections
 
 
 NUM_RES = shape_placeholders.NUM_RES
