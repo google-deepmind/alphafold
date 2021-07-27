@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ARG CUDA=11.0
-FROM nvidia/cuda:${CUDA}-base
+FROM nvidia/cuda:${CUDA}-cudnn8-runtime-ubuntu16.04
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
 ARG CUDA
@@ -52,7 +52,7 @@ ENV PATH="/opt/conda/bin:$PATH"
 RUN conda update -qy conda \
     && conda install -y -c conda-forge \
       openmm=7.5.1 \
-      cudatoolkit==${CUDA}.3 \
+      cudatoolkit==${CUDA_VERSION} \
       pdbfixer \
       pip \
       python=3.7
