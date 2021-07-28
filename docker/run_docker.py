@@ -57,7 +57,7 @@ uniref90_database_path = os.path.join(
 
 # Path to the MGnify database for use by JackHMMER.
 mgnify_database_path = os.path.join(
-    DOWNLOAD_DIR, 'mgnify', 'mgy_clusters_2018_08.fa')
+    DOWNLOAD_DIR, 'mgnify', 'mgy_clusters_2018_12.fa')
 
 # Path to the BFD database for use by HHblits.
 bfd_database_path = os.path.join(
