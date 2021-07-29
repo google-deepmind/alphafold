@@ -207,10 +207,11 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
 
 ### AlphaFold output
 
-The outputs will be in a subfolder of `output_dir` in `run_docker.py`. They
-include the computed MSAs, unrelaxed structures, relaxed structures, ranked
-structures, raw model outputs, prediction metadata, and section timings. The
-`output_dir` directory will have the following structure:
+The outputs will be in a subfolder of the `--output_dir` argument to
+`run_docker.py` (current working directory by default). They include the
+computed MSAs, unrelaxed structures, relaxed structures, ranked structures, raw
+model outputs, prediction metadata, and section timings. The `output_dir`
+directory will have the following structure:
 
 ```
 <target_name>/
