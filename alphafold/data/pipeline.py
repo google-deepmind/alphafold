@@ -16,6 +16,7 @@
 
 import os
 from typing import Mapping, Optional, Sequence
+from absl import logging
 from alphafold.common import residue_constants
 from alphafold.data import parsers
 from alphafold.data import templates
@@ -195,5 +196,14 @@ class DataPipeline:
         deletion_matrices=(uniref90_deletion_matrix,
                            bfd_deletion_matrix,
                            mgnify_deletion_matrix))
+
+    logging.info('Uniref90 MSA size: %d sequences.', len(uniref90_msa))
+    logging.info('BFD MSA size: %d sequences.', len(bfd_msa))
+    logging.info('MGnify MSA size: %d sequences.', len(mgnify_msa))
+    logging.info('Final (deduplicated) MSA size: %d sequences.',
+                 msa_features['num_alignments'][0])
+    logging.info('Total number of templates (NB: this can include bad '
+                 'templates and is later filtered to top 4): %d.',
+                 templates_result.features['template_domain_names'].shape[0])
 
     return {**sequence_features, **msa_features, **templates_result.features}
