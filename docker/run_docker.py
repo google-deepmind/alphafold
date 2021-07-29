@@ -15,6 +15,7 @@
 """Docker launch script for Alphafold docker image."""
 
 import os
+from pathlib import Path
 import signal
 from typing import Tuple
 
@@ -32,9 +33,6 @@ DOWNLOAD_DIR = 'SET ME'
 
 # Name of the AlphaFold Docker image.
 docker_image_name = 'alphafold'
-
-# Path to a directory that will store the results.
-output_dir = '/tmp/alphafold'
 
 # Names of models to use.
 model_names = [
@@ -92,6 +90,7 @@ flags.DEFINE_list('fasta_paths', None, 'Paths to FASTA files, each containing '
                   'All FASTA paths must have a unique basename as the '
                   'basename is used to name the output directories for '
                   'each prediction.')
+flags.DEFINE_string('output_dir', os.getcwd(), 'Output directory')
 flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
                     'to consider (ISO-8601 format - i.e. YYYY-MM-DD). '
                     'Important if folding historical test sets.')
@@ -135,6 +134,12 @@ def main(argv):
     mounts.append(mount)
     target_fasta_paths.append(target_path)
   command_args.append(f'--fasta_paths={",".join(target_fasta_paths)}')
+
+  # Set output directory and create if necessary
+  if FLAGS.output_dir is not None:
+    output_dir_path = Path(FLAGS.output_dir)
+    output_dir_path.mkdir(parents=True, exist_ok=True)
+    output_dir = str(output_dir_path.resolve())
 
   database_paths = [
       ('uniref90_database_path', uniref90_database_path),
