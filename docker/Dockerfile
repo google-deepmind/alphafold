@@ -72,6 +72,9 @@ RUN pip3 install --upgrade pip \
 WORKDIR /opt/conda/lib/python3.7/site-packages
 RUN patch -p0 < /app/alphafold/docker/openmm.patch
 
+# add SETUID bit to ldconfig binary so that non-root users can run it
+RUN chmod u+s /sbin/ldconfig.real
+
 # We need to run `ldconfig` first to ensure GPUs are visible, due to some quirk
 # with Debian. See https://github.com/NVIDIA/nvidia-docker/issues/1399 for
 # details.
