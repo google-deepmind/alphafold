@@ -106,6 +106,10 @@ flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
                      'to obtain a timing that excludes the compilation time, '
                      'which should be more indicative of the time required for '
                      'inferencing many proteins.')
+flags.DEFINE_string('docker_user', f"{os.geteuid()}:{os.getegid()}", 'Numerical UNIX user ID with '
+                    'which to run docker container. '
+                    'The output directories will be owned by this user. '
+                    'By default, this is your current user.')
 
 FLAGS = flags.FLAGS
 
@@ -177,6 +181,7 @@ def main(argv):
       remove=True,
       detach=True,
       mounts=mounts,
+      user=FLAGS.docker_user,
       environment={
           'NVIDIA_VISIBLE_DEVICES': FLAGS.gpu_devices,
           # The following flags allow us to make predictions on proteins that
