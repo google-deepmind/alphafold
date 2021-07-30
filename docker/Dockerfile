@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ARG CUDA=11.0
-FROM nvidia/cuda:${CUDA}-cudnn8-runtime-ubuntu16.04
+FROM nvidia/cuda:${CUDA}-cudnn8-runtime-ubuntu18.04
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
 ARG CUDA
