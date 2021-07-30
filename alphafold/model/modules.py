@@ -1305,6 +1305,12 @@ class TriangleMultiplication(hk.Module):
     left_proj_act *= left_gate_values
     right_proj_act *= right_gate_values
 
+    # "Outgoing" edges equation: 'ikc,jkc->ijc'
+    # "Incoming" edges equation: 'kjc,kic->ijc'
+    # Note on the Suppl. Alg. 11 & 12 notation:
+    # For the "outgoing" edges, a = left_proj_act and b = right_proj_act
+    # For the "incoming" edges, it's swapped:
+    #   b = left_proj_act and a = right_proj_act
     act = jnp.einsum(c.equation, left_proj_act, right_proj_act)
 
     act = hk.LayerNorm(
