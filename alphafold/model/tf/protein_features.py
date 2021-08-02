@@ -93,7 +93,7 @@ def shape(feature_name: str,
 
   Args:
     feature_name: String identifier for the feature. If the feature name ends
-      with "_unnormalized", theis suffix is stripped off.
+      with "_unnormalized", this suffix is stripped off.
     num_residues: The number of residues in the current domain - some elements
       of the shape can be dynamic and will be replaced by this value.
     msa_length: The number of sequences in the multiple sequence alignment, some

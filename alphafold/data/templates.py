@@ -885,7 +885,7 @@ class TemplateHitFeaturizer:
         errors.append(result.error)
 
       # There could be an error even if there are some results, e.g. thrown by
-      # other unparseable chains in the same mmCIF file.
+      # other unparsable chains in the same mmCIF file.
       if result.warning:
         warnings.append(result.warning)
 

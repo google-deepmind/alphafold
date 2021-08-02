@@ -107,7 +107,7 @@ $DOWNLOAD_DIR/                             # Total: ~ 2.2 TB (download: 438 GB)
         mmcif_files/
             # About 180,000 .cif files.
         obsolete.dat
-    small_fbd/                             # ~ 17 GB (download: 9.6 GB)
+    small_bfd/                             # ~ 17 GB (download: 9.6 GB)
         bfd-first_non_consensus_sequences.fasta
     uniclust30/                            # ~ 86 GB (download: 24.9 GB)
         uniclust30_2018_08/
