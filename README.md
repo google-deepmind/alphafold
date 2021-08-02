@@ -319,7 +319,7 @@ For genetics:
 For templates:
 
 *   PDB: (downloaded 2020-05-14)
-*   PDB70: (downloaded 2020-05-13)
+*   PDB70: [2020-05-13](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200513.tar.gz)
 
 An alternative for templates is to use the latest PDB and PDB70, but pass the
 flag `--max_template_date=2020-05-14`, which restricts templates only to
