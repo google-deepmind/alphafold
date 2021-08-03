@@ -1,0 +1,53 @@
+BootStrap: docker
+From: nvidia/cuda:11.0-cudnn8-runtime-ubuntu18.04
+
+%post
+
+	export TZ=Europe/London
+	ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+	apt-get update 
+	apt-get install -y build-essential cmake cuda-command-line-tools-11-0 git hmmer kalign tzdata wget 
+	
+	# Compile HHsuite from source.
+	cd /
+	git clone --branch v3.3.0 https://github.com/soedinglab/hh-suite.git 
+	mkdir /hh-suite/build 
+	cd /hh-suite/build 
+	cmake -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. 
+	make -j 4 && make install 
+	ln -s /opt/hhsuite/bin/* /usr/bin 
+	#rm -rf /hh-suite/
+	
+	# Install Miniconda package manger.
+	cd /tmp
+	wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh 
+	bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda
+	rm /tmp/Miniconda3-latest-Linux-x86_64.sh
+
+	# Install conda packages.
+	export PATH="/opt/conda/bin:$PATH"
+	conda update -qy conda 
+	conda install -y -c conda-forge openmm=7.5.1 cudatoolkit==${CUDA_VERSION} pdbfixer pip python=3.7
+
+	mkdir -p /app
+	cd /app
+        git clone https://github.com/deepmind/alphafold.git
+	wget -q -P /app/alphafold/alphafold/common/ \
+		  https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+
+	# Install pip packages.
+	pip3 install --upgrade pip 
+	pip3 install -r /app/alphafold/requirements.txt 
+	pip3 install --upgrade jax jaxlib==0.1.69+cuda110 -f https://storage.googleapis.com/jax-releases/jax_releases.html
+
+	# Apply OpenMM patch.
+	cd /opt/conda/lib/python3.7/site-packages
+	patch -p0 < /app/alphafold/docker/openmm.patch
+
+	ldconfig
+	mkdir /scratch
+
+%environment
+	export PATH=/opt/conda/bin:${PATH}
+
+#python /app/alphafold/run_alphafold.py 
