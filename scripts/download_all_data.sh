@@ -31,7 +31,7 @@ fi
 
 DOWNLOAD_DIR="$1"
 DOWNLOAD_MODE="${2:-full_dbs}" # Default mode to full_dbs.
-if [[ "${DOWNLOAD_MODE}"  != full_dbs && "${DOWNLOAD_MODE}" != reduced_dbs ]]
+if [[ "${DOWNLOAD_MODE}" != full_dbs && "${DOWNLOAD_MODE}" != reduced_dbs ]]
 then
   echo "DOWNLOAD_MODE ${DOWNLOAD_MODE} not recognized."
   exit 1
