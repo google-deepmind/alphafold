@@ -14,10 +14,10 @@ jobs:
       - run: flake8 --ignore=E111,E114,E123,E124,E125,E127,E129,E201,E226,E231,E241,E266,E272,E305,E306,E731,E741,W391,W503,W504
                     --max-complexity=22 --max-line-length=102 --show-source --statistics .
       - run: isort --check-only --profile black . || true
-      - run: pip install git+https://github.com/openmm/pdbfixer.git@v1.7 simtk -r requirements.txt
+      - run: pip install simtk -r requirements.txt  # git+https://github.com/openmm/pdbfixer.git@v1.7 
+      - run: ./run_alphafold_test.py || true
       - run: mkdir --parents --verbose .mypy_cache
       - run: mypy --ignore-missing-imports --install-types --non-interactive . || true
-      - run: ./run_alphafold_test.py || true
       - run: python ./run_alphafold_test.py || true      
       - run: pytest . || true
       - run: pytest --doctest-modules . || true
