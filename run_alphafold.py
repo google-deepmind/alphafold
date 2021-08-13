@@ -26,6 +26,7 @@ from absl import app
 from absl import flags
 from absl import logging
 from alphafold.common import protein
+from alphafold.common import residue_constants
 from alphafold.data import pipeline
 from alphafold.data import templates
 from alphafold.model import data
@@ -158,15 +159,22 @@ def predict_structure(
       timings[f'predict_benchmark_{model_name}'] = time.time() - t_0
 
     # Get mean pLDDT confidence metric.
-    plddts[model_name] = np.mean(prediction_result['plddt'])
+    plddt = prediction_result['plddt']
+    plddts[model_name] = np.mean(plddt)
 
     # Save the model outputs.
     result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
     with open(result_output_path, 'wb') as f:
       pickle.dump(prediction_result, f, protocol=4)
 
-    unrelaxed_protein = protein.from_prediction(processed_feature_dict,
-                                                prediction_result)
+    # Add the predicted LDDT in the b-factor column.
+    # Note that higher predicted LDDT value means higher model confidence.
+    plddt_b_factors = np.repeat(
+        plddt[:, None], residue_constants.atom_type_num, axis=-1)
+    unrelaxed_protein = protein.from_prediction(
+        features=processed_feature_dict,
+        result=prediction_result,
+        b_factors=plddt_b_factors)
 
     unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}.pdb')
     with open(unrelaxed_pdb_path, 'w') as f:

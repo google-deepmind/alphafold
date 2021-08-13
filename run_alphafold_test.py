@@ -45,7 +45,7 @@ class RunAlphafoldTest(parameterized.TestCase):
         'predicted_lddt': {
             'logits': np.ones((10, 50)),
         },
-        'plddt': np.zeros(10),
+        'plddt': np.ones(10) * 42,
         'ptm': np.array(0.),
         'aligned_confidence_probs': np.zeros((10, 10, 50)),
         'predicted_aligned_error': np.zeros((10, 10)),
@@ -70,6 +70,22 @@ class RunAlphafoldTest(parameterized.TestCase):
         amber_relaxer=amber_relaxer_mock,
         benchmark=False,
         random_seed=0)
+
+    base_output_files = os.listdir(out_dir)
+    self.assertIn('target.fasta', base_output_files)
+    self.assertIn('test', base_output_files)
+
+    target_output_files = os.listdir(os.path.join(out_dir, 'test'))
+    self.assertSequenceEqual(
+        ['features.pkl', 'msas', 'ranked_0.pdb', 'ranking_debug.json',
+         'relaxed_model1.pdb', 'result_model1.pkl', 'timings.json',
+         'unrelaxed_model1.pdb'], target_output_files)
+
+    # Check that pLDDT is set in the B-factor column.
+    with open(os.path.join(out_dir, 'test', 'unrelaxed_model1.pdb')) as f:
+      for line in f:
+        if line.startswith('ATOM'):
+          self.assertEqual(line[61:66], '42.00')
 
 
 if __name__ == '__main__':

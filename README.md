@@ -273,6 +273,10 @@ The contents of each output file are as follows:
         serve for a visualisation of domain packing confidence within the
         structure.
 
+The pLDDT confidence measure is stored in the B-factor field of the output PDB
+files (although unlike a B-factor, higher pLDDT is better, so care must be taken
+when using for tasks such as molecular replacement).
+
 This code has been tested to match mean top-1 accuracy on a CASP14 test set with
 pLDDT ranking over 5 model predictions (some CASP targets were run with earlier
 versions of AlphaFold and some had manual interventions; see our forthcoming
