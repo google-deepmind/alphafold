@@ -15,10 +15,9 @@ jobs:
                     --max-complexity=22 --max-line-length=102 --show-source --statistics .
       - run: isort --check-only --profile black . || true
       - run: pip install simtk -r requirements.txt  # git+https://github.com/openmm/pdbfixer.git@v1.7 
-      - run: ./run_alphafold_test.py || true
+      - run: python3 ./run_alphafold_test.py || true
       - run: mkdir --parents --verbose .mypy_cache
       - run: mypy --ignore-missing-imports --install-types --non-interactive . || true
-      - run: python ./run_alphafold_test.py || true      
       - run: pytest . || true
       - run: pytest --doctest-modules . || true
       - run: shopt -s globstar && pyupgrade --py36-plus **/*.py || true
