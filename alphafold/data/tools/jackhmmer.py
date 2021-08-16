@@ -14,9 +14,12 @@
 
 """Library to run Jackhmmer from Python."""
 
+from concurrent import futures
+import glob
 import os
 import subprocess
-from typing import Any, Mapping, Optional
+from typing import Any, Callable, Mapping, Optional, Sequence
+from urllib import request
 
 from absl import logging
 
@@ -40,7 +43,9 @@ class Jackhmmer:
                filter_f2: float = 0.00005,
                filter_f3: float = 0.0000005,
                incdom_e: Optional[float] = None,
-               dom_e: Optional[float] = None):
+               dom_e: Optional[float] = None,
+               num_streamed_chunks: Optional[int] = None,
+               streaming_callback: Optional[Callable[[int], None]] = None):
     """Initializes the Python Jackhmmer wrapper.
 
     Args:
@@ -57,11 +62,15 @@ class Jackhmmer:
       incdom_e: Domain e-value criteria for inclusion of domains in MSA/next
         round.
       dom_e: Domain e-value criteria for inclusion in tblout.
+      num_streamed_chunks: Number of database chunks to stream over.
+      streaming_callback: Callback function run after each chunk iteration with
+        the iteration number as argument.
     """
     self.binary_path = binary_path
     self.database_path = database_path
+    self.num_streamed_chunks = num_streamed_chunks
 
-    if not os.path.exists(self.database_path):
+    if not os.path.exists(self.database_path) and num_streamed_chunks is None:
       logging.error('Could not find Jackhmmer database %s', database_path)
       raise ValueError(f'Could not find Jackhmmer database {database_path}')
 
@@ -75,9 +84,11 @@ class Jackhmmer:
     self.incdom_e = incdom_e
     self.dom_e = dom_e
     self.get_tblout = get_tblout
+    self.streaming_callback = streaming_callback
 
-  def query(self, input_fasta_path: str) -> Mapping[str, Any]:
-    """Queries the database using Jackhmmer."""
+  def _query_chunk(self, input_fasta_path: str, database_path: str
+                   ) -> Mapping[str, Any]:
+    """Queries the database chunk using Jackhmmer."""
     with utils.tmpdir_manager(base_dir='/tmp') as query_tmp_dir:
       sto_path = os.path.join(query_tmp_dir, 'output.sto')
 
@@ -114,13 +125,13 @@ class Jackhmmer:
         cmd_flags.extend(['--incdomE', str(self.incdom_e)])
 
       cmd = [self.binary_path] + cmd_flags + [input_fasta_path,
-                                              self.database_path]
+                                              database_path]
 
       logging.info('Launching subprocess "%s"', ' '.join(cmd))
       process = subprocess.Popen(
           cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
       with utils.timing(
-          f'Jackhmmer ({os.path.basename(self.database_path)}) query'):
+          f'Jackhmmer ({os.path.basename(database_path)}) query'):
         _, stderr = process.communicate()
         retcode = process.wait()
 
@@ -145,3 +156,43 @@ class Jackhmmer:
         e_value=self.e_value)
 
     return raw_output
+
+  def query(self, input_fasta_path: str) -> Sequence[Mapping[str, Any]]:
+    """Queries the database using Jackhmmer."""
+    if self.num_streamed_chunks is None:
+      return [self._query_chunk(input_fasta_path, self.database_path)]
+
+    db_basename = os.path.basename(self.database_path)
+    db_remote_chunk = lambda db_idx: f'{self.database_path}.{db_idx}'
+    db_local_chunk = lambda db_idx: f'/tmp/ramdisk/{db_basename}.{db_idx}'
+
+    # Remove existing files to prevent OOM
+    for f in glob.glob(db_local_chunk('[0-9]*')):
+      try:
+        os.remove(f)
+      except OSError:
+        print(f'OSError while deleting {f}')
+
+    # Download the (i+1)-th chunk while Jackhmmer is running on the i-th chunk
+    with futures.ThreadPoolExecutor(max_workers=2) as executor:
+      chunked_output = []
+      for i in range(1, self.num_streamed_chunks + 1):
+        # Copy the chunk locally
+        if i == 1:
+          future = executor.submit(
+              request.urlretrieve, db_remote_chunk(i), db_local_chunk(i))
+        if i < self.num_streamed_chunks:
+          next_future = executor.submit(
+              request.urlretrieve, db_remote_chunk(i+1), db_local_chunk(i+1))
+
+        # Run Jackhmmer with the chunk
+        future.result()
+        chunked_output.append(
+            self._query_chunk(input_fasta_path, db_local_chunk(i)))
+
+        # Remove the local copy of the chunk
+        os.remove(db_local_chunk(i))
+        future = next_future
+        if self.streaming_callback:
+          self.streaming_callback(i)
+    return chunked_output

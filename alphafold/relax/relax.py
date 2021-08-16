@@ -14,12 +14,10 @@
 
 """Amber relaxation."""
 from typing import Any, Dict, Sequence, Tuple
-
-import numpy as np
-
 from alphafold.common import protein
 from alphafold.relax import amber_minimize
 from alphafold.relax import utils
+import numpy as np
 
 
 class AmberRelaxation(object):
@@ -80,4 +78,3 @@ class AmberRelaxation(object):
     violations = out['structural_violations'][
         'total_per_residue_violations_mask']
     return min_pdb, debug_data, violations
-

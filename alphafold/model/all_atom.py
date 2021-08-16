@@ -34,15 +34,13 @@ the network to facilitate easier conversion to existing protein datastructures.
 """
 
 from typing import Dict, Optional
-
-import jax
-import jax.numpy as jnp
-import numpy as np
-
 from alphafold.common import residue_constants
 
 from alphafold.model import r3
 from alphafold.model import utils
+import jax
+import jax.numpy as jnp
+import numpy as np
 
 
 def squared_difference(x, y):
@@ -580,10 +578,10 @@ def extreme_ca_ca_distance_violations(
     residue_index: jnp.ndarray,  # (N)
     max_angstrom_tolerance=1.5
     ) -> jnp.ndarray:
-  """Counts residues whose Ca is a large distance from its neighbor.
+  """Counts residues whose Ca is a large distance from its neighbour.
 
-  Measures the fraction of CA-CA pairs between consectutive amino acids that
-  are more than 'max_angstrom_tolerance' apart.
+  Measures the fraction of CA-CA pairs between consecutive amino acids that are
+  more than 'max_angstrom_tolerance' apart.
 
   Args:
     pred_atom_positions: Atom positions in atom37/14 representation

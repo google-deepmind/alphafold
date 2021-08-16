@@ -13,14 +13,12 @@
 # limitations under the License.
 
 """Protein data type."""
+import dataclasses
 import io
 from typing import Any, Mapping, Optional
-
-from Bio.PDB import PDBParser
-import dataclasses
-import numpy as np
-
 from alphafold.common import residue_constants
+from Bio.PDB import PDBParser
+import numpy as np
 
 FeatureDict = Mapping[str, np.ndarray]
 ModelOutput = Mapping[str, Any]  # Is a nested dict.
@@ -67,7 +65,7 @@ def from_pdb_string(pdb_str: str, chain_id: Optional[str] = None) -> Protein:
     A new `Protein` parsed from the pdb contents.
   """
   pdb_fh = io.StringIO(pdb_str)
-  parser = PDBParser()
+  parser = PDBParser(QUIET=True)
   structure = parser.get_structure('none', pdb_fh)
   models = list(structure.get_models())
   if len(models) != 1:
@@ -196,7 +194,7 @@ def ideal_atom_mask(prot: Protein) -> np.ndarray:
 
   `Protein.atom_mask` typically is defined according to the atoms that are
   reported in the PDB. This function computes a mask according to heavy atoms
-  that should be present in the given seqence of amino acids.
+  that should be present in the given sequence of amino acids.
 
   Args:
     prot: `Protein` whose fields are `numpy.ndarray` objects.
@@ -207,22 +205,25 @@ def ideal_atom_mask(prot: Protein) -> np.ndarray:
   return residue_constants.STANDARD_ATOM_MASK[prot.aatype]
 
 
-def from_prediction(features: FeatureDict, result: ModelOutput) -> Protein:
+def from_prediction(features: FeatureDict, result: ModelOutput,
+                    b_factors: Optional[np.ndarray] = None) -> Protein:
   """Assembles a protein from a prediction.
 
   Args:
     features: Dictionary holding model inputs.
     result: Dictionary holding model outputs.
+    b_factors: (Optional) B-factors to use for the protein.
 
   Returns:
     A protein instance.
   """
   fold_output = result['structure_module']
-  dist_per_residue = np.zeros_like(fold_output['final_atom_mask'])
+  if b_factors is None:
+    b_factors = np.zeros_like(fold_output['final_atom_mask'])
 
   return Protein(
       aatype=features['aatype'][0],
       atom_positions=fold_output['final_atom_positions'],
       atom_mask=fold_output['final_atom_mask'],
       residue_index=features['residue_index'][0] + 1,
-      b_factors=dist_per_residue)
+      b_factors=b_factors)

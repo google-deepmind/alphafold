@@ -16,10 +16,10 @@
 
 from absl import logging
 from absl.testing import absltest
+from alphafold.model import quat_affine
 import jax
 import jax.numpy as jnp
 import numpy as np
-from alphafold.model import quat_affine
 
 VERBOSE = False
 np.set_printoptions(precision=3, suppress=True)

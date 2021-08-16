@@ -16,13 +16,6 @@
 
 import functools
 from typing import Dict
-
-import haiku as hk
-import jax
-import jax.numpy as jnp
-import ml_collections
-import numpy as np
-
 from alphafold.common import residue_constants
 from alphafold.model import all_atom
 from alphafold.model import common_modules
@@ -30,6 +23,11 @@ from alphafold.model import prng
 from alphafold.model import quat_affine
 from alphafold.model import r3
 from alphafold.model import utils
+import haiku as hk
+import jax
+import jax.numpy as jnp
+import ml_collections
+import numpy as np
 
 
 def squared_difference(x, y):
@@ -492,7 +490,7 @@ class StructureModule(hk.Module):
         is_training=is_training,
         safe_key=safe_key)
 
-    representations['structure_module'] = output['act']
+    ret['representations'] = {'structure_module': output['act']}
 
     ret['traj'] = output['affine'] * jnp.array([1.] * 4 +
                                                [c.position_scale] * 3)
@@ -514,7 +512,8 @@ class StructureModule(hk.Module):
     if self.compute_loss:
       return ret
     else:
-      no_loss_features = ['final_atom_positions', 'final_atom_mask']
+      no_loss_features = ['final_atom_positions', 'final_atom_mask',
+                          'representations']
       no_loss_ret = {k: ret[k] for k in no_loss_features}
       return no_loss_ret
 

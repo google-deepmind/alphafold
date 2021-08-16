@@ -25,15 +25,15 @@ from typing import Dict
 from absl import app
 from absl import flags
 from absl import logging
-import numpy as np
-
 from alphafold.common import protein
+from alphafold.common import residue_constants
 from alphafold.data import pipeline
 from alphafold.data import templates
 from alphafold.model import data
 from alphafold.model import config
 from alphafold.model import model
 from alphafold.relax import relax
+import numpy as np
 # Internal import (7716).
 
 flags.DEFINE_list('fasta_paths', None, 'Paths to FASTA files, each containing '
@@ -59,6 +59,8 @@ flags.DEFINE_string('mgnify_database_path', None, 'Path to the MGnify '
                     'database for use by JackHMMER.')
 flags.DEFINE_string('bfd_database_path', None, 'Path to the BFD '
                     'database for use by HHblits.')
+flags.DEFINE_string('small_bfd_database_path', None, 'Path to the small '
+                    'version of BFD used with the "reduced_dbs" preset.')
 flags.DEFINE_string('uniclust30_database_path', None, 'Path to the Uniclust30 '
                     'database for use by HHblits.')
 flags.DEFINE_string('pdb70_database_path', None, 'Path to the PDB70 '
@@ -70,9 +72,13 @@ flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
 flags.DEFINE_string('obsolete_pdbs_path', None, 'Path to file containing a '
                     'mapping from obsolete PDB IDs to the PDB IDs of their '
                     'replacements.')
-flags.DEFINE_enum('preset', 'full_dbs', ['full_dbs', 'casp14'],
-                  'Choose preset model configuration - no ensembling '
-                  '(full_dbs) or 8 model ensemblings (casp14).')
+flags.DEFINE_enum('preset', 'full_dbs',
+                  ['reduced_dbs', 'full_dbs', 'casp14'],
+                  'Choose preset model configuration - no ensembling and '
+                  'smaller genetic database config (reduced_dbs), no '
+                  'ensembling and full genetic database config  (full_dbs) or '
+                  'full genetic database config and 8 model ensemblings '
+                  '(casp14).')
 flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
                      'to obtain a timing that excludes the compilation time, '
                      'which should be more indicative of the time required for '
@@ -90,6 +96,12 @@ RELAX_ENERGY_TOLERANCE = 2.39
 RELAX_STIFFNESS = 10.0
 RELAX_EXCLUDE_RESIDUES = []
 RELAX_MAX_OUTER_ITERATIONS = 20
+
+
+def _check_flag(flag_name: str, preset: str, should_be_set: bool):
+  if should_be_set != bool(FLAGS[flag_name].value):
+    verb = 'be' if should_be_set else 'not be'
+    raise ValueError(f'{flag_name} must {verb} set for preset "{preset}"')
 
 
 def predict_structure(
@@ -147,15 +159,22 @@ def predict_structure(
       timings[f'predict_benchmark_{model_name}'] = time.time() - t_0
 
     # Get mean pLDDT confidence metric.
-    plddts[model_name] = np.mean(prediction_result['plddt'])
+    plddt = prediction_result['plddt']
+    plddts[model_name] = np.mean(plddt)
 
     # Save the model outputs.
     result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
     with open(result_output_path, 'wb') as f:
       pickle.dump(prediction_result, f, protocol=4)
 
-    unrelaxed_protein = protein.from_prediction(processed_feature_dict,
-                                                prediction_result)
+    # Add the predicted LDDT in the b-factor column.
+    # Note that higher predicted LDDT value means higher model confidence.
+    plddt_b_factors = np.repeat(
+        plddt[:, None], residue_constants.atom_type_num, axis=-1)
+    unrelaxed_protein = protein.from_prediction(
+        features=processed_feature_dict,
+        result=prediction_result,
+        b_factors=plddt_b_factors)
 
     unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}.pdb')
     with open(unrelaxed_pdb_path, 'w') as f:
@@ -197,7 +216,15 @@ def main(argv):
   if len(argv) > 1:
     raise app.UsageError('Too many command-line arguments.')
 
-  if FLAGS.preset == 'full_dbs':
+  use_small_bfd = FLAGS.preset == 'reduced_dbs'
+  _check_flag('small_bfd_database_path', FLAGS.preset,
+              should_be_set=use_small_bfd)
+  _check_flag('bfd_database_path', FLAGS.preset,
+              should_be_set=not use_small_bfd)
+  _check_flag('uniclust30_database_path', FLAGS.preset,
+              should_be_set=not use_small_bfd)
+
+  if FLAGS.preset in ('reduced_dbs', 'full_dbs'):
     num_ensemble = 1
   elif FLAGS.preset == 'casp14':
     num_ensemble = 8
@@ -223,8 +250,10 @@ def main(argv):
       mgnify_database_path=FLAGS.mgnify_database_path,
       bfd_database_path=FLAGS.bfd_database_path,
       uniclust30_database_path=FLAGS.uniclust30_database_path,
+      small_bfd_database_path=FLAGS.small_bfd_database_path,
       pdb70_database_path=FLAGS.pdb70_database_path,
-      template_featurizer=template_featurizer)
+      template_featurizer=template_featurizer,
+      use_small_bfd=use_small_bfd)
 
   model_runners = {}
   for model_name in FLAGS.model_names:
@@ -272,8 +301,6 @@ if __name__ == '__main__':
       'preset',
       'uniref90_database_path',
       'mgnify_database_path',
-      'uniclust30_database_path',
-      'bfd_database_path',
       'pdb70_database_path',
       'template_mmcif_dir',
       'max_template_date',
