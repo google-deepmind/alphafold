@@ -89,7 +89,7 @@ class Jackhmmer:
   def _query_chunk(self, input_fasta_path: str, database_path: str
                    ) -> Mapping[str, Any]:
     """Queries the database chunk using Jackhmmer."""
-    with utils.tmpdir_manager(base_dir='/tmp') as query_tmp_dir:
+    with utils.tmpdir_manager() as query_tmp_dir:
       sto_path = os.path.join(query_tmp_dir, 'output.sto')
 
       # The F1/F2/F3 are the expected proportion to pass each of the filtering
