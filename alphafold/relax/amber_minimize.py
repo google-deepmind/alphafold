@@ -19,18 +19,17 @@ import time
 from typing import Collection, Optional, Sequence
 
 from absl import logging
+from alphafold.common import protein
+from alphafold.common import residue_constants
+from alphafold.model import folding
+from alphafold.relax import cleanup
+from alphafold.relax import utils
 import ml_collections
 import numpy as np
 from simtk import openmm
 from simtk import unit
 from simtk.openmm import app as openmm_app
 from simtk.openmm.app.internal.pdbstructure import PdbStructure
-
-from alphafold.common import protein
-from alphafold.common import residue_constants
-from alphafold.model import folding
-from alphafold.relax import cleanup
-from alphafold.relax import utils
 
 
 ENERGY = unit.kilocalories_per_mole
@@ -52,7 +51,7 @@ def _add_restraints(
     stiffness: unit.Unit,
     rset: str,
     exclude_residues: Sequence[int]):
-  """Adds a harmonic potential that restrains the end-to-end distance."""
+  """Adds a harmonic potential that restrains the system to a structure."""
   assert rset in ["non_hydrogen", "c_alpha"]
 
   force = openmm.CustomExternalForce(

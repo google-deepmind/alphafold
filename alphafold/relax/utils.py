@@ -14,13 +14,11 @@
 
 """Utils for minimization."""
 import io
-
+from alphafold.common import residue_constants
 from Bio import PDB
 import numpy as np
 from simtk.openmm import app as openmm_app
 from simtk.openmm.app.internal.pdbstructure import PdbStructure
-
-from alphafold.common import residue_constants
 
 
 def overwrite_pdb_coordinates(pdb_str: str, pos) -> str:
@@ -48,7 +46,7 @@ def overwrite_b_factors(pdb_str: str, bfactors: np.ndarray) -> str:
     raise ValueError(
         f'Invalid final dimension size for bfactors: {bfactors.shape[-1]}.')
 
-  parser = PDB.PDBParser()
+  parser = PDB.PDBParser(QUIET=True)
   handle = io.StringIO(pdb_str)
   structure = parser.get_structure('', handle)
 
@@ -80,4 +78,3 @@ def assert_equal_nonterminal_atom_types(
   no_oxt_mask[..., oxt] = False
   np.testing.assert_almost_equal(ref_atom_mask[no_oxt_mask],
                                  atom_mask[no_oxt_mask])
-

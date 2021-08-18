@@ -13,13 +13,13 @@
 # limitations under the License.
 
 """Data for AlphaFold."""
-import numpy as np
-import tensorflow.compat.v1 as tf
 
 from alphafold.common import residue_constants
 from alphafold.model.tf import shape_helpers
 from alphafold.model.tf import shape_placeholders
 from alphafold.model.tf import utils
+import numpy as np
+import tensorflow.compat.v1 as tf
 
 # Pylint gets confused by the curry1 decorator because it changes the number
 #   of arguments to the function.
@@ -623,4 +623,3 @@ def make_atom14_masks(protein):
   protein['atom37_atom_exists'] = residx_atom37_mask
 
   return protein
-

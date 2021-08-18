@@ -14,13 +14,13 @@
 
 """Parses the mmCIF file format."""
 import collections
+import dataclasses
 import io
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
 from absl import logging
 from Bio import PDB
 from Bio.Data import SCOPData
-import dataclasses
 
 # Type aliases:
 ChainId = str

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ARG CUDA=11.0
-FROM nvidia/cuda:${CUDA}-base
+FROM nvidia/cuda:${CUDA}-cudnn8-runtime-ubuntu18.04
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
 ARG CUDA
@@ -34,14 +34,15 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 
 # Compile HHsuite from source.
 RUN git clone --branch v3.3.0 https://github.com/soedinglab/hh-suite.git /tmp/hh-suite \
-    && mkdir /tmp/hh-suite/build
-WORKDIR /tmp/hh-suite/build
-RUN cmake -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
+    && mkdir /tmp/hh-suite/build \
+    && pushd /tmp/hh-suite/build \
+    && cmake -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
     && make -j 4 && make install \
     && ln -s /opt/hhsuite/bin/* /usr/bin \
+    && popd \
     && rm -rf /tmp/hh-suite
 
-# Install Miniconda package manger.
+# Install Miniconda package manager.
 RUN wget -q -P /tmp \
   https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
@@ -52,9 +53,10 @@ ENV PATH="/opt/conda/bin:$PATH"
 RUN conda update -qy conda \
     && conda install -y -c conda-forge \
       openmm=7.5.1 \
-      cudatoolkit==${CUDA}.3 \
+      cudatoolkit==${CUDA_VERSION} \
       pdbfixer \
-      pip
+      pip \
+      python=3.7
 
 COPY . /app/alphafold
 RUN wget -q -P /app/alphafold/alphafold/common/ \
@@ -67,7 +69,7 @@ RUN pip3 install --upgrade pip \
       https://storage.googleapis.com/jax-releases/jax_releases.html
 
 # Apply OpenMM patch.
-WORKDIR /opt/conda/lib/python3.8/site-packages
+WORKDIR /opt/conda/lib/python3.7/site-packages
 RUN patch -p0 < /app/alphafold/docker/openmm.patch
 
 # We need to run `ldconfig` first to ensure GPUs are visible, due to some quirk

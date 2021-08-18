@@ -16,16 +16,15 @@
 from typing import Any, Mapping, Optional, Union
 
 from absl import logging
+from alphafold.common import confidence
+from alphafold.model import features
+from alphafold.model import modules
 import haiku as hk
 import jax
 import ml_collections
 import numpy as np
 import tensorflow.compat.v1 as tf
 import tree
-
-from alphafold.common import confidence
-from alphafold.model import features
-from alphafold.model import modules
 
 
 def get_confidence_metrics(
@@ -140,4 +139,3 @@ class RunModel:
     logging.info('Output shape was %s',
                  tree.map_structure(lambda x: x.shape, result))
     return result
-
