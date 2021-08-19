@@ -34,44 +34,91 @@ from alphafold.model import config
 from alphafold.model import model
 from alphafold.relax import relax
 import numpy as np
-# Internal import (7716).
 
+# WTTAT added
+from docker import types
+import boto3
+s3 = boto3.client('s3')
+from typing import Tuple
+
+
+FLAGS = flags.FLAGS
+flags.DEFINE_string('BATCH_BUCKET', None, 'S3 bucket')
+############## From run_docker.py #############
+#### USER CONFIGURATION ####
+
+# Set to target of scripts/download_all_databases.sh
+
+_ROOT_MOUNT_DIRECTORY = '/mnt/'
+
+flags.DEFINE_string('DOWNLOAD_DIR', None, 'dataset folder')
+
+# DOWNLOAD_DIR = '/fsx/dataset/'
+
+# Name of the AlphaFold Docker image.
+docker_image_name = 'alphafold_batch'
+
+# Path to a directory that will store the results.
+output_dir = '/tmp/alphafold'
+
+# Names of models to use.
+# model_names = [
+#     'model_1',
+#     'model_2',
+#     'model_3',
+#     'model_4',
+#     'model_5',
+# ]
+
+# You can individually override the following paths if you have placed the
+# data in locations other than the DOWNLOAD_DIR.
+
+# Path to directory of supporting data, contains 'params' dir.
+data_dir = FLAGS.DOWNLOAD_DIR
+
+# Path to the Uniref90 database for use by JackHMMER.
+uniref90_database_path = os.path.join(
+    FLAGS.DOWNLOAD_DIR, 'uniref90', 'uniref90.fasta')
+
+# Path to the MGnify database for use by JackHMMER.
+mgnify_database_path = os.path.join(
+    FLAGS.DOWNLOAD_DIR, 'mgnify', 'mgy_clusters_2018_12.fa')
+
+# Path to the BFD database for use by HHblits.
+bfd_database_path = os.path.join(
+    FLAGS.DOWNLOAD_DIR, 'bfd',
+    'bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt')
+
+# Path to the Small BFD database for use by JackHMMER.
+small_bfd_database_path = os.path.join(
+    FLAGS.DOWNLOAD_DIR, 'small_bfd', 'bfd-first_non_consensus_sequences.fasta')
+
+# Path to the Uniclust30 database for use by HHblits.
+uniclust30_database_path = os.path.join(
+    FLAGS.DOWNLOAD_DIR, 'uniclust30', 'uniclust30_2018_08', 'uniclust30_2018_08')
+
+# Path to the PDB70 database for use by HHsearch.
+pdb70_database_path = os.path.join(FLAGS.DOWNLOAD_DIR, 'pdb70', 'pdb70')
+
+# Path to a directory with template mmCIF structures, each named <pdb_id>.cif')
+template_mmcif_dir = os.path.join(FLAGS.DOWNLOAD_DIR, 'pdb_mmcif', 'mmcif_files')
+
+# Path to a file mapping obsolete PDB IDs to their replacements.
+obsolete_pdbs_path = os.path.join(FLAGS.DOWNLOAD_DIR, 'pdb_mmcif', 'obsolete.dat')
+
+#### END OF USER CONFIGURATION ####
+
+# flags.DEFINE_bool('use_gpu', True, 'Enable NVIDIA runtime to run with GPUs.')
+# flags.DEFINE_string('gpu_devices', 'all', 'Comma separated list of devices to '
+#                     'pass to NVIDIA_VISIBLE_DEVICES.')
 flags.DEFINE_list('fasta_paths', None, 'Paths to FASTA files, each containing '
                   'one sequence. Paths should be separated by commas. '
                   'All FASTA paths must have a unique basename as the '
                   'basename is used to name the output directories for '
                   'each prediction.')
-flags.DEFINE_string('output_dir', None, 'Path to a directory that will '
-                    'store the results.')
-flags.DEFINE_list('model_names', None, 'Names of models to use.')
-flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
-flags.DEFINE_string('jackhmmer_binary_path', '/usr/bin/jackhmmer',
-                    'Path to the JackHMMER executable.')
-flags.DEFINE_string('hhblits_binary_path', '/usr/bin/hhblits',
-                    'Path to the HHblits executable.')
-flags.DEFINE_string('hhsearch_binary_path', '/usr/bin/hhsearch',
-                    'Path to the HHsearch executable.')
-flags.DEFINE_string('kalign_binary_path', '/usr/bin/kalign',
-                    'Path to the Kalign executable.')
-flags.DEFINE_string('uniref90_database_path', None, 'Path to the Uniref90 '
-                    'database for use by JackHMMER.')
-flags.DEFINE_string('mgnify_database_path', None, 'Path to the MGnify '
-                    'database for use by JackHMMER.')
-flags.DEFINE_string('bfd_database_path', None, 'Path to the BFD '
-                    'database for use by HHblits.')
-flags.DEFINE_string('small_bfd_database_path', None, 'Path to the small '
-                    'version of BFD used with the "reduced_dbs" preset.')
-flags.DEFINE_string('uniclust30_database_path', None, 'Path to the Uniclust30 '
-                    'database for use by HHblits.')
-flags.DEFINE_string('pdb70_database_path', None, 'Path to the PDB70 '
-                    'database for use by HHsearch.')
-flags.DEFINE_string('template_mmcif_dir', None, 'Path to a directory with '
-                    'template mmCIF structures, each named <pdb_id>.cif')
 flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
-                    'to consider. Important if folding historical test sets.')
-flags.DEFINE_string('obsolete_pdbs_path', None, 'Path to file containing a '
-                    'mapping from obsolete PDB IDs to the PDB IDs of their '
-                    'replacements.')
+                    'to consider (ISO-8601 format - i.e. YYYY-MM-DD). '
+                    'Important if folding historical test sets.')
 flags.DEFINE_enum('preset', 'full_dbs',
                   ['reduced_dbs', 'full_dbs', 'casp14'],
                   'Choose preset model configuration - no ensembling and '
@@ -83,6 +130,60 @@ flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
                      'to obtain a timing that excludes the compilation time, '
                      'which should be more indicative of the time required for '
                      'inferencing many proteins.')
+
+############## From run_docker.py #############
+# Internal import (7716).
+
+# flags.DEFINE_list('fasta_paths', None, 'Paths to FASTA files, each containing '
+#                   'one sequence. Paths should be separated by commas. '
+#                   'All FASTA paths must have a unique basename as the '
+#                   'basename is used to name the output directories for '
+#                   'each prediction.')
+# flags.DEFINE_string('output_dir', None, 'Path to a directory that will '
+#                     'store the results.')
+flags.DEFINE_list('model_names', None, 'Names of models to use.')
+
+# 以下参数不需要从run_docker.py传了
+# flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
+# flags.DEFINE_string('jackhmmer_binary_path', '/usr/bin/jackhmmer',
+#                     'Path to the JackHMMER executable.')
+# flags.DEFINE_string('hhblits_binary_path', '/usr/bin/hhblits',
+#                     'Path to the HHblits executable.')
+# flags.DEFINE_string('hhsearch_binary_path', '/usr/bin/hhsearch',
+#                     'Path to the HHsearch executable.')
+# flags.DEFINE_string('kalign_binary_path', '/usr/bin/kalign',
+#                     'Path to the Kalign executable.')
+# flags.DEFINE_string('uniref90_database_path', None, 'Path to the Uniref90 '
+#                     'database for use by JackHMMER.')
+# flags.DEFINE_string('mgnify_database_path', None, 'Path to the MGnify '
+#                     'database for use by JackHMMER.')
+# flags.DEFINE_string('bfd_database_path', None, 'Path to the BFD '
+#                     'database for use by HHblits.')
+# flags.DEFINE_string('small_bfd_database_path', None, 'Path to the small '
+#                     'version of BFD used with the "reduced_dbs" preset.')
+# flags.DEFINE_string('uniclust30_database_path', None, 'Path to the Uniclust30 '
+#                     'database for use by HHblits.')
+# flags.DEFINE_string('pdb70_database_path', None, 'Path to the PDB70 '
+#                     'database for use by HHsearch.')
+# flags.DEFINE_string('template_mmcif_dir', None, 'Path to a directory with '
+#                     'template mmCIF structures, each named <pdb_id>.cif')
+# flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
+#                     'to consider. Important if folding historical test sets.')
+# flags.DEFINE_string('obsolete_pdbs_path', None, 'Path to file containing a '
+#                     'mapping from obsolete PDB IDs to the PDB IDs of their '
+#                     'replacements.')
+# flags.DEFINE_enum('preset', 'full_dbs',
+#                   ['reduced_dbs', 'full_dbs', 'casp14'],
+#                   'Choose preset model configuration - no ensembling and '
+#                   'smaller genetic database config (reduced_dbs), no '
+#                   'ensembling and full genetic database config  (full_dbs) or '
+#                   'full genetic database config and 8 model ensemblings '
+#                   '(casp14).')
+# flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
+#                      'to obtain a timing that excludes the compilation time, '
+#                      'which should be more indicative of the time required for '
+#                      'inferencing many proteins.')
+
 flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
                      'pipeline. By default, this is randomly generated. Note '
                      'that even if this is set, Alphafold may still not be '
@@ -214,16 +315,24 @@ def predict_structure(
 
   ######
   #  将生成数据上传到S3 output文件夹
-  # 需要$BATCH_BUCKET 环境变量
+  #  需要$BATCH_BUCKET 环境变量
   print('start uploading')
 
   for root,dirs,files in os.walk(output_dir):
     for file in files:
-        s3.upload_file(os.path.join(root,file),BATCH_BUCKET,'output/'+fasta_name+'/'+file)
+        s3.upload_file(os.path.join(root,file),FLAGS.BATCH_BUCKET,'output/'+fasta_name+'/'+file)
 
-  print('upload successed to '+ BATCH_BUCKET,'output/'+fasta_name+'/')
+  print('upload successed to '+ FLAGS.BATCH_BUCKET,'output/'+fasta_name+'/')
   ######
 
+# From run_docker.py 挂载文件夹
+def _create_mount(mount_name: str, path: str) -> Tuple[types.Mount, str]:
+  path = os.path.abspath(path)
+  source_path = os.path.dirname(path)
+  target_path = os.path.join(_ROOT_MOUNT_DIRECTORY, mount_name)
+  logging.info('Mounting %s -> %s', source_path, target_path)
+  mount = types.Mount(target_path, source_path, type='bind', read_only=True)
+  return mount, os.path.join(target_path, os.path.basename(path))
 
 def main(argv):
   if len(argv) > 1:
@@ -246,6 +355,70 @@ def main(argv):
   fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
   if len(fasta_names) != len(set(fasta_names)):
     raise ValueError('All FASTA paths must have a unique basename.')
+
+######
+#  判断是否为S3 URL，将s3数据的下载fasta文件到本地，并且将S3 URL替换为文件名
+#  by WTTAT
+  from urllib.parse import urlparse
+
+  for i,paths in enumerate(FLAGS.fasta_paths):
+    if paths.startswith("s3://"):
+        o = urlparse(paths)
+        bucket = o.netloc
+        key = o.path
+        file_name = paths.split("/")[-1]
+        print('downloading fasta file from '+paths+' as '+file_name)
+        s3.download_file(bucket,key.lstrip('/'),file_name)
+        print('download file success')
+        FLAGS.fasta_paths[i]=file_name
+######
+
+# From run_docker.py
+  mounts = []
+  # command_args = []
+
+  target_fasta_paths = []
+
+  # 挂载
+  for i, fasta_path in enumerate(FLAGS.fasta_paths):
+    mount, target_path = _create_mount(f'fasta_path_{i}', fasta_path)
+    mounts.append(mount)
+    target_fasta_paths.append(target_path)
+  # command_args.append(f'--fasta_paths={",".join(target_fasta_paths)}')
+  
+  database_paths = [
+      ('uniref90_database_path', uniref90_database_path),
+      ('mgnify_database_path', mgnify_database_path),
+      ('pdb70_database_path', pdb70_database_path),
+      ('data_dir', data_dir),
+      ('template_mmcif_dir', template_mmcif_dir),
+      ('obsolete_pdbs_path', obsolete_pdbs_path),
+  ]
+  if FLAGS.preset == 'reduced_dbs':
+    database_paths.append(('small_bfd_database_path', small_bfd_database_path))
+  else:
+    database_paths.extend([
+        ('uniclust30_database_path', uniclust30_database_path),
+        ('bfd_database_path', bfd_database_path),
+    ])
+  for name, path in database_paths:
+    if path:
+      mount, target_path = _create_mount(name, path)
+      mounts.append(mount)
+      # command_args.append(f'--{name}={target_path}')
+
+  output_target_path = os.path.join(_ROOT_MOUNT_DIRECTORY, 'output')
+  mounts.append(types.Mount(output_target_path, output_dir, type='bind'))
+
+  command_args.extend([
+      f'--output_dir={output_target_path}',
+      # f'--model_names={",".join(model_names)}',
+      f'--model_names={",".join(FLAGS.model_names)}',
+      f'--max_template_date={FLAGS.max_template_date}',
+      f'--preset={FLAGS.preset}',
+      f'--benchmark={FLAGS.benchmark}',
+      '--logtostderr',
+  ])
 
   template_featurizer = templates.TemplateHitFeaturizer(
       mmcif_dir=FLAGS.template_mmcif_dir,
@@ -273,7 +446,8 @@ def main(argv):
     model_config = config.model_config(model_name)
     model_config.data.eval.num_ensemble = num_ensemble
     model_params = data.get_model_haiku_params(
-        model_name=model_name, data_dir=FLAGS.data_dir)
+        # model_name=model_name, data_dir=FLAGS.data_dir)
+        model_name=model_name, data_dir=data_dir)
     model_runner = model.RunModel(model_config, model_params)
     model_runners[model_name] = model_runner
 
@@ -293,11 +467,18 @@ def main(argv):
   logging.info('Using random seed %d for the data pipeline', random_seed)
 
   # Predict structure for each of the sequences.
-  for fasta_path, fasta_name in zip(FLAGS.fasta_paths, fasta_names):
+
+  # for fasta_path, fasta_name in zip(FLAGS.fasta_paths, fasta_names):
+  for fasta_path, fasta_name in zip(target_fasta_paths, fasta_names):
+
     predict_structure(
         fasta_path=fasta_path,
+
         fasta_name=fasta_name,
-        output_dir_base=FLAGS.output_dir,
+
+        # output_dir_base=FLAGS.output_dir,
+        output_dir_base=output_dir,
+
         data_pipeline=data_pipeline,
         model_runners=model_runners,
         amber_relaxer=amber_relaxer,
@@ -306,17 +487,19 @@ def main(argv):
   
 if __name__ == '__main__':
   flags.mark_flags_as_required([
-      'fasta_paths',
-      'output_dir',
+      'BATCH_BUCKET',
+      'DOWNLOAD_DIR',
+      'fasta_paths', # now support S3 path
+      # 'output_dir',
       'model_names',
-      'data_dir',
+      # 'data_dir',
       'preset',
-      'uniref90_database_path',
-      'mgnify_database_path',
-      'pdb70_database_path',
-      'template_mmcif_dir',
+      # 'uniref90_database_path',
+      # 'mgnify_database_path',
+      # 'pdb70_database_path',
+      # 'template_mmcif_dir',
       'max_template_date',
-      'obsolete_pdbs_path',
+      # 'obsolete_pdbs_path',
   ])
 
   app.run(main)

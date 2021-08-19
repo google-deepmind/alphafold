@@ -129,24 +129,7 @@ def main(argv):
   mounts = []
   command_args = []
 
-######
-#  判断S3地址，将s3数据的下载fasta文件到本地 by WTTAT
-  import boto3
-  from urllib.parse import urlparse
 
-  s3 = boto3.client('s3')
-
-  for i,paths in enumerate(FLAGS.fasta_paths):
-    if paths.startswith("s3://"):
-        o = urlparse(paths)
-        bucket = o.netloc
-        key = o.path
-        file_name = paths.split("/")[-1]
-        print('downloading fasta file from '+paths+' as '+file_name)
-        s3.download_file(bucket,key.lstrip('/'),file_name)
-        print('download file success')
-        FLAGS.fasta_paths[i]=file_name
-######
 
   # Mount each fasta path as a unique target directory.
   target_fasta_paths = []
@@ -195,8 +178,8 @@ def main(argv):
       command=command_args,
       runtime='nvidia' if FLAGS.use_gpu else None,
       remove=True,
-      detach=True,
-      mounts=mounts,
+      detach=True, # Run container in background and print container ID
+      mounts=mounts, # 挂载
       environment={
           'NVIDIA_VISIBLE_DEVICES': FLAGS.gpu_devices,
           # The following flags allow us to make predictions on proteins that
