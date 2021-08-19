@@ -24,6 +24,7 @@ from absl import logging
 import docker
 from docker import types
 
+import pathlib
 
 #### USER CONFIGURATION ####
 
