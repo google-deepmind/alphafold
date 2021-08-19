@@ -234,7 +234,7 @@ def main(argv):
   if len(fasta_names) != len(set(fasta_names)):
     raise ValueError('All FASTA paths must have a unique basename.')
 
-# 下载fasta文件到本地 by WTTAT
+# 判断S3地址，下载fasta文件到本地 by WTTAT
   import boto3
   from urllib.parse import urlparse
 
