@@ -234,6 +234,23 @@ def main(argv):
   if len(fasta_names) != len(set(fasta_names)):
     raise ValueError('All FASTA paths must have a unique basename.')
 
+# 下载fasta文件到本地 by WTTAT
+  import boto3
+  from urllib.parse import urlparse
+
+  s3 = boto3.client('s3')
+
+  for i,fasta_paths in enumerate(FLAGS.fasta_paths):
+      if fasta_paths.startswith("s3://"):
+          fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
+          o = urlparse(fasta_paths)
+          bucket = o.netloc
+          key = o.path
+          s3.download_file(bucket,key.lstrip('/'),fasta_names[i])
+          fasta_paths[i]=fasta_names[i]
+          
+################
+
   template_featurizer = templates.TemplateHitFeaturizer(
       mmcif_dir=FLAGS.template_mmcif_dir,
       max_template_date=FLAGS.max_template_date,
