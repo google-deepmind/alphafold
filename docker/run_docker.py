@@ -129,6 +129,22 @@ def main(argv):
   mounts = []
   command_args = []
 
+# 判断S3地址，将s3数据的下载fasta文件到本地 by WTTAT
+  import boto3
+  from urllib.parse import urlparse
+
+  s3 = boto3.client('s3')
+
+  for i,fasta_paths in enumerate(FLAGS.fasta_paths):
+      if fasta_paths.startswith("s3://"):
+          fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
+          o = urlparse(fasta_paths)
+          bucket = o.netloc
+          key = o.path
+          s3.download_file(bucket,key.lstrip('/'),fasta_names[i])
+          fasta_paths[i]=fasta_names[i]
+
+
   # Mount each fasta path as a unique target directory.
   target_fasta_paths = []
   for i, fasta_path in enumerate(FLAGS.fasta_paths):
