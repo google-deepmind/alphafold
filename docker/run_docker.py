@@ -136,14 +136,13 @@ def main(argv):
 
   s3 = boto3.client('s3')
 
-for i,paths in enumerate(FLAGS.fasta_paths):
+  for i,paths in enumerate(FLAGS.fasta_paths):
     if paths.startswith("s3://"):
         o = urlparse(paths)
         bucket = o.netloc
         key = o.path
         file_name = paths.split("/")[-1]
         s3.download_file(bucket,key.lstrip('/'),file_name)
-        print()
         print('downloading fasta file from '+paths+' as '+file_name)
         FLAGS.fasta_paths[i]=file_name
 ######
