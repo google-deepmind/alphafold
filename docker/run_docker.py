@@ -142,8 +142,9 @@ def main(argv):
         bucket = o.netloc
         key = o.path
         file_name = paths.split("/")[-1]
-        s3.download_file(bucket,key.lstrip('/'),file_name)
         print('downloading fasta file from '+paths+' as '+file_name)
+        s3.download_file(bucket,key.lstrip('/'),file_name)
+        print('download file success')
         FLAGS.fasta_paths[i]=file_name
 ######
 

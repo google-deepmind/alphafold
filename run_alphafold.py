@@ -210,6 +210,19 @@ def predict_structure(
   timings_output_path = os.path.join(output_dir, 'timings.json')
   with open(timings_output_path, 'w') as f:
     f.write(json.dumps(timings, indent=4))
+  
+
+  ######
+  #  将生成数据上传到S3 output文件夹
+  # 需要$BATCH_BUCKET 环境变量
+  print('start uploading')
+
+  for root,dirs,files in os.walk(output_dir):
+    for file in files:
+        s3.upload_file(os.path.join(root,file),BATCH_BUCKET,'output/'+fasta_name+'/'+file)
+
+  print('upload successed to '+ BATCH_BUCKET,'output/'+fasta_name+'/')
+  ######
 
 
 def main(argv):
@@ -290,8 +303,7 @@ def main(argv):
         amber_relaxer=amber_relaxer,
         benchmark=FLAGS.benchmark,
         random_seed=random_seed)
-
-
+  
 if __name__ == '__main__':
   flags.mark_flags_as_required([
       'fasta_paths',
