@@ -1,11 +1,12 @@
 #!/bin/bash
-ldconfig
 # Description: AlphaFold non-docker version
 # Author: Sanjay Kumar Srikakulam
 # https://github.com/kalininalab/alphafold_non_docker/blob/main/run_alphafold.sh
+ldconfig
 
 # Author: WTTAT
 usage() {
+    echo " "
     echo "六个环境变量"
     echo "model names : $model_names"
     echo "fasta_path : $fasta_path"
@@ -13,12 +14,11 @@ usage() {
     echo "preset : $preset"
     echo "benchmark : $benchmark"
     echo "BATCH_BUCKET : $BATCH_BUCKET"
+    echo " "
     exit 1
 }
-
-
 # Parse input and set defaults
-if [["$model_names" == "" || "$fasta_path" == "" || "$max_template_date" == "" ]] ; then
+if [[ "$model_names" == "" || "$fasta_path" == "" || "$max_template_date" == "" ]] ; then
     usage
 fi
 
@@ -71,7 +71,7 @@ export TF_FORCE_UNIFIED_MEMORY='1'
 # JAX control
 export XLA_PYTHON_CLIENT_MEM_FRACTION='4.0'
 
-data_dir = '/mnt/dataset/'
+data_dir="/mnt/dataset/"
 # Path and user config (change me if required)
 
 bfd_database_path="$data_dir/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt"
