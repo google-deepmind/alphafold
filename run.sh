@@ -109,7 +109,7 @@ uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 #  only support one file
 #  by WTTAT
 echo "start downloading"
-aws s3 cp $fasta_paths ./ --reigon $REGION
+aws s3 cp $fasta_paths ./ --region $REGION
 fasta_paths="${fasta_paths##*/}"
 
 # ######
