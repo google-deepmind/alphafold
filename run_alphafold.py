@@ -295,7 +295,6 @@ def main(argv):
     num_ensemble = 8
 
 
-  print('debug1')
 # ######
 # #  if S3 URL，download fasta，change to file name
 # #  by WTTAT
@@ -327,7 +326,8 @@ def main(argv):
       kalign_binary_path=kalign_binary_path,
       release_dates_path=None,
       obsolete_pdbs_path=FLAGS.obsolete_pdbs_path)
-  print('debug2')
+
+
   data_pipeline = pipeline.DataPipeline(
       # jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
       # hhblits_binary_path=FLAGS.hhblits_binary_path,
@@ -349,7 +349,8 @@ def main(argv):
       pdb70_database_path=pdb70_database_path,
       template_featurizer=template_featurizer,
       use_small_bfd=use_small_bfd)
-  print('debug3')
+
+
   model_runners = {}
   for model_name in FLAGS.model_names:
     model_config = config.model_config(model_name)
@@ -362,7 +363,8 @@ def main(argv):
 
   logging.info('Have %d models: %s', len(model_runners),
                list(model_runners.keys()))
-  print('debug4')
+
+
   amber_relaxer = relax.AmberRelaxation(
       max_iterations=RELAX_MAX_ITERATIONS,
       tolerance=RELAX_ENERGY_TOLERANCE,
@@ -376,7 +378,8 @@ def main(argv):
   logging.info('Using random seed %d for the data pipeline', random_seed)
 
   # Predict structure for each of the sequences.
-  print('debug5')
+
+
   for fasta_path, fasta_name in zip(FLAGS.fasta_paths, fasta_names):
 
     predict_structure(
@@ -394,13 +397,13 @@ def main(argv):
     ######
     #  upload data to s3 output folder
     #  need $BATCH_BUCKET 
-    print('start uploading')
+    print("start uploading")
 
     for root,dirs,files in os.walk(output_dir):
       for file in files:
         s3.upload_file(os.path.join(root,file),FLAGS.BATCH_BUCKET,'output/'+fasta_name+'/'+file)
     
-    print('upload successed to '+ FLAGS.BATCH_BUCKET,'output/'+fasta_name+'/')
+    print("upload successed to "+ FLAGS.BATCH_BUCKET,"output/"+fasta_name+"/")
   ######
   
 if __name__ == '__main__':

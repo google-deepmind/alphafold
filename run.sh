@@ -111,6 +111,7 @@ uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 echo "start downloading"
 aws s3 cp $fasta_paths ./ --region $REGION
 fasta_paths="${fasta_paths##*/}"
+echo "fasta_paths changed to $fasta_paths"
 
 # ######
 echo "start running af2"
