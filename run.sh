@@ -102,37 +102,48 @@ uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 
 echo "start running af2"
 
+# ######
+# #  if S3 URL，download fasta，change to file name
+# #  by WTTAT
+
+# for path in $fasta_paths
+# do
+#     aws s3 cp "$cp"
+# done
+
+# ######
+
 # Run AlphaFold with required parameters
 # 'reduced_dbs' preset does not use bfd and uniclust30 databases
 if [[ "$preset" == "reduced_dbs" ]]; then
     $(python /app/alphafold/run_alphafold.py \
-    --BATCH_BUCKET=$BATCH_BUCKET \
-    --small_bfd_database_path=$small_bfd_database_path \
+    --BATCH_BUCKET="$BATCH_BUCKET" \
+    --small_bfd_database_path="$small_bfd_database_path" \
     # --mgnify_database_path=$mgnify_database_path \
     # --template_mmcif_dir=$template_mmcif_dir \
     # --obsolete_pdbs_path=$obsolete_pdbs_path \
     # --pdb70_database_path=$pdb70_database_path \
     # --uniref90_database_path=$uniref90_database_path  \
-    --fasta_paths=$fasta_paths \
-    --model_names=$model_names \
-    --max_template_date=$max_template_date \
-    --preset=$preset \
-    --benchmark=$benchmark \
+    --fasta_paths="$fasta_paths" \
+    --model_names="$model_names" \
+    --max_template_date="$max_template_date" \
+    --preset="$preset" \
+    --benchmark="$benchmark" \
     --logtostderr)
 else
     $(python /app/alphafold/run_alphafold.py  \
-    --BATCH_BUCKET=$BATCH_BUCKET  \
-    --bfd_database_path=$bfd_database_path \
-    --uniclust30_database_path=$uniclust30_database_path \
+    --BATCH_BUCKET="$BATCH_BUCKET"  \
+    --bfd_database_path="$bfd_database_path" \
+    --uniclust30_database_path="$uniclust30_database_path" \
     # --mgnify_database_path=$mgnify_database_path \
     # --template_mmcif_dir=$template_mmcif_dir \
     # --obsolete_pdbs_path=$obsolete_pdbs_path \
     # --pdb70_database_path=$pdb70_database_path \
     # --uniref90_database_path=$uniref90_database_path   \
-    --fasta_paths=$fasta_paths \
-    --model_names=$model_names \
-    --max_template_date=$max_template_date \
-    --preset=$preset \
-    --benchmark=$benchmark \
+    --fasta_paths="$fasta_paths" \
+    --model_names="$model_names" \
+    --max_template_date="$max_template_date" \
+    --preset="$preset" \
+    --benchmark="$benchmark" \
     --logtostderr)
 fi
