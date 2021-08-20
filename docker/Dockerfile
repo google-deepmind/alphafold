@@ -64,6 +64,8 @@ RUN wget -q -P /app/alphafold/alphafold/common/ \
 
 # Install pip packages.
 RUN pip3 install --upgrade pip \
+# WTTAT add boto3
+    && pip3 install boto3 \ 
     && pip3 install -r /app/alphafold/requirements.txt \
     && pip3 install --upgrade jax jaxlib==0.1.69+cuda${CUDA/./} -f \
       https://storage.googleapis.com/jax-releases/jax_releases.html

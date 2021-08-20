@@ -53,9 +53,6 @@ flags.DEFINE_string('BATCH_BUCKET', None, 'S3 bucket')
 
 # DOWNLOAD_DIR = '/fsx/dataset/'
 
-# Name of the AlphaFold Docker image.
-docker_image_name = 'alphafold_batch'
-
 # Path to a directory that will store the results.
 # output_dir = '/tmp/alphafold'
 output_dir = '/mnt/output'
