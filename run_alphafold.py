@@ -64,7 +64,7 @@ output_dir = '/mnt/output'
 #     'model_5',
 # ]
 
-# 由Batch任务定义配置挂载，py里面直接写配置路径
+# /mnt
 
 #### END OF USER CONFIGURATION ####
 
@@ -100,7 +100,7 @@ flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
 
 flags.DEFINE_list('model_names', None, 'Names of models to use.')
 
-# 以下参数不需要从run_docker.py传了
+
 # flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
 data_dir = '/mnt/dataset/'
 
@@ -279,8 +279,8 @@ def predict_structure(
   
 
   ######
-  #  将生成数据上传到S3 output文件夹
-  #  需要$BATCH_BUCKET 环境变量
+  #  upload data to s3 output folder
+  #  need $BATCH_BUCKET 
   print('start uploading')
 
   for root,dirs,files in os.walk(output_dir):
@@ -313,7 +313,7 @@ def main(argv):
     raise ValueError('All FASTA paths must have a unique basename.')
 
 ######
-#  判断是否为S3 URL，将S3数据的下载fasta文件到本地，并且将S3 URL替换为文件名
+#  if S3 URL，download fasta，change to file name
 #  by WTTAT
   from urllib.parse import urlparse
 
