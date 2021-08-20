@@ -163,13 +163,6 @@ RELAX_STIFFNESS = 10.0
 RELAX_EXCLUDE_RESIDUES = []
 RELAX_MAX_OUTER_ITERATIONS = 20
 
-
-def _check_flag(flag_name: str, preset: str, should_be_set: bool):
-  if should_be_set != bool(FLAGS[flag_name].value):
-    verb = 'be' if should_be_set else 'not be'
-    raise ValueError(f'{flag_name} must {verb} set for preset "{preset}"')
-
-
 def predict_structure(
     fasta_path: str,
     fasta_name: str,
@@ -289,6 +282,11 @@ def predict_structure(
 
   print('upload successed to '+ FLAGS.BATCH_BUCKET,'output/'+fasta_name+'/')
   ######
+
+def _check_flag(flag_name: str, preset: str, should_be_set: bool):
+  if should_be_set != bool(FLAGS[flag_name].value):
+    verb = 'be' if should_be_set else 'not be'
+    raise ValueError(f'{flag_name} must {verb} set for preset "{preset}"')
 
 def main(argv):
   if len(argv) > 1:
