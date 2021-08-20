@@ -150,11 +150,6 @@ flags.DEFINE_string('obsolete_pdbs_path', None, 'Path to file containing a '
                     'replacements.')
 # obsolete_pdbs_path = '/mnt/dataset/pdb_mmcif/obsolete.dat'
 
-# flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
-#                      'to obtain a timing that excludes the compilation time, '
-#                      'which should be more indicative of the time required for '
-#                      'inferencing many proteins.')
-
 flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
                      'pipeline. By default, this is randomly generated. Note '
                      'that even if this is set, Alphafold may still not be '
