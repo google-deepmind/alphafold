@@ -25,7 +25,7 @@ echo "max_template_date : $max_template_date"
 echo "preset : $preset"
 echo "benchmark : $benchmark"
 echo "BATCH_BUCKET : $BATCH_BUCKET"
-echo "REGION" : $REGION"
+echo "REGION : $REGION"
 
 # Parse input and set defaults
 if [[ "$model_names" == "" || "$fasta_paths" == "" || "$max_template_date" == "" ]] ; then
