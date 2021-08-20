@@ -106,7 +106,7 @@ data_dir = '/mnt/dataset/'
 
 # flags.DEFINE_string('jackhmmer_binary_path', '/usr/bin/jackhmmer',
 #                     'Path to the JackHMMER executable.')
-
+jackhmmer_binary_path = '/usr/bin/jackhmmer'
 # flags.DEFINE_string('hhblits_binary_path', '/usr/bin/hhblits',
 #                     'Path to the HHblits executable.')
 hhblits_binary_path = '/usr/bin/hhblits'
@@ -346,18 +346,18 @@ def main(argv):
       obsolete_pdbs_path=FLAGS.obsolete_pdbs_path)
 
   data_pipeline = pipeline.DataPipeline(
-      jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
-      hhblits_binary_path=FLAGS.hhblits_binary_path,
-      hhsearch_binary_path=FLAGS.hhsearch_binary_path,
+      # jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
+      # hhblits_binary_path=FLAGS.hhblits_binary_path,
+      # hhsearch_binary_path=FLAGS.hhsearch_binary_path,
       uniref90_database_path=FLAGS.uniref90_database_path,
       mgnify_database_path=FLAGS.mgnify_database_path,
       bfd_database_path=FLAGS.bfd_database_path,
       uniclust30_database_path=FLAGS.uniclust30_database_path,
       small_bfd_database_path=FLAGS.small_bfd_database_path,
       pdb70_database_path=FLAGS.pdb70_database_path,
-      # jackhmmer_binary_path = jackhmmer_binary_path,
-      # hhblits_binary_path = hhblits_binary_path,
-      # hhsearch_binary_path = hhsearch_binary_path,
+      jackhmmer_binary_path = jackhmmer_binary_path,
+      hhblits_binary_path = hhblits_binary_path,
+      hhsearch_binary_path = hhsearch_binary_path,
       # uniref90_database_path = uniref90_database_path,
       # mgnify_database_path = mgnify_database_path,
       # bfd_database_path = bfd_database_path,
@@ -398,7 +398,6 @@ def main(argv):
 
     predict_structure(
         fasta_path=fasta_path,
-
         fasta_name=fasta_name,
 
         # output_dir_base=FLAGS.output_dir,

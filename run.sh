@@ -7,7 +7,7 @@ ldconfig
 # Author: WTTAT
 usage() {
     echo " "
-    echo "六个环境变量"
+    echo "需要六个环境变量"
     echo "model names : $model_names"
     echo "fasta_path : $fasta_path"
     echo "max_template_date : $max_template_date"
@@ -17,6 +17,14 @@ usage() {
     echo " "
     exit 1
 }
+
+echo "model names : $model_names"
+echo "fasta_path : $fasta_path"
+echo "max_template_date : $max_template_date"
+echo "preset : $preset"
+echo "benchmark : $benchmark"
+echo "BATCH_BUCKET : $BATCH_BUCKET"
+
 # Parse input and set defaults
 if [[ "$model_names" == "" || "$fasta_path" == "" || "$max_template_date" == "" ]] ; then
     usage
@@ -92,7 +100,34 @@ uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 # Run AlphaFold with required parameters
 # 'reduced_dbs' preset does not use bfd and uniclust30 databases
 if [[ "$preset" == "reduced_dbs" ]]; then
-    $(python /app/alphafold/run_alphafold.py --BATCH_BUCKET=$BATCH_BUCKET --small_bfd_database_path=$small_bfd_database_path --mgnify_database_path=$mgnify_database_path --template_mmcif_dir=$template_mmcif_dir --obsolete_pdbs_path=$obsolete_pdbs_path --pdb70_database_path=$pdb70_database_path --uniref90_database_path=$uniref90_database_path  --fasta_paths=$fasta_path --model_names=$model_names --max_template_date=$max_template_date --preset=$preset --benchmark=$benchmark --logtostderr)
+    $(python /app/alphafold/run_alphafold.py \
+    --BATCH_BUCKET=$BATCH_BUCKET \
+    --small_bfd_database_path=$small_bfd_database_path \
+    --mgnify_database_path=$mgnify_database_path \
+    --template_mmcif_dir=$template_mmcif_dir \
+    --obsolete_pdbs_path=$obsolete_pdbs_path \
+    --pdb70_database_path=$pdb70_database_path \
+    --uniref90_database_path=$uniref90_database_path  \
+    --fasta_paths=$fasta_path \
+    --model_names=$model_names \
+    --max_template_date=$max_template_date \
+    --preset=$preset \
+    --benchmark=$benchmark \
+    --logtostderr)
 else
-    $(python /app/alphafold/run_alphafold.py  --BATCH_BUCKET=$BATCH_BUCKET  --bfd_database_path=$bfd_database_path --mgnify_database_path=$mgnify_database_path --template_mmcif_dir=$template_mmcif_dir --obsolete_pdbs_path=$obsolete_pdbs_path --pdb70_database_path=$pdb70_database_path --uniclust30_database_path=$uniclust30_database_path --uniref90_database_path=$uniref90_database_path   --fasta_paths=$fasta_path --model_names=$model_names --max_template_date=$max_template_date --preset=$preset --benchmark=$benchmark --logtostderr)
+    $(python /app/alphafold/run_alphafold.py  \
+    --BATCH_BUCKET=$BATCH_BUCKET  \
+    --bfd_database_path=$bfd_database_path \
+    --mgnify_database_path=$mgnify_database_path \
+    --template_mmcif_dir=$template_mmcif_dir \
+    --obsolete_pdbs_path=$obsolete_pdbs_path \
+    --pdb70_database_path=$pdb70_database_path \
+    --uniclust30_database_path=$uniclust30_database_path \
+    --uniref90_database_path=$uniref90_database_path   \
+    --fasta_paths=$fasta_path \
+    --model_names=$model_names \
+    --max_template_date=$max_template_date \
+    --preset=$preset \
+    --benchmark=$benchmark \
+    --logtostderr)
 fi
