@@ -409,8 +409,7 @@ def main(argv):
   
 if __name__ == '__main__':
   flags.mark_flags_as_required([
-      'BATCH_BUCKET',
-      'DOWNLOAD_DIR',
+      # 'DOWNLOAD_DIR',
       'fasta_paths', # now support S3 path
       # 'output_dir',
       'model_names',
