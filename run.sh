@@ -110,7 +110,7 @@ uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 #  by WTTAT
 echo "start downloading"
 aws s3 cp $fasta_paths ./ --reigon $REGION
-fasta_paths=${fasta_paths##*/}
+fasta_paths="${fasta_paths##*/}"
 
 # ######
 echo "start running af2"
