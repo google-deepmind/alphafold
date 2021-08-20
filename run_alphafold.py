@@ -117,13 +117,13 @@ hhsearch_binary_path = '/usr/bin/hhsearch'
 #                     'Path to the Kalign executable.')
 kalign_binary_path = '/usr/bin/kalign'
 
-flags.DEFINE_string('uniref90_database_path', None, 'Path to the Uniref90 '
-                    'database for use by JackHMMER.')
-# uniref90_database_path = '/mnt/dataset/uniref90/uniref90.fasta'
+# flags.DEFINE_string('uniref90_database_path', None, 'Path to the Uniref90 '
+#                     'database for use by JackHMMER.')
+uniref90_database_path = '/mnt/dataset/uniref90/uniref90.fasta'
 
-flags.DEFINE_string('mgnify_database_path', None, 'Path to the MGnify '
-                    'database for use by JackHMMER.')
-# mgnify_database_path = '/mnt/dataset/mgnify/mgy_clusters_2018_12.fa'
+# flags.DEFINE_string('mgnify_database_path', None, 'Path to the MGnify '
+#                     'database for use by JackHMMER.')
+mgnify_database_path = '/mnt/dataset/mgnify/mgy_clusters_2018_12.fa'
 
 flags.DEFINE_string('bfd_database_path', None, 'Path to the BFD '
                     'database for use by HHblits.')
@@ -134,21 +134,22 @@ flags.DEFINE_string('small_bfd_database_path', None, 'Path to the small '
 flags.DEFINE_string('uniclust30_database_path', None, 'Path to the Uniclust30 '
                     'database for use by HHblits.')
 # uniclust30_database_path = '/mnt/dataset/uniclust30/uniclust30_2018_08/uniclust30_2018_08'
-flags.DEFINE_string('pdb70_database_path', None, 'Path to the PDB70 '
-                    'database for use by HHsearch.')
-# pdb70_database_path = '/mnt/dataset/pdb70/pdb70'
 
-flags.DEFINE_string('template_mmcif_dir', None, 'Path to a directory with '
-                    'template mmCIF structures, each named <pdb_id>.cif')
-# template_mmcif_dir = '/mnt/dataset/pdb_mmcif/mmcif_files'
+# flags.DEFINE_string('pdb70_database_path', None, 'Path to the PDB70 '
+#                     'database for use by HHsearch.')
+pdb70_database_path = '/mnt/dataset/pdb70/pdb70'
+
+# flags.DEFINE_string('template_mmcif_dir', None, 'Path to a directory with '
+#                     'template mmCIF structures, each named <pdb_id>.cif')
+template_mmcif_dir = '/mnt/dataset/pdb_mmcif/mmcif_files'
 
 # flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
 #                     'to consider. Important if folding historical test sets.')
 
-flags.DEFINE_string('obsolete_pdbs_path', None, 'Path to file containing a '
-                    'mapping from obsolete PDB IDs to the PDB IDs of their '
-                    'replacements.')
-# obsolete_pdbs_path = '/mnt/dataset/pdb_mmcif/obsolete.dat'
+# flags.DEFINE_string('obsolete_pdbs_path', None, 'Path to file containing a '
+#                     'mapping from obsolete PDB IDs to the PDB IDs of their '
+#                     'replacements.')
+obsolete_pdbs_path = '/mnt/dataset/pdb_mmcif/obsolete.dat'
 
 flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
                      'pipeline. By default, this is randomly generated. Note '
@@ -342,21 +343,21 @@ def main(argv):
       # jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
       # hhblits_binary_path=FLAGS.hhblits_binary_path,
       # hhsearch_binary_path=FLAGS.hhsearch_binary_path,
-      uniref90_database_path=FLAGS.uniref90_database_path,
-      mgnify_database_path=FLAGS.mgnify_database_path,
+      # uniref90_database_path=FLAGS.uniref90_database_path,
+      # mgnify_database_path=FLAGS.mgnify_database_path,
       bfd_database_path=FLAGS.bfd_database_path,
       uniclust30_database_path=FLAGS.uniclust30_database_path,
       small_bfd_database_path=FLAGS.small_bfd_database_path,
-      pdb70_database_path=FLAGS.pdb70_database_path,
+      # pdb70_database_path=FLAGS.pdb70_database_path,
       jackhmmer_binary_path = jackhmmer_binary_path,
       hhblits_binary_path = hhblits_binary_path,
       hhsearch_binary_path = hhsearch_binary_path,
-      # uniref90_database_path = uniref90_database_path,
-      # mgnify_database_path = mgnify_database_path,
+      uniref90_database_path = uniref90_database_path,
+      mgnify_database_path = mgnify_database_path,
       # bfd_database_path = bfd_database_path,
       # uniclust30_database_path = uniclust30_database_path,
       # small_bfd_database_path = small_bfd_database_path,
-      # pdb70_database_path=pdb70_database_path,
+      pdb70_database_path=pdb70_database_path,
       template_featurizer=template_featurizer,
       use_small_bfd=use_small_bfd)
 
@@ -411,13 +412,13 @@ if __name__ == '__main__':
       'model_names',
       # 'data_dir',
       'preset',
-      'uniref90_database_path',
-      'mgnify_database_path',
-      'pdb70_database_path',
-      'template_mmcif_dir',
+      # 'uniref90_database_path',
+      # 'mgnify_database_path',
+      # 'pdb70_database_path',
+      # 'template_mmcif_dir',
+      # 'obsolete_pdbs_path',
       'max_template_date',
       'benchmark',
-      'obsolete_pdbs_path',
   ])
 
   app.run(main)
