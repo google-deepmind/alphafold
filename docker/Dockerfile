@@ -80,8 +80,9 @@ RUN patch -p0 < /app/alphafold/docker/openmm.patch
 # ENTRYPOINT does not support easily running multiple commands, so instead we
 # write a shell script to wrap them up.
 WORKDIR /app/alphafold
-RUN echo $'#!/bin/bash\n\
-ldconfig\n\
-python /app/alphafold/run_alphafold.py "$@"' > /app/run_alphafold.sh \
-  && chmod +x /app/run_alphafold.sh
-ENTRYPOINT ["/app/run_alphafold.sh"]
+# RUN echo $'#!/bin/bash\n\
+# ldconfig\n\
+# python /app/alphafold/run_alphafold.py "$@"' > /app/run_alphafold.sh \
+#   && chmod +x /app/run_alphafold.sh
+RUN run.sh
+# ENTRYPOINT ["/app/run_alphafold.sh"]

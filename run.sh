@@ -1,7 +1,5 @@
 #!/bin/bash
 ldconfig
-python /app/alphafold/run_alphafold.py 
-
 # Description: AlphaFold non-docker version
 # Author: Sanjay Kumar Srikakulam
 # https://github.com/kalininalab/alphafold_non_docker/blob/main/run_alphafold.sh

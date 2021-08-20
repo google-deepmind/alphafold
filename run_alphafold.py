@@ -424,7 +424,7 @@ if __name__ == '__main__':
       'pdb70_database_path',
       'template_mmcif_dir',
       'max_template_date',
-      'benchmark'
+      'benchmark',
       'obsolete_pdbs_path',
   ])
 
