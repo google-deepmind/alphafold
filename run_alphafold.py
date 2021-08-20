@@ -325,7 +325,8 @@ def main(argv):
       # kalign_binary_path=FLAGS.kalign_binary_path,
       kalign_binary_path=kalign_binary_path,
       release_dates_path=None,
-      obsolete_pdbs_path=FLAGS.obsolete_pdbs_path)
+      # obsolete_pdbs_path=FLAGS.obsolete_pdbs_path)
+      obsolete_pdbs_path=obsolete_pdbs_path)
 
 
   data_pipeline = pipeline.DataPipeline(
