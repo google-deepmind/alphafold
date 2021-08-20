@@ -7,13 +7,14 @@ ldconfig
 # Author: WTTAT
 usage() {
     echo " "
-    echo "需要六个环境变量"
+    echo "需要七个环境变量"
     echo "model_names : $model_names"
     echo "fasta_paths : $fasta_paths"
     echo "max_template_date : $max_template_date"
     echo "preset : $preset"
     echo "benchmark : $benchmark"
     echo "BATCH_BUCKET : $BATCH_BUCKET"
+    echo "REGION" : $REGION"
     echo " "
     exit 1
 }
@@ -24,6 +25,7 @@ echo "max_template_date : $max_template_date"
 echo "preset : $preset"
 echo "benchmark : $benchmark"
 echo "BATCH_BUCKET : $BATCH_BUCKET"
+echo "REGION" : $REGION"
 
 # Parse input and set defaults
 if [[ "$model_names" == "" || "$fasta_paths" == "" || "$max_template_date" == "" ]] ; then
@@ -100,19 +102,18 @@ uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 # jackhmmer_binary_path=$(which jackhmmer)
 # kalign_binary_path=$(which kalign)
 
-echo "start running af2"
+
 
 ######
 #  if S3 URL，download fasta，change to file name
 #  only support one file
 #  by WTTAT
-
-aws s3 cp $fasta_paths ./
-
+echo "start downloading"
+aws s3 cp $fasta_paths ./ --reigon $REGION
 fasta_paths=${fasta_paths##*/}
 
 # ######
-
+echo "start running af2"
 # Run AlphaFold with required parameters
 # 'reduced_dbs' preset does not use bfd and uniclust30 databases
 if [[ "$preset" == "reduced_dbs" ]]; then
