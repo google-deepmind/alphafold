@@ -8,7 +8,7 @@ ldconfig
 usage() {
     echo " "
     echo "需要六个环境变量"
-    echo "model names : $model_names"
+    echo "model_names : $model_names"
     echo "fasta_path : $fasta_path"
     echo "max_template_date : $max_template_date"
     echo "preset : $preset"
@@ -18,7 +18,7 @@ usage() {
     exit 1
 }
 
-echo "model names : $model_names"
+echo "model_names : $model_names"
 echo "fasta_path : $fasta_path"
 echo "max_template_date : $max_template_date"
 echo "preset : $preset"
