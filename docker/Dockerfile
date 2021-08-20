@@ -84,6 +84,6 @@ WORKDIR /app/alphafold
 # ldconfig\n\
 # python /app/alphafold/run_alphafold.py "$@"' > /app/run_alphafold.sh \
 #   && chmod +x /app/run_alphafold.sh
-COPY run.sh /run.sh
-RUN chmod +x /run.sh
+COPY run.sh /app/run.sh
+RUN chmod +x /app/run.sh
 # ENTRYPOINT ["/app/run_alphafold.sh"]

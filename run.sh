@@ -102,14 +102,14 @@ uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 
 echo "start running af2"
 
-# ######
-# #  if S3 URL，download fasta，change to file name
-# #  by WTTAT
+######
+#  if S3 URL，download fasta，change to file name
+#  only support one file
+#  by WTTAT
 
-# for path in $fasta_paths
-# do
-#     aws s3 cp "$cp"
-# done
+aws s3 cp $fasta_paths ./
+
+fasta_paths=${fasta_paths##*/}
 
 # ######
 
