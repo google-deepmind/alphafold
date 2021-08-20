@@ -14,7 +14,7 @@ usage() {
     echo "preset : $preset"
     echo "benchmark : $benchmark"
     echo "BATCH_BUCKET : $BATCH_BUCKET"
-    echo "REGION" : $REGION"
+    echo "REGION : $REGION"
     echo " "
     exit 1
 }
