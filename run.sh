@@ -9,7 +9,7 @@ usage() {
     echo " "
     echo "需要六个环境变量"
     echo "model_names : $model_names"
-    echo "fasta_path : $fasta_path"
+    echo "fasta_paths : $fasta_paths"
     echo "max_template_date : $max_template_date"
     echo "preset : $preset"
     echo "benchmark : $benchmark"
@@ -19,14 +19,14 @@ usage() {
 }
 
 echo "model_names : $model_names"
-echo "fasta_path : $fasta_path"
+echo "fasta_paths : $fasta_paths"
 echo "max_template_date : $max_template_date"
 echo "preset : $preset"
 echo "benchmark : $benchmark"
 echo "BATCH_BUCKET : $BATCH_BUCKET"
 
 # Parse input and set defaults
-if [[ "$model_names" == "" || "$fasta_path" == "" || "$max_template_date" == "" ]] ; then
+if [[ "$model_names" == "" || "$fasta_paths" == "" || "$max_template_date" == "" ]] ; then
     usage
 fi
 
@@ -50,6 +50,9 @@ if [[ "$preset" != "full_dbs" && "$preset" != "casp14" && "$preset" != "reduced_
     echo "Unknown preset! Using default ('full_dbs')"
     preset="full_dbs"
 fi
+
+
+
 
 # This bash script looks for the run_alphafold.py script in its current working directory, if it does not exist then exits
 # current_working_dir=$(pwd)
@@ -108,7 +111,7 @@ if [[ "$preset" == "reduced_dbs" ]]; then
     # --obsolete_pdbs_path=$obsolete_pdbs_path \
     # --pdb70_database_path=$pdb70_database_path \
     # --uniref90_database_path=$uniref90_database_path  \
-    --fasta_paths=$fasta_path \
+    --fasta_paths=$fasta_paths \
     --model_names=$model_names \
     --max_template_date=$max_template_date \
     --preset=$preset \
@@ -124,7 +127,7 @@ else
     # --obsolete_pdbs_path=$obsolete_pdbs_path \
     # --pdb70_database_path=$pdb70_database_path \
     # --uniref90_database_path=$uniref90_database_path   \
-    --fasta_paths=$fasta_path \
+    --fasta_paths=$fasta_paths \
     --model_names=$model_names \
     --max_template_date=$max_template_date \
     --preset=$preset \

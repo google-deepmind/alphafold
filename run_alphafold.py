@@ -306,10 +306,7 @@ def main(argv):
   elif FLAGS.preset == 'casp14':
     num_ensemble = 8
 
-  # Check for duplicate FASTA file names.
-  fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
-  if len(fasta_names) != len(set(fasta_names)):
-    raise ValueError('All FASTA paths must have a unique basename.')
+
 
 ######
 #  if S3 URL，download fasta，change to file name
@@ -327,7 +324,11 @@ def main(argv):
         print('download file success')
         FLAGS.fasta_paths[i]=file_name
 ######
-  
+
+  # Check for duplicate FASTA file names.
+  fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
+  if len(fasta_names) != len(set(fasta_names)):
+    raise ValueError('All FASTA paths must have a unique basename.')
 
   template_featurizer = templates.TemplateHitFeaturizer(
       mmcif_dir=FLAGS.template_mmcif_dir,
