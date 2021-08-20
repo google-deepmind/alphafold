@@ -89,12 +89,12 @@ data_dir="/mnt/dataset/"
 
 bfd_database_path="$data_dir/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt"
 small_bfd_database_path="$data_dir/small_bfd/bfd-first_non_consensus_sequences.fasta"
-mgnify_database_path="$data_dir/mgnify/mgy_clusters.fa"
-template_mmcif_dir="$data_dir/pdb_mmcif/mmcif_files"
-obsolete_pdbs_path="$data_dir/pdb_mmcif/obsolete.dat"
-pdb70_database_path="$data_dir/pdb70/pdb70"
+# mgnify_database_path="$data_dir/mgnify/mgy_clusters.fa"
+# template_mmcif_dir="$data_dir/pdb_mmcif/mmcif_files"
+# obsolete_pdbs_path="$data_dir/pdb_mmcif/obsolete.dat"
+# pdb70_database_path="$data_dir/pdb70/pdb70"
 uniclust30_database_path="$data_dir/uniclust30/uniclust30_2018_08/uniclust30_2018_08"
-uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
+# uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 
 # Binary path (change me if required)
 # hhblits_binary_path=$(which hhblits)

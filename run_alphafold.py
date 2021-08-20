@@ -318,8 +318,8 @@ def main(argv):
     raise ValueError('All FASTA paths must have a unique basename.')
 
   template_featurizer = templates.TemplateHitFeaturizer(
-      mmcif_dir=FLAGS.template_mmcif_dir,
-      # mmcif_dir=template_mmcif_dir,
+      # mmcif_dir=FLAGS.template_mmcif_dir,
+      mmcif_dir=template_mmcif_dir,
       max_template_date=FLAGS.max_template_date,
       max_hits=MAX_TEMPLATE_HITS,
       # kalign_binary_path=FLAGS.kalign_binary_path,
