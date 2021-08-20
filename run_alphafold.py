@@ -53,7 +53,7 @@ flags.DEFINE_string('BATCH_BUCKET', None, 'S3 bucket')
 
 # Path to a directory that will store the results.
 # output_dir = '/tmp/alphafold'
-output_dir = '/mnt/output'
+output_dir = '/app/output'
 
 # Names of models to use.
 # model_names = [
@@ -102,7 +102,8 @@ flags.DEFINE_list('model_names', None, 'Names of models to use.')
 
 
 # flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
-data_dir = '/mnt/dataset/'
+# data_dir = '/mnt/dataset/'
+data_dir = '/fsx/dataset/'
 
 # flags.DEFINE_string('jackhmmer_binary_path', '/usr/bin/jackhmmer',
 #                     'Path to the JackHMMER executable.')
@@ -119,11 +120,11 @@ kalign_binary_path = '/usr/bin/kalign'
 
 # flags.DEFINE_string('uniref90_database_path', None, 'Path to the Uniref90 '
 #                     'database for use by JackHMMER.')
-uniref90_database_path = '/mnt/dataset/uniref90/uniref90.fasta'
+uniref90_database_path = '/fsx/dataset/uniref90/uniref90.fasta'
 
 # flags.DEFINE_string('mgnify_database_path', None, 'Path to the MGnify '
 #                     'database for use by JackHMMER.')
-mgnify_database_path = '/mnt/dataset/mgnify/mgy_clusters_2018_12.fa'
+mgnify_database_path = '/fsx/dataset/mgnify/mgy_clusters_2018_12.fa'
 
 flags.DEFINE_string('bfd_database_path', None, 'Path to the BFD '
                     'database for use by HHblits.')
@@ -137,11 +138,11 @@ flags.DEFINE_string('uniclust30_database_path', None, 'Path to the Uniclust30 '
 
 # flags.DEFINE_string('pdb70_database_path', None, 'Path to the PDB70 '
 #                     'database for use by HHsearch.')
-pdb70_database_path = '/mnt/dataset/pdb70/pdb70'
+pdb70_database_path = '/fsx/dataset/pdb70/pdb70'
 
 # flags.DEFINE_string('template_mmcif_dir', None, 'Path to a directory with '
 #                     'template mmCIF structures, each named <pdb_id>.cif')
-template_mmcif_dir = '/mnt/dataset/pdb_mmcif/mmcif_files'
+template_mmcif_dir = '/fsx/dataset/pdb_mmcif/mmcif_files'
 
 # flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
 #                     'to consider. Important if folding historical test sets.')
@@ -149,7 +150,7 @@ template_mmcif_dir = '/mnt/dataset/pdb_mmcif/mmcif_files'
 # flags.DEFINE_string('obsolete_pdbs_path', None, 'Path to file containing a '
 #                     'mapping from obsolete PDB IDs to the PDB IDs of their '
 #                     'replacements.')
-obsolete_pdbs_path = '/mnt/dataset/pdb_mmcif/obsolete.dat'
+obsolete_pdbs_path = '/fsx/dataset/pdb_mmcif/obsolete.dat'
 
 flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
                      'pipeline. By default, this is randomly generated. Note '
