@@ -100,6 +100,8 @@ uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 # jackhmmer_binary_path=$(which jackhmmer)
 # kalign_binary_path=$(which kalign)
 
+echo "start running af2"
+
 # Run AlphaFold with required parameters
 # 'reduced_dbs' preset does not use bfd and uniclust30 databases
 if [[ "$preset" == "reduced_dbs" ]]; then
