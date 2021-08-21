@@ -12,7 +12,7 @@ usage() {
     exit 1
 }
 
-while getopts ":f:m:t:p:b" i; do
+while getopts ":f:m:d:p:b" i; do
         case "${i}" in
         f)
                 fasta_paths=$OPTARG
@@ -20,7 +20,7 @@ while getopts ":f:m:t:p:b" i; do
         m)
                 model_names=$OPTARG
         ;;
-        t)
+        d)
                 max_template_date=$OPTARG
         ;;
         p)
@@ -54,8 +54,6 @@ if [[ "$preset" != "full_dbs" && "$preset" != "casp14" && "$preset" != "reduced_
 fi
 
 
-
-
 # This bash script looks for the run_alphafold.py script in its current working directory, if it does not exist then exits
 # current_working_dir=$(pwd)
 # alphafold_script="$current_working_dir/run_alphafold.py"
@@ -77,12 +75,6 @@ fi
 # if [[ "$openmm_threads" ]] ; then
 #     export OPENMM_CPU_THREADS=$openmm_threads
 # fi
-
-# TensorFlow control
-export TF_FORCE_UNIFIED_MEMORY='1'
-
-# JAX control
-export XLA_PYTHON_CLIENT_MEM_FRACTION='4.0'
 
 # data_dir="/mnt/dataset/"
 data_dir="/fsx/dataset/"
