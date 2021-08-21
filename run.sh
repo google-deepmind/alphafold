@@ -7,23 +7,31 @@ ldconfig
 # Author: WTTAT
 usage() {
     echo " "
-    echo "需要七个环境变量"
-    echo "model_names : $model_names"
-    echo "fasta_paths : $fasta_paths"
-    echo "max_template_date : $max_template_date"
-    echo "preset : $preset"
-    echo "benchmark : $benchmark"
-    echo "BATCH_BUCKET : $BATCH_BUCKET"
-    echo "REGION : $REGION"
+    echo "something wrong"
     echo " "
     exit 1
 }
 
-echo "model_names : $model_names"
-echo "fasta_paths : $fasta_paths"
-echo "max_template_date : $max_template_date"
-echo "preset : $preset"
-echo "benchmark : $benchmark"
+while getopts ":f:m:t:p:b" i; do
+        case "${i}" in
+        f)
+                fasta_paths=$OPTARG
+        ;;
+        m)
+                model_names=$OPTARG
+        ;;
+        t)
+                max_template_date=$OPTARG
+        ;;
+        p)
+                preset=$OPTARG
+        ;;
+        b)
+                benchmark=$OPTARG
+        ;;
+        esac
+done
+
 echo "BATCH_BUCKET : $BATCH_BUCKET"
 echo "REGION : $REGION"
 
