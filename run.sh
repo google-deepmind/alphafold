@@ -34,6 +34,11 @@ done
 
 echo "BATCH_BUCKET : $BATCH_BUCKET"
 echo "REGION : $REGION"
+echo "fasta_paths : $fasta_paths"
+echo "model_names : $model_names"
+echo "max_template_date : $max_template_date"
+echo "preset : $preset"
+echo "benchmark : $benchmark"
 
 # Parse input and set defaults
 if [[ "$model_names" == "" || "$fasta_paths" == "" || "$max_template_date" == "" ]] ; then
@@ -53,6 +58,8 @@ if [[ "$preset" != "full_dbs" && "$preset" != "casp14" && "$preset" != "reduced_
     preset="full_dbs"
 fi
 
+echo "preset reset : $preset"
+echo "benchmark reset : $benchmark"
 
 # This bash script looks for the run_alphafold.py script in its current working directory, if it does not exist then exits
 # current_working_dir=$(pwd)
