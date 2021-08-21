@@ -102,7 +102,7 @@ uniclust30_database_path="$data_dir/uniclust30/uniclust30_2018_08/uniclust30_201
 #  only support one file
 #  by WTTAT
 echo "start downloading"
-aws s3 cp s3://input/$fasta_paths ./ --region $REGION
+aws s3 cp s3://$BATCH_BUCKET/$BATCH_DIR_PREFIX/$fasta_paths ./ --region $REGION
 # fasta_paths="${fasta_paths##*/}"
 # echo "fasta_paths changed to $fasta_paths"
 
