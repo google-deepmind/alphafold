@@ -44,14 +44,6 @@ if [[ "$benchmark" == "" ]] ; then
     benchmark=false
 fi
 
-if [[ "$use_gpu" == "" ]] ; then
-    use_gpu=true
-fi
-
-if [[ "$gpu_devices" == "" ]] ; then
-    gpu_devices=0
-fi
-
 if [[ "$preset" == "" ]] ; then
     preset="full_dbs"
 fi
