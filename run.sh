@@ -77,7 +77,7 @@ fi
 # fi
 
 # data_dir="/mnt/dataset/"
-data_dir="/fsx/dataset/"
+data_dir="/fsx/dataset"
 # Path and user config (change me if required)
 
 bfd_database_path="$data_dir/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt"
