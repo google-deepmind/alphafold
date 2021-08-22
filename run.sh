@@ -1,7 +1,4 @@
 #!/bin/bash
-# Description: AlphaFold non-docker version
-# Author: Sanjay Kumar Srikakulam
-# https://github.com/kalininalab/alphafold_non_docker/blob/main/run_alphafold.sh
 ldconfig
 
 # Author: WTTAT
@@ -61,27 +58,6 @@ fi
 echo "preset reset : $preset"
 echo "benchmark reset : $benchmark"
 
-# This bash script looks for the run_alphafold.py script in its current working directory, if it does not exist then exits
-# current_working_dir=$(pwd)
-# alphafold_script="$current_working_dir/run_alphafold.py"
-
-# Export ENVIRONMENT variables and set CUDA devices for use
-# CUDA GPU control
-
-# no need for batch
-# export CUDA_VISIBLE_DEVICES=-1
-# if [[ "$use_gpu" == true ]] ; then
-#     export CUDA_VISIBLE_DEVICES=0
-
-#     if [[ "$gpu_devices" ]] ; then
-#         export CUDA_VISIBLE_DEVICES=$gpu_devices
-#     fi
-# fi
-
-# # OpenMM threads control
-# if [[ "$openmm_threads" ]] ; then
-#     export OPENMM_CPU_THREADS=$openmm_threads
-# fi
 
 # data_dir="/mnt/dataset/"
 data_dir="/fsx/dataset"
@@ -89,11 +65,12 @@ data_dir="/fsx/dataset"
 
 bfd_database_path="$data_dir/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt"
 small_bfd_database_path="$data_dir/small_bfd/bfd-first_non_consensus_sequences.fasta"
+uniclust30_database_path="$data_dir/uniclust30/uniclust30_2018_08/uniclust30_2018_08"
+
 # mgnify_database_path="$data_dir/mgnify/mgy_clusters.fa"
 # template_mmcif_dir="$data_dir/pdb_mmcif/mmcif_files"
 # obsolete_pdbs_path="$data_dir/pdb_mmcif/obsolete.dat"
 # pdb70_database_path="$data_dir/pdb70/pdb70"
-uniclust30_database_path="$data_dir/uniclust30/uniclust30_2018_08/uniclust30_2018_08"
 # uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 
 # Binary path (change me if required)
@@ -110,8 +87,6 @@ uniclust30_database_path="$data_dir/uniclust30/uniclust30_2018_08/uniclust30_201
 #  by WTTAT
 echo "start downloading"
 aws s3 cp s3://$BATCH_BUCKET/$BATCH_DIR_PREFIX/$fasta_paths ./ --region $REGION
-# fasta_paths="${fasta_paths##*/}"
-# echo "fasta_paths changed to $fasta_paths"
 
 # ######
 echo "start running af2"

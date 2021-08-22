@@ -94,9 +94,6 @@ flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
 ############## From run_docker.py #############
 # Internal import (7716).
 
-# just upload to S3
-# flags.DEFINE_string('output_dir', None, 'Path to a directory that will '
-#                     'store the results.')
 
 flags.DEFINE_list('model_names', None, 'Names of models to use.')
 
@@ -385,7 +382,7 @@ if __name__ == '__main__':
   flags.mark_flags_as_required([
       # 'DOWNLOAD_DIR',
       'BATCH_BUCKET',
-      'fasta_paths', # now support S3 path
+      'fasta_paths',
       # 'output_dir',
       'model_names',
       # 'data_dir',
