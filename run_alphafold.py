@@ -296,22 +296,6 @@ def main(argv):
     num_ensemble = 8
 
 
-# ######
-# #  if S3 URL，download fasta，change to file name
-# #  by WTTAT
-#   from urllib.parse import urlparse
-
-#   for i,paths in enumerate(FLAGS.fasta_paths):
-#     if paths.startswith("s3://"):
-#         o = urlparse(paths)
-#         bucket = o.netloc
-#         key = o.path
-#         file_name = paths.split("/")[-1]
-#         print('downloading fasta file from '+paths+' as '+file_name)
-#         s3.download_file(bucket,key.lstrip('/'),file_name)
-#         print('download file success')
-#         FLAGS.fasta_paths[i]=file_name
-# ######
 
   # Check for duplicate FASTA file names.
   fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
