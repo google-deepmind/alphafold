@@ -122,3 +122,9 @@ if [[ "$preset" == "reduced_dbs" ]]; then
 else
     $(python /app/alphafold/run_alphafold.py  --BATCH_BUCKET="$BATCH_BUCKET"  --bfd_database_path="$bfd_database_path" --uniclust30_database_path="$uniclust30_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr)
 fi
+
+
+echo "start uploading"
+aws s3 sync /app/output/$fasta_paths s3://$BATCH_BUCKET/output/$fasta_paths  --region $REGION
+
+echo "all done"

@@ -396,17 +396,6 @@ def main(argv):
         amber_relaxer=amber_relaxer,
         benchmark=FLAGS.benchmark,
         random_seed=random_seed)
-    ######
-    #  upload data to s3 output folder
-    #  need $BATCH_BUCKET 
-    print("start uploading")
-
-    for root,dirs,files in os.walk(output_dir):
-      for file in files:
-        s3.upload_file(os.path.join(root,file),FLAGS.BATCH_BUCKET,'output/'+fasta_name+'/'+file)
-    
-    print("upload successed to "+ FLAGS.BATCH_BUCKET,"output/"+fasta_name+"/")
-  ######
   
 if __name__ == '__main__':
   flags.mark_flags_as_required([
