@@ -9,7 +9,9 @@ usage() {
     exit 1
 }
 
-while getopts ":f:m:d:p:b:" i; do
+# while getopts ":f:m:d:p:b:" i; do
+while getopts ":f:m:d:p" i; do
+
         case "${i}" in
         f)
                 fasta_paths=$OPTARG
@@ -23,9 +25,9 @@ while getopts ":f:m:d:p:b:" i; do
         p)
                 preset=$OPTARG
         ;;
-        b)
-                benchmark=$OPTARG
-        ;;
+        # b)
+        #         benchmark=$OPTARG
+        # ;;
         esac
 done
 
@@ -35,7 +37,7 @@ echo "fasta_paths : $fasta_paths"
 echo "model_names : $model_names"
 echo "max_template_date : $max_template_date"
 echo "preset : $preset"
-echo "benchmark : $benchmark"
+# echo "benchmark : $benchmark"
 
 # Parse input and set defaults
 if [[ "$model_names" == "" || "$fasta_paths" == "" || "$max_template_date" == "" ]] ; then
