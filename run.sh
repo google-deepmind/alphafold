@@ -9,7 +9,7 @@ usage() {
     exit 1
 }
 
-while getopts ":f:m:d:p:b" i; do
+while getopts ":f:m:d:p:b:" i; do
         case "${i}" in
         f)
                 fasta_paths=$OPTARG
