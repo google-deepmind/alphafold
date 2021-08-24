@@ -82,7 +82,6 @@ uniclust30_database_path="$data_dir/uniclust30/uniclust30_2018_08/uniclust30_201
 # kalign_binary_path=$(which kalign)
 
 
-
 ######
 #  if S3 URL，download fasta，change to file name
 #  only support one file
@@ -90,16 +89,20 @@ uniclust30_database_path="$data_dir/uniclust30/uniclust30_2018_08/uniclust30_201
 echo "start downloading"
 aws s3 cp s3://$BATCH_BUCKET/$BATCH_DIR_PREFIX/$fasta_paths ./ --region $REGION
 
+####
+# get vCPU setting
+vcpu=$[$(curl -s $ECS_CONTAINER_METADATA_URI | jq '.Limits.CPU')/1024]
+echo "get vCPU : $vcpu"
+
 # ######
 echo "start running af2"
 # Run AlphaFold with required parameters
 # 'reduced_dbs' preset does not use bfd and uniclust30 databases
 if [[ "$preset" == "reduced_dbs" ]]; then
-    $(python /app/alphafold/run_alphafold.py --BATCH_BUCKET="$BATCH_BUCKET" --small_bfd_database_path="$small_bfd_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr)
+    $(python /app/alphafold/run_alphafold.py --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET" --small_bfd_database_path="$small_bfd_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr)
 else
-    $(python /app/alphafold/run_alphafold.py  --BATCH_BUCKET="$BATCH_BUCKET"  --bfd_database_path="$bfd_database_path" --uniclust30_database_path="$uniclust30_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr)
+    $(python /app/alphafold/run_alphafold.py  --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET"  --bfd_database_path="$bfd_database_path" --uniclust30_database_path="$uniclust30_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr)
 fi
-
 
 echo "start uploading"
 aws s3 sync /app/output/${fasta_path%.*} s3://$BATCH_BUCKET/output/${fasta_path%.*}  --region $REGION

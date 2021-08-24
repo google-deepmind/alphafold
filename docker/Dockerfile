@@ -30,6 +30,8 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
       kalign \
       tzdata \
       wget \
+      curl \
+      jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Compile HHsuite from source.

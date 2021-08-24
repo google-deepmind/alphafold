@@ -162,6 +162,9 @@ RELAX_STIFFNESS = 10.0
 RELAX_EXCLUDE_RESIDUES = []
 RELAX_MAX_OUTER_ITERATIONS = 20
 
+flags.DEFINE_int('vcpu', 8, 'vcpu from batch setting')
+
+
 def predict_structure(
     fasta_path: str,
     fasta_name: str,
@@ -275,6 +278,10 @@ def _check_flag(flag_name: str, preset: str, should_be_set: bool):
     verb = 'be' if should_be_set else 'not be'
     raise ValueError(f'{flag_name} must {verb} set for preset "{preset}"')
 
+
+
+
+
 def main(argv):
   if len(argv) > 1:
     raise app.UsageError('Too many command-line arguments.')
@@ -331,7 +338,8 @@ def main(argv):
       # small_bfd_database_path = small_bfd_database_path,
       pdb70_database_path=pdb70_database_path,
       template_featurizer=template_featurizer,
-      use_small_bfd=use_small_bfd)
+      use_small_bfd=use_small_bfd,
+      vcpu=FLAGS.vcpu)
 
 
   model_runners = {}
@@ -394,6 +402,7 @@ if __name__ == '__main__':
       # 'obsolete_pdbs_path',
       'max_template_date',
       'benchmark',
+      'vcpu',
   ])
 
   app.run(main)

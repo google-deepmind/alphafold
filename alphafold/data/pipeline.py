@@ -94,21 +94,26 @@ class DataPipeline:
                template_featurizer: templates.TemplateHitFeaturizer,
                use_small_bfd: bool,
                mgnify_max_hits: int = 501,
-               uniref_max_hits: int = 10000):
+               uniref_max_hits: int = 10000,
+               vcpu: int = 8):
     """Constructs a feature dict for a given FASTA file."""
     self._use_small_bfd = use_small_bfd
     self.jackhmmer_uniref90_runner = jackhmmer.Jackhmmer(
+        n_cpu=vcpu,
         binary_path=jackhmmer_binary_path,
         database_path=uniref90_database_path)
     if use_small_bfd:
       self.jackhmmer_small_bfd_runner = jackhmmer.Jackhmmer(
+          n_cpu=vcpu,
           binary_path=jackhmmer_binary_path,
           database_path=small_bfd_database_path)
     else:
       self.hhblits_bfd_uniclust_runner = hhblits.HHBlits(
+          n_cpu=vcpu,
           binary_path=hhblits_binary_path,
           databases=[bfd_database_path, uniclust30_database_path])
     self.jackhmmer_mgnify_runner = jackhmmer.Jackhmmer(
+        n_cpu=vcpu,
         binary_path=jackhmmer_binary_path,
         database_path=mgnify_database_path)
     self.hhsearch_pdb70_runner = hhsearch.HHSearch(
