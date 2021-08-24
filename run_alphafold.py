@@ -162,7 +162,7 @@ RELAX_STIFFNESS = 10.0
 RELAX_EXCLUDE_RESIDUES = []
 RELAX_MAX_OUTER_ITERATIONS = 20
 
-flags.DEFINE_int('vcpu', 8, 'vcpu from batch setting')
+flags.DEFINE_integer('vcpu', 8, 'vcpu from batch setting')
 
 
 def predict_structure(
