@@ -51,9 +51,9 @@ if [[ "$benchmark" == "" ]] ; then
     benchmark=false
 fi
 
-if [[ "$preset" == "" ]] ; then
-    preset="full_dbs"
-fi
+# if [[ "$preset" == "" ]] ; then
+#     preset="full_dbs"
+# fi
 
 if [[ "$preset" != "full_dbs" && "$preset" != "casp14" && "$preset" != "reduced_dbs" ]] ; then
     echo "Unknown preset! Using default ('full_dbs')"
@@ -110,7 +110,7 @@ fi
 
 echo "start ziping"
 
-fasta_name=${fasta_path%.*}
+fasta_name=${fasta_paths%.*}
 
 tar -zcvf $fasta_name.tar.gz --directory=/app/output/$fasta_name
 mv $fasta_name.tar.gz /app/output/$fasta_name/
