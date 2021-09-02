@@ -40,6 +40,8 @@ echo "max_template_date : $max_template_date"
 echo "preset : $preset"
 # echo "benchmark : $benchmark"
 
+pwd
+
 # Parse input and set defaults
 if [[ "$model_names" == "" || "$fasta_paths" == "" || "$max_template_date" == "" ]] ; then
     usage
@@ -95,6 +97,7 @@ aws s3 cp s3://$BATCH_BUCKET/$BATCH_DIR_PREFIX/$fasta_paths ./ --region $REGION
 vcpu=$[$(curl -s $ECS_CONTAINER_METADATA_URI | jq '.Limits.CPU')/1024]
 echo "get vCPU : $vcpu"
 
+
 # ######
 echo "start running af2"
 # Run AlphaFold with required parameters
@@ -107,9 +110,11 @@ fi
 
 echo "start ziping"
 
-tar -zcvf ${fasta_path%.*}.tar.gz --directory=/app/output/${fasta_path%.*} .
-mv ${fasta_path%.*}.tar.gz /app/output/${fasta_path%.*}
+fasta_name=${fasta_path%.*}
+
+tar -zcvf $fasta_name.tar.gz --directory=/app/output/$fasta_name
+mv $fasta_name.tar.gz /app/output/$fasta_name/
 echo "start uploading"
-aws s3 sync /app/output/${fasta_path%.*} s3://$BATCH_BUCKET/output/${fasta_path%.*}  --region $REGION
+aws s3 sync /app/output/$fasta_name s3://$BATCH_BUCKET/output/$fasta_name  --region $REGION
 
 echo "all done"
