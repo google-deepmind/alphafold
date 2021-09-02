@@ -2,6 +2,7 @@
 ldconfig
 
 # Author: WTTAT
+# AWS Batch start script.
 usage() {
     echo " "
     echo "something wrong"
@@ -104,6 +105,10 @@ else
     $(python /app/alphafold/run_alphafold.py  --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET"  --bfd_database_path="$bfd_database_path" --uniclust30_database_path="$uniclust30_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr)
 fi
 
+echo "start ziping"
+
+tar -zcvf ${fasta_path%.*}.tar.gz --directory=/app/output/${fasta_path%.*} .
+mv ${fasta_path%.*}.tar.gz /app/output/${fasta_path%.*}
 echo "start uploading"
 aws s3 sync /app/output/${fasta_path%.*} s3://$BATCH_BUCKET/output/${fasta_path%.*}  --region $REGION
 

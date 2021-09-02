@@ -94,9 +94,7 @@ flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
 ############## From run_docker.py #############
 # Internal import (7716).
 
-
 flags.DEFINE_list('model_names', None, 'Names of models to use.')
-
 
 # flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
 # data_dir = '/mnt/dataset/'
@@ -369,7 +367,6 @@ def main(argv):
   logging.info('Using random seed %d for the data pipeline', random_seed)
 
   # Predict structure for each of the sequences.
-
 
   for fasta_path, fasta_name in zip(FLAGS.fasta_paths, fasta_names):
 
