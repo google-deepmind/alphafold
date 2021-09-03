@@ -123,9 +123,10 @@ fasta_name=${fasta_paths%.*}
 
 cd /app/output/
 tar -zcvf $fasta_name.tar.gz $fasta_name/
-mv $fasta_name.tar.gz /app/output/$fasta_name/
+# mv $fasta_name.tar.gz /app/output/$fasta_name/
 
 echo "start uploading"
 aws s3 sync /app/output/$fasta_name s3://$BATCH_BUCKET/output/$fasta_name  --region $REGION
+aws s3 cp /app/output/$fasta_name.tar.gz s3://$BATCH_BUCKET/output/  --region $REGION
 
 echo "all done"
