@@ -398,7 +398,7 @@ if __name__ == '__main__':
       # 'template_mmcif_dir',
       # 'obsolete_pdbs_path',
       'max_template_date',
-      'benchmark',
+      # 'benchmark',
       'vcpu',
   ])
 

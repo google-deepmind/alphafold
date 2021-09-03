@@ -51,9 +51,12 @@ if [[ "$benchmark" == "" ]] ; then
     benchmark=false
 fi
 
-# if [[ "$preset" == "" ]] ; then
-#     preset="full_dbs"
-# fi
+if [[ "$preset" == "full" ]] ; then
+    preset="full_dbs"
+fi
+if [[ "$preset" == "reduced" ]] ; then
+    preset="reduced_dbs"
+fi
 
 if [[ "$preset" != "full_dbs" && "$preset" != "casp14" && "$preset" != "reduced_dbs" ]] ; then
     echo "Unknown preset! Using default ('full_dbs')"
@@ -104,16 +107,20 @@ echo "start running af2"
 # 'reduced_dbs' preset does not use bfd and uniclust30 databases
 if [[ "$preset" == "reduced_dbs" ]]; then
     $(python /app/alphafold/run_alphafold.py --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET" --small_bfd_database_path="$small_bfd_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr)
+    echo "running command : python /app/alphafold/run_alphafold.py --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET" --small_bfd_database_path="$small_bfd_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr"
 else
     $(python /app/alphafold/run_alphafold.py  --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET"  --bfd_database_path="$bfd_database_path" --uniclust30_database_path="$uniclust30_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr)
+    echo  "running command : python /app/alphafold/run_alphafold.py  --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET"  --bfd_database_path="$bfd_database_path" --uniclust30_database_path="$uniclust30_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr"
 fi
 
 echo "start ziping"
 
 fasta_name=${fasta_paths%.*}
 
-tar -zcvf $fasta_name.tar.gz --directory=/app/output/$fasta_name
+cd /app/output/
+tar -zcvf $fasta_name.tar.gz $fasta_name/
 mv $fasta_name.tar.gz /app/output/$fasta_name/
+
 echo "start uploading"
 aws s3 sync /app/output/$fasta_name s3://$BATCH_BUCKET/output/$fasta_name  --region $REGION
 
