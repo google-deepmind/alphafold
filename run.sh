@@ -11,7 +11,7 @@ usage() {
 }
 
 # while getopts ":f:m:d:p:b:" i; do
-while getopts ":f:m:d:p" i; do
+while getopts ":f:m:d:p:h" i; do
 
         case "${i}" in
         f)
@@ -26,6 +26,10 @@ while getopts ":f:m:d:p" i; do
         p)
                 preset=$OPTARG
         ;;
+        h)
+                echo "usage: -f fasta -m model -d template -p preset corresponding to af2 parameters"
+                exit 1
+
         # b)
         #         benchmark=$OPTARG
         # ;;
