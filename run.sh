@@ -93,7 +93,6 @@ uniclust30_database_path="$data_dir/uniclust30/uniclust30_2018_08/uniclust30_201
 
 
 ######
-#  if S3 URL，download fasta，change to file name
 #  only support one file
 #  by WTTAT
 echo "start downloading"
@@ -111,10 +110,10 @@ echo "start running af2"
 # 'reduced_dbs' preset does not use bfd and uniclust30 databases
 if [[ "$preset" == "reduced_dbs" ]]; then
     $(python /app/alphafold/run_alphafold.py --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET" --small_bfd_database_path="$small_bfd_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr)
-    echo "running command : python /app/alphafold/run_alphafold.py --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET" --small_bfd_database_path="$small_bfd_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr"
+    # echo "running command : python /app/alphafold/run_alphafold.py --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET" --small_bfd_database_path="$small_bfd_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr"
 else
     $(python /app/alphafold/run_alphafold.py  --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET"  --bfd_database_path="$bfd_database_path" --uniclust30_database_path="$uniclust30_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr)
-    echo  "running command : python /app/alphafold/run_alphafold.py  --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET"  --bfd_database_path="$bfd_database_path" --uniclust30_database_path="$uniclust30_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr"
+    # echo  "running command : python /app/alphafold/run_alphafold.py  --vcpu=$vcpu --BATCH_BUCKET="$BATCH_BUCKET"  --bfd_database_path="$bfd_database_path" --uniclust30_database_path="$uniclust30_database_path" --fasta_paths="$fasta_paths" --model_names="$model_names" --max_template_date="$max_template_date" --preset="$preset" --benchmark="$benchmark" --logtostderr"
 fi
 
 echo "start ziping"
@@ -127,6 +126,9 @@ tar -zcvf $fasta_name.tar.gz $fasta_name/
 
 echo "start uploading"
 aws s3 sync /app/output/$fasta_name s3://$BATCH_BUCKET/output/$fasta_name  --region $REGION
-aws s3 cp /app/output/$fasta_name.tar.gz s3://$BATCH_BUCKET/output/  --region $REGION
+# aws s3 cp /app/output/$fasta_name.tar.gz s3://$BATCH_BUCKET/output/  --region $REGION
+
+# add metadata
+aws s3 cp /app/output/$fasta_name.tar.gz s3://$BATCH_BUCKET/output/  --metadata {'"id"':'"'$id'"'} --region $REGION
 
 echo "all done"
