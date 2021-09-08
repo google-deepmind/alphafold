@@ -2,6 +2,15 @@
 # Convert Dockerfile to a Singularity recipe.
 # Requires Singularity Python (spython)
 
+# INSTRUCTIONS
+# $ cd alphafold/docker
+# $ ./create_singularity_recipe.sh
+# $ cd ..
+# $ sudo singularity build ./alphafold.sif ./docker/Singularity.def
+#
+# N.B. If you run out of space, set your TMPDIR environment variable
+# to a large tmp directory before doing the 'singularity build'.
+
 TMPRECIPE=$( mktemp )
 
 spython recipe Dockerfile > $TMPRECIPE 2> /dev/null
