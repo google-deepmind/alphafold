@@ -76,7 +76,7 @@ class RunAlphafoldTest(parameterized.TestCase):
     self.assertIn('test', base_output_files)
 
     target_output_files = os.listdir(os.path.join(out_dir, 'test'))
-    self.assertSequenceEqual(
+    self.assertCountEqual(
         ['features.pkl', 'msas', 'ranked_0.pdb', 'ranking_debug.json',
          'relaxed_model1.pdb', 'result_model1.pkl', 'timings.json',
          'unrelaxed_model1.pdb'], target_output_files)

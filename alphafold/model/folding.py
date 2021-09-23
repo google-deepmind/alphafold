@@ -750,10 +750,10 @@ def find_structural_violations(
   # Compute the Van der Waals radius for every atom
   # (the first letter of the atom name is the element type).
   # Shape: (N, 14).
-  atomtype_radius = [
+  atomtype_radius = jnp.array([
       residue_constants.van_der_waals_radius[name[0]]
       for name in residue_constants.atom_types
-  ]
+  ])
   atom14_atom_radius = batch['atom14_atom_exists'] * utils.batched_gather(
       atomtype_radius, batch['residx_atom14_to_atom37'])
 
