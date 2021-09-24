@@ -339,8 +339,10 @@ If you use the code or data in this package, please cite:
   journal = {Nature},
   title   = {Highly accurate protein structure prediction with {AlphaFold}},
   year    = {2021},
-  doi     = {10.1038/s41586-021-03819-2},
-  note    = {(Accelerated article preview)},
+  volume  = {596},
+  number  = {7873},
+  pages   = {583--589},
+  doi     = {10.1038/s41586-021-03819-2}
 }
 ```
 
