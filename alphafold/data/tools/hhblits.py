@@ -96,7 +96,7 @@ class HHBlits:
 
   def query(self, input_fasta_path: str) -> Mapping[str, Any]:
     """Queries the database using HHblits."""
-    with utils.tmpdir_manager(base_dir='/tmp') as query_tmp_dir:
+    with utils.tmpdir_manager(base_dir=utils.TEMPDIR) as query_tmp_dir:
       a3m_path = os.path.join(query_tmp_dir, 'output.a3m')
 
       db_cmd = []

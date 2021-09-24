@@ -20,6 +20,7 @@ from typing import Optional
 
 from absl import logging
 
+TMPDIR = tempfile.gettempdir()
 
 @contextlib.contextmanager
 def tmpdir_manager(base_dir: Optional[str] = None):

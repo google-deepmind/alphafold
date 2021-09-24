@@ -51,7 +51,7 @@ class Hmmsearch(object):
 
   def query(self, hmm: str) -> str:
     """Queries the database using hmmsearch using a given hmm."""
-    with utils.tmpdir_manager(base_dir='/tmp') as query_tmp_dir:
+    with utils.tmpdir_manager(base_dir=utils.TMPDIR) as query_tmp_dir:
       hmm_input_path = os.path.join(query_tmp_dir, 'query.hmm')
       a3m_out_path = os.path.join(query_tmp_dir, 'output.a3m')
       with open(hmm_input_path, 'w') as f:

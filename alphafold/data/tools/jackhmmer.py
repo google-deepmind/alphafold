@@ -89,7 +89,7 @@ class Jackhmmer:
   def _query_chunk(self, input_fasta_path: str, database_path: str
                    ) -> Mapping[str, Any]:
     """Queries the database chunk using Jackhmmer."""
-    with utils.tmpdir_manager(base_dir='/tmp') as query_tmp_dir:
+    with utils.tmpdir_manager(base_dir=utils.TMPDIR) as query_tmp_dir:
       sto_path = os.path.join(query_tmp_dir, 'output.sto')
 
       # The F1/F2/F3 are the expected proportion to pass each of the filtering
@@ -164,7 +164,7 @@ class Jackhmmer:
 
     db_basename = os.path.basename(self.database_path)
     db_remote_chunk = lambda db_idx: f'{self.database_path}.{db_idx}'
-    db_local_chunk = lambda db_idx: f'/tmp/ramdisk/{db_basename}.{db_idx}'
+    db_local_chunk = lambda db_idx: os.path.join(utils.TMPDIR, 'ramdisk', f'{db_basename}.{db_idx}')
 
     # Remove existing files to prevent OOM
     for f in glob.glob(db_local_chunk('[0-9]*')):
