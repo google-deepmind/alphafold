@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG CUDA=11.4
-ARG CUDA_M=1
+ARG CUDA=11.2
+ARG CUDA_M=2
 FROM nvidia/cuda:${CUDA}.${CUDA_M}-cudnn8-runtime-ubuntu18.04
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
@@ -54,7 +54,7 @@ ENV PATH="/opt/conda/bin:$PATH"
 RUN conda update -qy conda \
     && conda install -y -c conda-forge \
       openmm=7.5.1 \
-      cudatoolkit==${${CUDA}.${CUDA_M}} \
+      cudatoolkit==${CUDA}.${CUDA_M} \
       pdbfixer \
       pip \
       python=3.7
