@@ -13,7 +13,7 @@
 # limitations under the License.
 
 ARG CUDA=11.4
-ARG CUDA_M=2
+ARG CUDA_M=1
 FROM nvidia/cuda:${CUDA}.${CUDA_M}-cudnn8-runtime-ubuntu18.04
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
