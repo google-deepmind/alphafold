@@ -76,11 +76,8 @@ patch -p0 < /app/alphafold/docker/openmm.patch
 %environment
 export PATH="/opt/conda/bin:$PATH"
 %runscript
-#ldconfig
 cd /app/alphafold
 exec python /app/alphafold/run_alphafold.py "$@"
 %startscript
-#cd /app/alphafold
-#exec /app/run_alphafold.sh "$@"
-#ldconfig
+cd /app/alphafold
 exec python /app/alphafold/run_alphafold.py "$@"
