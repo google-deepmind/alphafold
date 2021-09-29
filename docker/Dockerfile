@@ -15,13 +15,14 @@
 #https://hub.docker.com/r/nvidia/cuda/tags
 #https://storage.googleapis.com/jax-releases/cuda111 jaxlib ==1.69
 
-ARG CUDA=11.1
-ARG CUDA_M=1
+ARG CUDA=11.2
+ARG CUDA_M=2
 FROM nvidia/cuda:${CUDA}.${CUDA_M}-cudnn8-runtime-ubuntu18.04
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
 ARG CUDA
 ARG CUDA_M
+ARG CUDA_JAX=11.1
 
 # Use bash to support string substitution.
 SHELL ["/bin/bash", "-c"]
@@ -70,7 +71,7 @@ RUN wget -q -P /app/alphafold/alphafold/common/ \
 # Install pip packages.
 RUN pip3 install --upgrade pip \
     && pip3 install -r /app/alphafold/requirements.txt \
-    && pip3 install --upgrade jax jaxlib==0.1.69+cuda${CUDA/./} -f \
+    && pip3 install --upgrade jax jaxlib==0.1.69+cuda${CUDA_JAX/./} -f \
       https://storage.googleapis.com/jax-releases/jax_releases.html
 
 # Apply OpenMM patch.
