@@ -42,7 +42,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 RUN git clone --branch v3.3.0 https://github.com/soedinglab/hh-suite.git /tmp/hh-suite \
     && mkdir /tmp/hh-suite/build \
     && pushd /tmp/hh-suite/build \
-    && cmake -DHAVE_AVX2=1 -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
+    && cmake -DHAVE_SSE4_1=1 -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
     && make -j 4 && make install \
     && ln -s /opt/hhsuite/bin/* /usr/bin \
     && popd \
