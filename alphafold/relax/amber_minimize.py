@@ -530,7 +530,7 @@ def get_initial_energies(pdb_strs: Sequence[str],
   simulation = openmm_app.Simulation(openmm_pdbs[0].topology,
                                      system,
                                      openmm.LangevinIntegrator(0, 0.01, 0.0),
-                                     openmm.Platform.getPlatformByName("CPU"))
+                                     openmm.Platform.getPlatformByName("CUDA"))
   energies = []
   for pdb in openmm_pdbs:
     try:
