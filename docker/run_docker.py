@@ -17,6 +17,8 @@
 import os
 import signal
 from typing import Tuple
+import glob
+import pathlib
 
 from absl import app
 from absl import flags
@@ -92,6 +94,8 @@ flags.DEFINE_list('fasta_paths', None, 'Paths to FASTA files, each containing '
                   'All FASTA paths must have a unique basename as the '
                   'basename is used to name the output directories for '
                   'each prediction.')
+flags.DEFINE_string('fastas_dir', None, 'Directory containing fasta inputs. '
+                    'Alternative to fasta_paths.')
 flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
                     'to consider (ISO-8601 format - i.e. YYYY-MM-DD). '
                     'Important if folding historical test sets.')
@@ -106,6 +110,18 @@ flags.DEFINE_boolean('benchmark', False, 'Run multiple JAX model evaluations '
                      'to obtain a timing that excludes the compilation time, '
                      'which should be more indicative of the time required for '
                      'inferencing many proteins.')
+flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
+                     'pipeline. By default, this is randomly generated. Note '
+                     'that even if this is set, Alphafold may still not be '
+                     'deterministic, because processes like GPU inference are '
+                     'nondeterministic.')
+flags.DEFINE_boolean('features_only', False, 'Only search MSAs/templates and dump features. '
+                     'Useful when running feature generation in parallel before doing GPU '
+                     'inference in serial')
+flags.DEFINE_integer('num_workers', 1, 'Number of parallel runs of feature generation. '
+                     'Only applies if features_only')
+flags.DEFINE_boolean('do_relax', True, 'Whether to run Amber relaxation. '
+                     'If sequence contains Xs, Amber will fail.')
 
 FLAGS = flags.FLAGS
 
@@ -118,7 +134,7 @@ def _create_mount(mount_name: str, path: str) -> Tuple[types.Mount, str]:
   target_path = os.path.join(_ROOT_MOUNT_DIRECTORY, mount_name)
   logging.info('Mounting %s -> %s', source_path, target_path)
   mount = types.Mount(target_path, source_path, type='bind', read_only=True)
-  return mount, os.path.join(target_path, os.path.basename(path))
+  return mount, target_path, os.path.join(target_path, os.path.basename(path))
 
 
 def main(argv):
@@ -128,11 +144,29 @@ def main(argv):
   mounts = []
   command_args = []
 
-  # Mount each fasta path as a unique target directory.
+  if bool(FLAGS.fasta_paths) == bool(FLAGS.fastas_dir):
+    raise app.UsageError('Either fasta_paths or fastas_dir must be specified.')
+  if FLAGS.fasta_paths:
+    fasta_paths = FLAGS.fasta_paths
+    logging.info('Using %d specified fasta paths', len(fasta_paths))
+  else:
+    fasta_paths = glob.glob(str(pathlib.Path(FLAGS.fastas_dir)/'*.fasta'))
+    logging.info('Found %d .fasta files in directory %s', len(fasta_paths), FLAGS.fastas_dir)
+  if not fasta_paths:
+    raise ValueError("Empty fastas list.")
+
+  # Mount each unique directory containing a fasta path as a unique target directory.
   target_fasta_paths = []
-  for i, fasta_path in enumerate(FLAGS.fasta_paths):
-    mount, target_path = _create_mount(f'fasta_path_{i}', fasta_path)
-    mounts.append(mount)
+  sourcedir_to_mountdir = {}
+  for i, fasta_path in enumerate(fasta_paths):
+    sourcedir = os.path.dirname(os.path.abspath(fasta_path))
+    mountdir = sourcedir_to_mountdir.get(sourcedir)
+    if mountdir:
+      target_path = os.path.join(mountdir, os.path.basename(fasta_path))
+    else:
+      mount, mountdir, target_path = _create_mount(f'fasta_path_{i}', fasta_path)
+      mounts.append(mount)
+      sourcedir_to_mountdir[sourcedir] = mountdir
     target_fasta_paths.append(target_path)
   command_args.append(f'--fasta_paths={",".join(target_fasta_paths)}')
 
@@ -153,7 +187,7 @@ def main(argv):
     ])
   for name, path in database_paths:
     if path:
-      mount, target_path = _create_mount(name, path)
+      mount, _, target_path = _create_mount(name, path)
       mounts.append(mount)
       command_args.append(f'--{name}={target_path}')
 
@@ -166,6 +200,10 @@ def main(argv):
       f'--max_template_date={FLAGS.max_template_date}',
       f'--preset={FLAGS.preset}',
       f'--benchmark={FLAGS.benchmark}',
+      f'--random_seed={FLAGS.random_seed}',
+      f'--features_only={FLAGS.features_only}',
+      f'--num_workers={FLAGS.num_workers}',
+      f'--do_relax={FLAGS.do_relax}',
       '--logtostderr',
   ])
 
@@ -195,7 +233,6 @@ def main(argv):
 
 if __name__ == '__main__':
   flags.mark_flags_as_required([
-      'fasta_paths',
       'max_template_date',
   ])
   app.run(main)
