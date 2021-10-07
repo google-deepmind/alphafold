@@ -77,6 +77,11 @@ and set up all of these databases:
 
     will download a reduced version of the databases to be used with the
     `reduced_dbs` preset.
+    
+:ledger: **Note: The download directory should not be in the repo directory or
+docker will attempt to copy the databases when building the image with the repo
+directory as context. This can make the build take a long time and may run out
+of disk space.**
 
 We don't provide exactly the versions used in CASP14 -- see the [note on
 reproducibility](#note-on-reproducibility). Some of the databases are mirrored
