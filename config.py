@@ -1,0 +1,22 @@
+CONFIG_RUN_ALPHAFOLD = {
+    "fasta_paths": None,
+    "output_dir":None, 
+    "model_names": None, 
+    "data_dir": None, 
+    "jackhmmer_binary_path": "/usr/bin/jackhmmer", 
+    "hhblits_binary_path": "/usr/bin/hhblits",
+    "hhsearch_binary_path": "/usr/bin/hhsearch",
+    "kalign_binary_path": "/usr/bin/kalign",
+    "uniref90_database_path": None,
+    "mgnifiy_database_path": None,
+    "bfd_database_path": None,
+    "small_bfd_database_path": None,
+    "uniclust30_database_path": None,
+    "pdb70_database_path": None,
+    "tempalte_mmcif_dir": None,
+    "max_template_date": None,
+    "obsolete_pdbs_path": None, 
+    "preset": "full_dbs", 
+    "benchmark": False,
+    "random_seed": None
+}
