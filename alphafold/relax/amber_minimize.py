@@ -15,6 +15,7 @@
 """Restrained Amber Minimization of a structure."""
 
 import io
+import os
 import time
 from typing import Collection, Optional, Sequence
 
@@ -35,6 +36,8 @@ from simtk.openmm.app.internal.pdbstructure import PdbStructure
 ENERGY = unit.kilocalories_per_mole
 LENGTH = unit.angstroms
 
+#--- allow to run ambermininmize on selected platform CPU//GPU
+OPENMM_PLATFORM=os.environ.get('OPENMM_RELAX', 'CPU')
 
 def will_restrain(atom: openmm_app.Atom, rset: str) -> bool:
   """Returns True if the atom will be restrained by the given restraint set."""
@@ -90,7 +93,7 @@ def _openmm_minimize(
     _add_restraints(system, pdb, stiffness, restraint_set, exclude_residues)
 
   integrator = openmm.LangevinIntegrator(0, 0.01, 0.0)
-  platform = openmm.Platform.getPlatformByName("CPU")
+  platform = openmm.Platform.getPlatformByName(OPENMM_PLATFORM)
   simulation = openmm_app.Simulation(
       pdb.topology, system, integrator, platform)
   simulation.context.setPositions(pdb.positions)
@@ -530,7 +533,7 @@ def get_initial_energies(pdb_strs: Sequence[str],
   simulation = openmm_app.Simulation(openmm_pdbs[0].topology,
                                      system,
                                      openmm.LangevinIntegrator(0, 0.01, 0.0),
-                                     openmm.Platform.getPlatformByName("CPU"))
+                                     openmm.Platform.getPlatformByName(OPENMM_PLATFORM))
   energies = []
   for pdb in openmm_pdbs:
     try:
