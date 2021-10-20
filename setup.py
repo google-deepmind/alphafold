@@ -39,7 +39,7 @@ setup(
         'ml-collections',
         'numpy',
         'scipy',
-        'tensorflow',
+        'tensorflow-cpu',
     ],
     tests_require=['mock'],
     classifiers=[
