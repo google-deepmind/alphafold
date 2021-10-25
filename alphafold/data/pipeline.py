@@ -158,6 +158,8 @@ class DataPipeline:
     hhsearch_hits = parsers.parse_hhr(hhsearch_result)
     mgnify_msa = mgnify_msa[:self.mgnify_max_hits]
     mgnify_deletion_matrix = mgnify_deletion_matrix[:self.mgnify_max_hits]
+    uniref90_msa = uniref90_msa[:self.uniref_max_hits]
+    uniref90_deletion_matrix = uniref90_deletion_matrix[:self.uniref_max_hits]
 
     if self._use_small_bfd:
       jackhmmer_small_bfd_result = self.jackhmmer_small_bfd_runner.query(
