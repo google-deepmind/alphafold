@@ -18,6 +18,7 @@ import os
 import pathlib
 import pickle
 import random
+import shutil
 import sys
 import time
 from typing import Dict
@@ -45,13 +46,13 @@ flags.DEFINE_string('output_dir', None, 'Path to a directory that will '
                     'store the results.')
 flags.DEFINE_list('model_names', None, 'Names of models to use.')
 flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
-flags.DEFINE_string('jackhmmer_binary_path', '/usr/bin/jackhmmer',
+flags.DEFINE_string('jackhmmer_binary_path', shutil.which('jackhmmer') or '/usr/bin/jackhmmer',
                     'Path to the JackHMMER executable.')
-flags.DEFINE_string('hhblits_binary_path', '/usr/bin/hhblits',
+flags.DEFINE_string('hhblits_binary_path', shutil.which('hhblits') or '/usr/bin/hhblits',
                     'Path to the HHblits executable.')
-flags.DEFINE_string('hhsearch_binary_path', '/usr/bin/hhsearch',
+flags.DEFINE_string('hhsearch_binary_path', shutil.which('hhsearch') or '/usr/bin/hhsearch',
                     'Path to the HHsearch executable.')
-flags.DEFINE_string('kalign_binary_path', '/usr/bin/kalign',
+flags.DEFINE_string('kalign_binary_path', shutil.which('kalign') or '/usr/bin/kalign',
                     'Path to the Kalign executable.')
 flags.DEFINE_string('uniref90_database_path', None, 'Path to the Uniref90 '
                     'database for use by JackHMMER.')
