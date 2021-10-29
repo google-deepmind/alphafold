@@ -167,6 +167,136 @@ def _convert_sto_seq_to_a3m(
       yield sequence_res.lower()
 
 
+def get_sto(sto_path: str, max_sequences: int) -> str:
+  """Parses sto format alignment files line-by-line.
+  Instead of using sto_fh.read()
+
+  Args:
+    sto_path: sto file path
+    max_sequences: maximum numbers of sequences to keep in the alingment
+
+  Returns:
+    str: sto_head + sto_seq
+  """
+  n_desc = 0
+  descriptions = {}
+  sequences = {}
+  reached_max_sequences = False
+
+  sto_seq = ""
+  sto_head = ""
+
+  with open(sto_path) as sto_fh:
+
+    for i in range(4):
+      line = sto_fh.readline()
+      sto_head += line
+
+    for line in sto_fh:
+      reached_max_sequences = max_sequences and len(sequences) >= max_sequences
+      if line.strip() and not line.startswith(('#', '//')):
+        # Ignore blank lines, markup and end symbols - remainder are alignment
+        # sequence parts.
+        seqname, aligned_seq = line.split(maxsplit=1)
+        if seqname not in sequences:
+          if reached_max_sequences:
+            continue
+          sequences[seqname] = ''
+        # sequences[seqname] += aligned_seq
+        sto_seq += line
+    sto_fh.seek(0)
+    
+    for line in sto_fh:
+      if line[:4] == '#=GS':
+        # Description row - example format is:
+        # #=GS UniRef90_Q9H5Z4/4-78            DE [subseq from] cDNA: FLJ22755 ...
+        columns = line.split(maxsplit=3)
+        seqname, feature = columns[1:3]
+        #value = columns[3] if len(columns) == 4 else ''
+        if feature != 'DE':
+          continue
+        if reached_max_sequences and seqname not in sequences:
+          continue
+        descriptions[seqname] = "" #value
+        sto_head += line
+        if len(descriptions) == len(sequences):
+          break
+
+    return sto_head + sto_seq
+
+      
+def get_sto_a3m(sto_path: str, max_sequences: int) -> Tuple[str, str]:
+  """Parses sto format alignment files line-by-line. It also converts it to a3m at the same time.
+  Instead of using sto_fh.read()
+
+  Args:
+    sto_path: sto file path
+    max_sequences: maximum numbers of sequences to keep in the alingment
+
+  Returns:
+    A tuple of:
+      * str: sto (sto_head + sto_seq)
+      * str: a3m
+  """
+
+  descriptions = {}
+  sequences = {}
+  reached_max_sequences = False
+
+  sto_seq = ""
+  sto_head = ""
+
+  with open(sto_path) as sto_fh:
+
+    for i in range(4):
+      line = sto_fh.readline()
+      sto_head += line
+
+    for line in sto_fh:
+      reached_max_sequences = max_sequences and len(sequences) >= max_sequences
+      if line.strip() and not line.startswith(('#', '//')):
+        # Ignore blank lines, markup and end symbols - remainder are alignment
+        # sequence parts.
+        seqname, aligned_seq = line.split(maxsplit=1)
+        if seqname not in sequences:
+          if reached_max_sequences:
+            continue
+          sequences[seqname] = ''
+        sequences[seqname] += aligned_seq
+        sto_seq += line
+    sto_fh.seek(0)
+    
+    for line in sto_fh:
+      if line[:4] == '#=GS':
+        # Description row - example format is:
+        # #=GS UniRef90_Q9H5Z4/4-78            DE [subseq from] cDNA: FLJ22755 ...
+        columns = line.split(maxsplit=3)
+        seqname, feature = columns[1:3]
+        value = columns[3] if len(columns) == 4 else ''
+        if feature != 'DE':
+          continue
+        if reached_max_sequences and seqname not in sequences:
+          continue
+        descriptions[seqname] = value
+        sto_head += line
+        if len(descriptions) == len(sequences):
+          break
+
+  # Convert sto format to a3m line by line
+  a3m_sequences = {}
+  # query_sequence is assumed to be the first sequence
+  query_sequence = next(iter(sequences.values()))
+  query_non_gaps = [res != '-' for res in query_sequence]
+  for seqname, sto_sequence in sequences.items():
+    a3m_sequences[seqname] = ''.join(
+        _convert_sto_seq_to_a3m(query_non_gaps, sto_sequence))
+
+  fasta_chunks = (f">{k} {descriptions.get(k, '')}\n{a3m_sequences[k]}"
+                  for k in a3m_sequences)
+
+  return (sto_head + sto_seq, '\n'.join(fasta_chunks) + '\n')  # Include terminating newline.
+
+      
 def convert_stockholm_to_a3m(stockholm_format: str,
                              max_sequences: Optional[int] = None) -> str:
   """Converts MSA in Stockholm format to the A3M format."""

@@ -131,21 +131,18 @@ class DataPipeline:
     num_res = len(input_sequence)
 
     jackhmmer_uniref90_result = self.jackhmmer_uniref90_runner.query(
-        input_fasta_path)[0]
+      input_fasta_path,
+      sto_path=os.path.join(msa_output_dir, 'uniref90_hits.sto'),
+      max_hits=self.uniref_max_hits,
+      a3m_needed=True)[0]
     jackhmmer_mgnify_result = self.jackhmmer_mgnify_runner.query(
-        input_fasta_path)[0]
+      input_fasta_path,
+      sto_path=os.path.join(msa_output_dir, 'mgnify_hits.sto'),
+      max_hits=self.mgnify_max_hits,
+      a3m_needed=False)[0]
 
-    uniref90_msa_as_a3m = parsers.convert_stockholm_to_a3m(
-        jackhmmer_uniref90_result['sto'], max_sequences=self.uniref_max_hits)
+    uniref90_msa_as_a3m = jackhmmer_uniref90_result['a3m']
     hhsearch_result = self.hhsearch_pdb70_runner.query(uniref90_msa_as_a3m)
-
-    uniref90_out_path = os.path.join(msa_output_dir, 'uniref90_hits.sto')
-    with open(uniref90_out_path, 'w') as f:
-      f.write(jackhmmer_uniref90_result['sto'])
-
-    mgnify_out_path = os.path.join(msa_output_dir, 'mgnify_hits.sto')
-    with open(mgnify_out_path, 'w') as f:
-      f.write(jackhmmer_mgnify_result['sto'])
 
     pdb70_out_path = os.path.join(msa_output_dir, 'pdb70_hits.hhr')
     with open(pdb70_out_path, 'w') as f:
@@ -156,8 +153,6 @@ class DataPipeline:
     mgnify_msa, mgnify_deletion_matrix, _ = parsers.parse_stockholm(
         jackhmmer_mgnify_result['sto'])
     hhsearch_hits = parsers.parse_hhr(hhsearch_result)
-    mgnify_msa = mgnify_msa[:self.mgnify_max_hits]
-    mgnify_deletion_matrix = mgnify_deletion_matrix[:self.mgnify_max_hits]
 
     if self._use_small_bfd:
       jackhmmer_small_bfd_result = self.jackhmmer_small_bfd_runner.query(
