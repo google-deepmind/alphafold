@@ -111,8 +111,10 @@ def compute_predicted_aligned_error(
 def predicted_tm_score(
     logits: np.ndarray,
     breaks: np.ndarray,
-    residue_weights: Optional[np.ndarray] = None) -> np.ndarray:
-  """Computes predicted TM alignment score.
+    residue_weights: Optional[np.ndarray] = None,
+    asym_id: Optional[np.ndarray] = None,
+    interface: bool = False) -> np.ndarray:
+  """Computes predicted TM alignment or predicted interface TM alignment score.
 
   Args:
     logits: [num_res, num_res, num_bins] the logits output from
@@ -120,9 +122,12 @@ def predicted_tm_score(
     breaks: [num_bins] the error bins.
     residue_weights: [num_res] the per residue weights to use for the
       expectation.
+    asym_id: [num_res] the asymmetric unit ID - the chain ID. Only needed for
+      ipTM calculation, i.e. when interface=True.
+    interface: If True, interface predicted TM score is computed.
 
   Returns:
-    ptm_score: the predicted TM alignment score.
+    ptm_score: The predicted TM alignment or the predicted iTM score.
   """
 
   # residue_weights has to be in [0, 1], but can be floating-point, i.e. the
@@ -132,24 +137,32 @@ def predicted_tm_score(
 
   bin_centers = _calculate_bin_centers(breaks)
 
-  num_res = np.sum(residue_weights)
+  num_res = int(np.sum(residue_weights))
   # Clip num_res to avoid negative/undefined d0.
   clipped_num_res = max(num_res, 19)
 
-  # Compute d_0(num_res) as defined by TM-score, eqn. (5) in
-  # http://zhanglab.ccmb.med.umich.edu/papers/2004_3.pdf
-  # Yang & Skolnick "Scoring function for automated
-  # assessment of protein structure template quality" 2004
+  # Compute d_0(num_res) as defined by TM-score, eqn. (5) in Yang & Skolnick
+  # "Scoring function for automated assessment of protein structure template
+  # quality", 2004: http://zhanglab.ccmb.med.umich.edu/papers/2004_3.pdf
   d0 = 1.24 * (clipped_num_res - 15) ** (1./3) - 1.8
 
-  # Convert logits to probs
+  # Convert logits to probs.
   probs = scipy.special.softmax(logits, axis=-1)
 
-  # TM-Score term for every bin
+  # TM-Score term for every bin.
   tm_per_bin = 1. / (1 + np.square(bin_centers) / np.square(d0))
-  # E_distances tm(distance)
+  # E_distances tm(distance).
   predicted_tm_term = np.sum(probs * tm_per_bin, axis=-1)
 
-  normed_residue_mask = residue_weights / (1e-8 + residue_weights.sum())
+  pair_mask = np.ones(shape=(num_res, num_res), dtype=bool)
+  if interface:
+    pair_mask *= asym_id[:, None] != asym_id[None, :]
+
+  predicted_tm_term *= pair_mask
+
+  pair_residue_weights = pair_mask * (
+      residue_weights[None, :] * residue_weights[:, None])
+  normed_residue_mask = pair_residue_weights / (1e-8 + np.sum(
+      pair_residue_weights, axis=-1, keepdims=True))
   per_alignment = np.sum(predicted_tm_term * normed_residue_mask, axis=-1)
   return np.asarray(per_alignment[(per_alignment * residue_weights).argmax()])

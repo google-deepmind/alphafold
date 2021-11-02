@@ -15,19 +15,22 @@
 """Functions for building the input features for the AlphaFold model."""
 
 import os
-from typing import Mapping, Optional, Sequence
+from typing import Any, Mapping, MutableMapping, Optional, Sequence, Union
 from absl import logging
 from alphafold.common import residue_constants
+from alphafold.data import msa_identifiers
 from alphafold.data import parsers
 from alphafold.data import templates
 from alphafold.data.tools import hhblits
 from alphafold.data.tools import hhsearch
+from alphafold.data.tools import hmmsearch
 from alphafold.data.tools import jackhmmer
 import numpy as np
 
 # Internal import (7716).
 
-FeatureDict = Mapping[str, np.ndarray]
+FeatureDict = MutableMapping[str, np.ndarray]
+TemplateSearcher = Union[hhsearch.HHSearch, hmmsearch.Hmmsearch]
 
 
 def make_sequence_features(
@@ -47,35 +50,58 @@ def make_sequence_features(
   return features
 
 
-def make_msa_features(
-    msas: Sequence[Sequence[str]],
-    deletion_matrices: Sequence[parsers.DeletionMatrix]) -> FeatureDict:
+def make_msa_features(msas: Sequence[parsers.Msa]) -> FeatureDict:
   """Constructs a feature dict of MSA features."""
   if not msas:
     raise ValueError('At least one MSA must be provided.')
 
   int_msa = []
   deletion_matrix = []
+  uniprot_accession_ids = []
+  species_ids = []
   seen_sequences = set()
   for msa_index, msa in enumerate(msas):
     if not msa:
       raise ValueError(f'MSA {msa_index} must contain at least one sequence.')
-    for sequence_index, sequence in enumerate(msa):
+    for sequence_index, sequence in enumerate(msa.sequences):
       if sequence in seen_sequences:
         continue
       seen_sequences.add(sequence)
       int_msa.append(
           [residue_constants.HHBLITS_AA_TO_ID[res] for res in sequence])
-      deletion_matrix.append(deletion_matrices[msa_index][sequence_index])
+      deletion_matrix.append(msa.deletion_matrix[sequence_index])
+      identifiers = msa_identifiers.get_identifiers(
+          msa.descriptions[sequence_index])
+      uniprot_accession_ids.append(
+          identifiers.uniprot_accession_id.encode('utf-8'))
+      species_ids.append(identifiers.species_id.encode('utf-8'))
 
-  num_res = len(msas[0][0])
+  num_res = len(msas[0].sequences[0])
   num_alignments = len(int_msa)
   features = {}
   features['deletion_matrix_int'] = np.array(deletion_matrix, dtype=np.int32)
   features['msa'] = np.array(int_msa, dtype=np.int32)
   features['num_alignments'] = np.array(
       [num_alignments] * num_res, dtype=np.int32)
+  features['msa_uniprot_accession_identifiers'] = np.array(
+      uniprot_accession_ids, dtype=np.object_)
+  features['msa_species_identifiers'] = np.array(species_ids, dtype=np.object_)
   return features
+
+
+def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
+                 msa_format: str, use_precomputed_msas: bool,
+                 ) -> Mapping[str, Any]:
+  """Runs an MSA tool, checking if output already exists first."""
+  if not use_precomputed_msas or not os.path.exists(msa_out_path):
+    result = msa_runner.query(input_fasta_path)[0]
+    with open(msa_out_path, 'w') as f:
+      f.write(result[msa_format])
+  else:
+    logging.warning('Reading MSA from file %s', msa_out_path)
+    with open(msa_out_path, 'r') as f:
+      result = {msa_format: f.read()}
+  return result
 
 
 class DataPipeline:
@@ -84,18 +110,18 @@ class DataPipeline:
   def __init__(self,
                jackhmmer_binary_path: str,
                hhblits_binary_path: str,
-               hhsearch_binary_path: str,
                uniref90_database_path: str,
                mgnify_database_path: str,
                bfd_database_path: Optional[str],
                uniclust30_database_path: Optional[str],
                small_bfd_database_path: Optional[str],
-               pdb70_database_path: str,
+               template_searcher: TemplateSearcher,
                template_featurizer: templates.TemplateHitFeaturizer,
                use_small_bfd: bool,
                mgnify_max_hits: int = 501,
-               uniref_max_hits: int = 10000):
-    """Constructs a feature dict for a given FASTA file."""
+               uniref_max_hits: int = 10000,
+               use_precomputed_msas: bool = False):
+    """Initializes the data pipeline."""
     self._use_small_bfd = use_small_bfd
     self.jackhmmer_uniref90_runner = jackhmmer.Jackhmmer(
         binary_path=jackhmmer_binary_path,
@@ -111,12 +137,11 @@ class DataPipeline:
     self.jackhmmer_mgnify_runner = jackhmmer.Jackhmmer(
         binary_path=jackhmmer_binary_path,
         database_path=mgnify_database_path)
-    self.hhsearch_pdb70_runner = hhsearch.HHSearch(
-        binary_path=hhsearch_binary_path,
-        databases=[pdb70_database_path])
+    self.template_searcher = template_searcher
     self.template_featurizer = template_featurizer
     self.mgnify_max_hits = mgnify_max_hits
     self.uniref_max_hits = uniref_max_hits
+    self.use_precomputed_msas = use_precomputed_msas
 
   def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
     """Runs alignment tools on the input sequence and creates features."""
@@ -130,72 +155,68 @@ class DataPipeline:
     input_description = input_descs[0]
     num_res = len(input_sequence)
 
-    jackhmmer_uniref90_result = self.jackhmmer_uniref90_runner.query(
-        input_fasta_path)[0]
-    jackhmmer_mgnify_result = self.jackhmmer_mgnify_runner.query(
-        input_fasta_path)[0]
-
-    uniref90_msa_as_a3m = parsers.convert_stockholm_to_a3m(
-        jackhmmer_uniref90_result['sto'], max_sequences=self.uniref_max_hits)
-    hhsearch_result = self.hhsearch_pdb70_runner.query(uniref90_msa_as_a3m)
-
     uniref90_out_path = os.path.join(msa_output_dir, 'uniref90_hits.sto')
-    with open(uniref90_out_path, 'w') as f:
-      f.write(jackhmmer_uniref90_result['sto'])
-
+    jackhmmer_uniref90_result = run_msa_tool(
+        self.jackhmmer_uniref90_runner, input_fasta_path, uniref90_out_path,
+        'sto', self.use_precomputed_msas)
     mgnify_out_path = os.path.join(msa_output_dir, 'mgnify_hits.sto')
-    with open(mgnify_out_path, 'w') as f:
-      f.write(jackhmmer_mgnify_result['sto'])
+    jackhmmer_mgnify_result = run_msa_tool(
+        self.jackhmmer_mgnify_runner, input_fasta_path, mgnify_out_path, 'sto',
+        self.use_precomputed_msas)
 
-    pdb70_out_path = os.path.join(msa_output_dir, 'pdb70_hits.hhr')
-    with open(pdb70_out_path, 'w') as f:
-      f.write(hhsearch_result)
+    msa_for_templates = jackhmmer_uniref90_result['sto']
+    msa_for_templates = parsers.truncate_stockholm_msa(
+        msa_for_templates, max_sequences=self.uniref_max_hits)
+    msa_for_templates = parsers.deduplicate_stockholm_msa(
+        msa_for_templates)
+    msa_for_templates = parsers.remove_empty_columns_from_stockholm_msa(
+        msa_for_templates)
 
-    uniref90_msa, uniref90_deletion_matrix, _ = parsers.parse_stockholm(
-        jackhmmer_uniref90_result['sto'])
-    mgnify_msa, mgnify_deletion_matrix, _ = parsers.parse_stockholm(
-        jackhmmer_mgnify_result['sto'])
-    hhsearch_hits = parsers.parse_hhr(hhsearch_result)
-    mgnify_msa = mgnify_msa[:self.mgnify_max_hits]
-    mgnify_deletion_matrix = mgnify_deletion_matrix[:self.mgnify_max_hits]
+    if self.template_searcher.input_format == 'sto':
+      pdb_templates_result = self.template_searcher.query(msa_for_templates)
+    elif self.template_searcher.input_format == 'a3m':
+      uniref90_msa_as_a3m = parsers.convert_stockholm_to_a3m(msa_for_templates)
+      pdb_templates_result = self.template_searcher.query(uniref90_msa_as_a3m)
+    else:
+      raise ValueError('Unrecognized template input format: '
+                       f'{self.template_searcher.input_format}')
+
+    pdb_hits_out_path = os.path.join(
+        msa_output_dir, f'pdb_hits.{self.template_searcher.output_format}')
+    with open(pdb_hits_out_path, 'w') as f:
+      f.write(pdb_templates_result)
+
+    uniref90_msa = parsers.parse_stockholm(jackhmmer_uniref90_result['sto'])
+    uniref90_msa = uniref90_msa.truncate(max_seqs=self.uniref_max_hits)
+    mgnify_msa = parsers.parse_stockholm(jackhmmer_mgnify_result['sto'])
+    mgnify_msa = mgnify_msa.truncate(max_seqs=self.mgnify_max_hits)
+
+    pdb_template_hits = self.template_searcher.get_template_hits(
+        output_string=pdb_templates_result, input_sequence=input_sequence)
 
     if self._use_small_bfd:
-      jackhmmer_small_bfd_result = self.jackhmmer_small_bfd_runner.query(
-          input_fasta_path)[0]
-
-      bfd_out_path = os.path.join(msa_output_dir, 'small_bfd_hits.a3m')
-      with open(bfd_out_path, 'w') as f:
-        f.write(jackhmmer_small_bfd_result['sto'])
-
-      bfd_msa, bfd_deletion_matrix, _ = parsers.parse_stockholm(
-          jackhmmer_small_bfd_result['sto'])
+      bfd_out_path = os.path.join(msa_output_dir, 'small_bfd_hits.sto')
+      jackhmmer_small_bfd_result = run_msa_tool(
+          self.jackhmmer_small_bfd_runner, input_fasta_path, bfd_out_path,
+          'sto', self.use_precomputed_msas)
+      bfd_msa = parsers.parse_stockholm(jackhmmer_small_bfd_result['sto'])
     else:
-      hhblits_bfd_uniclust_result = self.hhblits_bfd_uniclust_runner.query(
-          input_fasta_path)
-
       bfd_out_path = os.path.join(msa_output_dir, 'bfd_uniclust_hits.a3m')
-      with open(bfd_out_path, 'w') as f:
-        f.write(hhblits_bfd_uniclust_result['a3m'])
-
-      bfd_msa, bfd_deletion_matrix = parsers.parse_a3m(
-          hhblits_bfd_uniclust_result['a3m'])
+      hhblits_bfd_uniclust_result = run_msa_tool(
+          self.hhblits_bfd_uniclust_runner, input_fasta_path, bfd_out_path,
+          'a3m', self.use_precomputed_msas)
+      bfd_msa = parsers.parse_a3m(hhblits_bfd_uniclust_result['a3m'])
 
     templates_result = self.template_featurizer.get_templates(
         query_sequence=input_sequence,
-        query_pdb_code=None,
-        query_release_date=None,
-        hits=hhsearch_hits)
+        hits=pdb_template_hits)
 
     sequence_features = make_sequence_features(
         sequence=input_sequence,
         description=input_description,
         num_res=num_res)
 
-    msa_features = make_msa_features(
-        msas=(uniref90_msa, bfd_msa, mgnify_msa),
-        deletion_matrices=(uniref90_deletion_matrix,
-                           bfd_deletion_matrix,
-                           mgnify_deletion_matrix))
+    msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa))
 
     logging.info('Uniref90 MSA size: %d sequences.', len(uniref90_msa))
     logging.info('BFD MSA size: %d sequences.', len(bfd_msa))

@@ -15,6 +15,7 @@
 """Parses the mmCIF file format."""
 import collections
 import dataclasses
+import functools
 import io
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
@@ -160,6 +161,7 @@ def mmcif_loop_to_dict(prefix: str,
   return {entry[index]: entry for entry in entries}
 
 
+@functools.lru_cache(16, typed=False)
 def parse(*,
           file_id: str,
           mmcif_string: str,
@@ -314,7 +316,7 @@ def _get_header(parsed_info: MmCIFDict) -> PdbHeader:
         raw_resolution = parsed_info[res_key][0]
         header['resolution'] = float(raw_resolution)
       except ValueError:
-        logging.warning('Invalid resolution format: %s', parsed_info[res_key])
+        logging.debug('Invalid resolution format: %s', parsed_info[res_key])
 
   return header
 
