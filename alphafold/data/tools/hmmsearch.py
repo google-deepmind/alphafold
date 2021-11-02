@@ -19,6 +19,8 @@ import subprocess
 from typing import Optional, Sequence
 
 from absl import logging
+from alphafold.data import parsers
+from alphafold.data.tools import hmmbuild
 from alphafold.data.tools import utils
 # Internal import (7716).
 
@@ -29,12 +31,15 @@ class Hmmsearch(object):
   def __init__(self,
                *,
                binary_path: str,
+               hmmbuild_binary_path: str,
                database_path: str,
                flags: Optional[Sequence[str]] = None):
     """Initializes the Python hmmsearch wrapper.
 
     Args:
       binary_path: The path to the hmmsearch executable.
+      hmmbuild_binary_path: The path to the hmmbuild executable. Used to build
+        an hmm from an input a3m.
       database_path: The path to the hmmsearch database (FASTA format).
       flags: List of flags to be used by hmmsearch.
 
@@ -42,18 +47,42 @@ class Hmmsearch(object):
       RuntimeError: If hmmsearch binary not found within the path.
     """
     self.binary_path = binary_path
+    self.hmmbuild_runner = hmmbuild.Hmmbuild(binary_path=hmmbuild_binary_path)
     self.database_path = database_path
+    if flags is None:
+      # Default hmmsearch run settings.
+      flags = ['--F1', '0.1',
+               '--F2', '0.1',
+               '--F3', '0.1',
+               '--incE', '100',
+               '-E', '100',
+               '--domE', '100',
+               '--incdomE', '100']
     self.flags = flags
 
     if not os.path.exists(self.database_path):
       logging.error('Could not find hmmsearch database %s', database_path)
       raise ValueError(f'Could not find hmmsearch database {database_path}')
 
-  def query(self, hmm: str) -> str:
+  @property
+  def output_format(self) -> str:
+    return 'sto'
+
+  @property
+  def input_format(self) -> str:
+    return 'sto'
+
+  def query(self, msa_sto: str) -> str:
+    """Queries the database using hmmsearch using a given stockholm msa."""
+    hmm = self.hmmbuild_runner.build_profile_from_sto(msa_sto,
+                                                      model_construction='hand')
+    return self.query_with_hmm(hmm)
+
+  def query_with_hmm(self, hmm: str) -> str:
     """Queries the database using hmmsearch using a given hmm."""
-    with utils.tmpdir_manager(base_dir='/tmp') as query_tmp_dir:
+    with utils.tmpdir_manager() as query_tmp_dir:
       hmm_input_path = os.path.join(query_tmp_dir, 'query.hmm')
-      a3m_out_path = os.path.join(query_tmp_dir, 'output.a3m')
+      out_path = os.path.join(query_tmp_dir, 'output.sto')
       with open(hmm_input_path, 'w') as f:
         f.write(hmm)
 
@@ -66,7 +95,7 @@ class Hmmsearch(object):
       if self.flags:
         cmd.extend(self.flags)
       cmd.extend([
-          '-A', a3m_out_path,
+          '-A', out_path,
           hmm_input_path,
           self.database_path,
       ])
@@ -84,7 +113,19 @@ class Hmmsearch(object):
             'hmmsearch failed:\nstdout:\n%s\n\nstderr:\n%s\n' % (
                 stdout.decode('utf-8'), stderr.decode('utf-8')))
 
-      with open(a3m_out_path) as f:
-        a3m_out = f.read()
+      with open(out_path) as f:
+        out_msa = f.read()
 
-    return a3m_out
+    return out_msa
+
+  def get_template_hits(self,
+                        output_string: str,
+                        input_sequence: str) -> Sequence[parsers.TemplateHit]:
+    """Gets parsed template hits from the raw string output by the tool."""
+    a3m_string = parsers.convert_stockholm_to_a3m(output_string,
+                                                  remove_first_row_gaps=False)
+    template_hits = parsers.parse_hmmsearch_a3m(
+        query_sequence=input_sequence,
+        a3m_string=a3m_string,
+        skip_first=False)
+    return template_hits

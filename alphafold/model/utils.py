@@ -15,6 +15,7 @@
 """A collection of JAX utility functions for use in protein folding."""
 
 import collections
+import functools
 import numbers
 from typing import Mapping
 
@@ -79,3 +80,52 @@ def flat_params_to_haiku(params: Mapping[str, np.ndarray]) -> hk.Params:
     hk_params[scope][name] = jnp.array(array)
 
   return hk_params
+
+
+def padding_consistent_rng(f):
+  """Modify any element-wise random function to be consistent with padding.
+
+  Normally if you take a function like jax.random.normal and generate an array,
+  say of size (10,10), you will get a different set of random numbers to if you
+  add padding and take the first (10,10) sub-array.
+
+  This function makes a random function that is consistent regardless of the
+  amount of padding added.
+
+  Note: The padding-consistent function is likely to be slower to compile and
+  run than the function it is wrapping, but these slowdowns are likely to be
+  negligible in a large network.
+
+  Args:
+    f: Any element-wise function that takes (PRNG key, shape) as the first 2
+      arguments.
+
+  Returns:
+    An equivalent function to f, that is now consistent for different amounts of
+    padding.
+  """
+  def grid_keys(key, shape):
+    """Generate a grid of rng keys that is consistent with different padding.
+
+    Generate random keys such that the keys will be identical, regardless of
+    how much padding is added to any dimension.
+
+    Args:
+      key: A PRNG key.
+      shape: The shape of the output array of keys that will be generated.
+
+    Returns:
+      An array of shape `shape` consisting of random keys.
+    """
+    if not shape:
+      return key
+    new_keys = jax.vmap(functools.partial(jax.random.fold_in, key))(
+        jnp.arange(shape[0]))
+    return jax.vmap(functools.partial(grid_keys, shape=shape[1:]))(new_keys)
+
+  def inner(key, shape, **kwargs):
+    return jnp.vectorize(
+        lambda key: f(key, shape=(), **kwargs),
+        signature='(2)->()')(
+            grid_keys(key, shape))
+  return inner

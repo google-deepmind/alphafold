@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Downloads and unzips the AlphaFold parameters.
+# Downloads and unzips the PDB SeqRes database for AlphaFold.
 #
-# Usage: bash download_alphafold_params.sh /path/to/download/directory
+# Usage: bash download_pdb_seqres.sh /path/to/download/directory
 set -e
 
 if [[ $# -eq 0 ]]; then
@@ -30,12 +30,9 @@ if ! command -v aria2c &> /dev/null ; then
 fi
 
 DOWNLOAD_DIR="$1"
-ROOT_DIR="${DOWNLOAD_DIR}/params"
-SOURCE_URL="https://storage.googleapis.com/alphafold/alphafold_params_2021-10-27.tar"
+ROOT_DIR="${DOWNLOAD_DIR}/pdb_seqres"
+SOURCE_URL="ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt"
 BASENAME=$(basename "${SOURCE_URL}")
 
 mkdir --parents "${ROOT_DIR}"
 aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}"
-tar --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
-  --directory="${ROOT_DIR}" --preserve-permissions
-rm "${ROOT_DIR}/${BASENAME}"

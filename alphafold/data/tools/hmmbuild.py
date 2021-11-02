@@ -98,7 +98,7 @@ class Hmmbuild(object):
       raise ValueError(f'Invalid model_construction {model_construction} - only'
                        'hand and fast supported.')
 
-    with utils.tmpdir_manager(base_dir='/tmp') as query_tmp_dir:
+    with utils.tmpdir_manager() as query_tmp_dir:
       input_query = os.path.join(query_tmp_dir, 'query.msa')
       output_hmm_path = os.path.join(query_tmp_dir, 'output.hmm')
 
