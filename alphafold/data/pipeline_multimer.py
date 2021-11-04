@@ -202,7 +202,7 @@ class DataPipeline:
       msa_output_dir: str,
       is_homomer_or_monomer: bool) -> pipeline.FeatureDict:
     """Runs the monomer pipeline on a single chain."""
-    chain_fasta_str = f'>{description}\n{sequence}\n'
+    chain_fasta_str = f'>chain_{chain_id}\n{sequence}\n'
     chain_msa_output_dir = os.path.join(msa_output_dir, chain_id)
     if not os.path.exists(chain_msa_output_dir):
       os.makedirs(chain_msa_output_dir)
