@@ -196,6 +196,10 @@ change the following:
     happens inside the Multimer model.
 *   The `preset` flag in `run_alphafold.py` and `run_docker.py` was split into
     `db_preset` and `model_preset`.
+*   The models to use are not specified using `model_names` but rather using the
+    `model_preset` flag. If you want to customize which models are used for each
+    preset, you will have to modify the the `MODEL_PRESETS` dictionary in
+    `alphafold/model/config.py`.
 *   Setting the `data_dir` flag is now needed when using `run_docker.py`.
 
 
@@ -299,14 +303,120 @@ All steps are the same as when running the monomer system, but you will have to
     whether all input sequences in the given fasta file are prokaryotic. If that
     is not the case or the origin is unknown, set to `false` for that fasta.
 
-An example that folds two protein complexes `multimer1` and `multimer2` where
-the first is prokaryotic and the second isn't:
+An example that folds a protein complex `multimer.fasta` that is prokaryotic:
+
+```bash
+python3 docker/run_docker.py \
+  --fasta_paths=multimer.fasta \
+  --is_prokaryote_list=true \
+  --max_template_date=2020-05-14 \
+  --model_preset=multimer \
+  --data_dir=$DOWNLOAD_DIR
+```
+
+### Examples
+
+Below are examples on how to use AlphaFold in different scenarios.
+
+#### Folding a monomer
+
+Say we have a monomer with the sequence `<SEQUENCE>`. The input fasta should be:
+
+```fasta
+>sequence_name
+<SEQUENCE>
+```
+
+Then run the following command:
+
+```bash
+python3 docker/run_docker.py \
+  --fasta_paths=monomer.fasta \
+  --max_template_date=2021-11-01 \
+  --model_preset=monomer \
+  --data_dir=$DOWNLOAD_DIR
+```
+
+#### Folding a homomer
+
+Say we have a homomer from a prokaryote with 3 copies of the same sequence
+`<SEQUENCE>`. The input fasta should be:
+
+```fasta
+>sequence_1
+<SEQUENCE>
+>sequence_2
+<SEQUENCE>
+>sequence_3
+<SEQUENCE>
+```
+
+Then run the following command:
+
+```bash
+python3 docker/run_docker.py \
+  --fasta_paths=homomer.fasta \
+  --is_prokaryote_list=true \
+  --max_template_date=2021-11-01 \
+  --model_preset=multimer \
+  --data_dir=$DOWNLOAD_DIR
+```
+
+#### Folding a heteromer
+
+Say we have a heteromer A2B3 of unknown origin, i.e. with 2 copies of
+`<SEQUENCE A>` and 3 copies of `<SEQUENCE B>`. The input fasta should be:
+
+```fasta
+>sequence_1
+<SEQUENCE A>
+>sequence_2
+<SEQUENCE A>
+>sequence_3
+<SEQUENCE B>
+>sequence_4
+<SEQUENCE B>
+>sequence_5
+<SEQUENCE B>
+```
+
+Then run the following command:
+
+```bash
+python3 docker/run_docker.py \
+  --fasta_paths=heteromer.fasta \
+  --is_prokaryote_list=false \
+  --max_template_date=2021-11-01 \
+  --model_preset=multimer \
+  --data_dir=$DOWNLOAD_DIR
+```
+
+#### Folding multiple monomers one after another
+
+Say we have a two monomers, `monomer1.fasta` and `monomer2.fasta`.
+
+We can fold both sequentially by using the following command:
+
+```bash
+python3 docker/run_docker.py \
+  --fasta_paths=monomer1.fasta,monomer2.fasta \
+  --max_template_date=2021-11-01 \
+  --model_preset=monomer \
+  --data_dir=$DOWNLOAD_DIR
+```
+
+#### Folding multiple multimers one after another
+
+Say we have a two multimers, `multimer1.fasta` and `multimer2.fasta`. Both are
+from a prokaryotic organism.
+
+We can fold both sequentially by using the following command:
 
 ```bash
 python3 docker/run_docker.py \
   --fasta_paths=multimer1.fasta,multimer2.fasta \
-  --is_prokaryote_list=true,false \
-  --max_template_date=2020-05-14 \
+  --is_prokaryote_list=true,true \
+  --max_template_date=2021-11-01 \
   --model_preset=multimer \
   --data_dir=$DOWNLOAD_DIR
 ```
