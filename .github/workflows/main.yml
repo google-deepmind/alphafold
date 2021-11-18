@@ -24,10 +24,6 @@ env:
 
 jobs:
   build:
-  except:
-    changes:
-      - workflows/docker-image.yml
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
