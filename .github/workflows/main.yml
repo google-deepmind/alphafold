@@ -14,9 +14,6 @@ on:
     tags: [ 'v*.*.*' ]
   pull_request:
     branches: [ main ]
-  except:
-    changes:
-      - workflows/docker-image.yml
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -27,6 +24,9 @@ env:
 
 jobs:
   build:
+  except:
+    changes:
+      - workflows/docker-image.yml
 
     runs-on: ubuntu-latest
     permissions:
