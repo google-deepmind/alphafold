@@ -90,7 +90,7 @@ def _openmm_minimize(
     _add_restraints(system, pdb, stiffness, restraint_set, exclude_residues)
 
   integrator = openmm.LangevinIntegrator(0, 0.01, 0.0)
-  platform = openmm.Platform.getPlatformByName("CPU")
+  platform = openmm.Platform.getPlatformByName("CUDA")
   simulation = openmm_app.Simulation(
       pdb.topology, system, integrator, platform)
   simulation.context.setPositions(pdb.positions)
@@ -530,7 +530,7 @@ def get_initial_energies(pdb_strs: Sequence[str],
   simulation = openmm_app.Simulation(openmm_pdbs[0].topology,
                                      system,
                                      openmm.LangevinIntegrator(0, 0.01, 0.0),
-                                     openmm.Platform.getPlatformByName("CPU"))
+                                     openmm.Platform.getPlatformByName("CUDA"))
   energies = []
   for pdb in openmm_pdbs:
     try:
