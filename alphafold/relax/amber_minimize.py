@@ -35,6 +35,8 @@ from simtk.openmm.app.internal.pdbstructure import PdbStructure
 ENERGY = unit.kilocalories_per_mole
 LENGTH = unit.angstroms
 
+# if no GPU is present in the system shifts compute to CPU
+chosen_platform = "CUDA" if openmm.Platform.getNumPlatforms() > 2 else "CPU"
 
 def will_restrain(atom: openmm_app.Atom, rset: str) -> bool:
   """Returns True if the atom will be restrained by the given restraint set."""
@@ -90,7 +92,7 @@ def _openmm_minimize(
     _add_restraints(system, pdb, stiffness, restraint_set, exclude_residues)
 
   integrator = openmm.LangevinIntegrator(0, 0.01, 0.0)
-  platform = openmm.Platform.getPlatformByName("CUDA")
+  platform = openmm.Platform.getPlatformByName(chosen_platform)
   simulation = openmm_app.Simulation(
       pdb.topology, system, integrator, platform)
   simulation.context.setPositions(pdb.positions)
@@ -530,7 +532,7 @@ def get_initial_energies(pdb_strs: Sequence[str],
   simulation = openmm_app.Simulation(openmm_pdbs[0].topology,
                                      system,
                                      openmm.LangevinIntegrator(0, 0.01, 0.0),
-                                     openmm.Platform.getPlatformByName("CUDA"))
+                                     openmm.Platform.getPlatformByName(chosen_platform))
   energies = []
   for pdb in openmm_pdbs:
     try:
