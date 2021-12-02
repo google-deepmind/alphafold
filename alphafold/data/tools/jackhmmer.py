@@ -24,6 +24,7 @@ from urllib import request
 from absl import logging
 
 from alphafold.data.tools import utils
+from alphafold.data import parsers
 # Internal import (7716).
 
 
@@ -86,11 +87,14 @@ class Jackhmmer:
     self.get_tblout = get_tblout
     self.streaming_callback = streaming_callback
 
-  def _query_chunk(self, input_fasta_path: str, database_path: str
+  def _query_chunk(self, input_fasta_path: str, database_path: str,
+                   sto_path: Optional[str] = None,
+                   max_hits: Optional[int] = None
                    ) -> Mapping[str, Any]:
     """Queries the database chunk using Jackhmmer."""
     with utils.tmpdir_manager() as query_tmp_dir:
-      sto_path = os.path.join(query_tmp_dir, 'output.sto')
+      if sto_path is None:
+        sto_path = os.path.join(query_tmp_dir, 'output.sto')
 
       # The F1/F2/F3 are the expected proportion to pass each of the filtering
       # stages (which get progressively more expensive), reducing these
@@ -145,8 +149,7 @@ class Jackhmmer:
         with open(tblout_path) as f:
           tbl = f.read()
 
-      with open(sto_path) as f:
-        sto = f.read()
+      sto = parsers.get_stockholm_msa(sto_path, max_hits)
 
     raw_output = dict(
         sto=sto,
@@ -157,10 +160,13 @@ class Jackhmmer:
 
     return raw_output
 
-  def query(self, input_fasta_path: str) -> Sequence[Mapping[str, Any]]:
+  def query(self, input_fasta_path: str,
+            msa_out_path: Optional[str] = None,
+            max_hits: Optional[int] = None
+            ) -> Sequence[Mapping[str, Any]]:
     """Queries the database using Jackhmmer."""
     if self.num_streamed_chunks is None:
-      return [self._query_chunk(input_fasta_path, self.database_path)]
+      return [self._query_chunk(input_fasta_path, self.database_path, msa_out_path, max_hits)]
 
     db_basename = os.path.basename(self.database_path)
     db_remote_chunk = lambda db_idx: f'{self.database_path}.{db_idx}'
