@@ -271,6 +271,28 @@ def _keep_line(line: str, seqnames: Set[str]) -> bool:
     return seqname in seqnames
 
 
+def get_stockholm_msa(msa_out_path: str, max_sequences: int) -> str:
+  """Reads alignment from an sto file and truncates it to max_hits"""
+  seqnames = set()
+  filtered_lines = []
+  with open(msa_out_path) as sto_fh:
+    for line in sto_fh:
+      if line.strip() and not line.startswith(('#', '//')):
+        # Ignore blank lines, markup and end symbols - remainder are alignment
+        # sequence parts.
+        seqname = line.partition(' ')[0]
+        seqnames.add(seqname)
+        if len(seqnames) >= max_sequences:
+          break
+
+    sto_fh.seek(0)
+    for line in sto_fh:
+      if _keep_line(line, seqnames):
+        filtered_lines.append(line)
+
+  return ''.join(filtered_lines)
+    
+
 def truncate_stockholm_msa(stockholm_msa: str, max_sequences: int) -> str:
   """Truncates a stockholm file to a maximum number of sequences."""
   seqnames = set()
