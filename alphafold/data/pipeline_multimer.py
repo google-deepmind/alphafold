@@ -226,9 +226,9 @@ class DataPipeline:
     out_path = os.path.join(msa_output_dir, 'uniprot_hits.sto')
     result = pipeline.run_msa_tool(
         self._uniprot_msa_runner, input_fasta_path, out_path, 'sto',
-        self.use_precomputed_msas)
+        self.use_precomputed_msas, max_hits=self._max_uniprot_hits)
     msa = parsers.parse_stockholm(result['sto'])
-    msa = msa.truncate(max_seqs=self._max_uniprot_hits)
+
     all_seq_features = pipeline.make_msa_features([msa])
     valid_feats = msa_pairing.MSA_FEATURES + (
         'msa_uniprot_accession_identifiers',

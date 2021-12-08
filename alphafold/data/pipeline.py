@@ -91,12 +91,11 @@ def make_msa_features(msas: Sequence[parsers.Msa]) -> FeatureDict:
 
 def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
                  msa_format: str, use_precomputed_msas: bool,
+                 max_hits: Optional[int] = None
                  ) -> Mapping[str, Any]:
   """Runs an MSA tool, checking if output already exists first."""
   if not use_precomputed_msas or not os.path.exists(msa_out_path):
-    result = msa_runner.query(input_fasta_path)[0]
-    with open(msa_out_path, 'w') as f:
-      f.write(result[msa_format])
+    result = msa_runner.query(input_fasta_path, msa_out_path, max_hits)[0]
   else:
     logging.warning('Reading MSA from file %s', msa_out_path)
     with open(msa_out_path, 'r') as f:
@@ -158,11 +157,11 @@ class DataPipeline:
     uniref90_out_path = os.path.join(msa_output_dir, 'uniref90_hits.sto')
     jackhmmer_uniref90_result = run_msa_tool(
         self.jackhmmer_uniref90_runner, input_fasta_path, uniref90_out_path,
-        'sto', self.use_precomputed_msas)
+        'sto', self.use_precomputed_msas, max_hits=self.uniref_max_hits)
     mgnify_out_path = os.path.join(msa_output_dir, 'mgnify_hits.sto')
     jackhmmer_mgnify_result = run_msa_tool(
         self.jackhmmer_mgnify_runner, input_fasta_path, mgnify_out_path, 'sto',
-        self.use_precomputed_msas)
+        self.use_precomputed_msas, max_hits=self.mgnify_max_hits)
 
     msa_for_templates = jackhmmer_uniref90_result['sto']
     msa_for_templates = parsers.truncate_stockholm_msa(
@@ -187,9 +186,7 @@ class DataPipeline:
       f.write(pdb_templates_result)
 
     uniref90_msa = parsers.parse_stockholm(jackhmmer_uniref90_result['sto'])
-    uniref90_msa = uniref90_msa.truncate(max_seqs=self.uniref_max_hits)
     mgnify_msa = parsers.parse_stockholm(jackhmmer_mgnify_result['sto'])
-    mgnify_msa = mgnify_msa.truncate(max_seqs=self.mgnify_max_hits)
 
     pdb_template_hits = self.template_searcher.get_template_hits(
         output_string=pdb_templates_result, input_sequence=input_sequence)
