@@ -28,6 +28,52 @@ or community-supported versions (see below).
 
 ![CASP14 predictions](imgs/casp14_predictions.gif)
 
+## Non-docker, separated version 
+_Yinying Yao added this for updates with ver 1.0_
+
+### Clone the repo.
+```bash
+git clone https://github.com/deepmind/alphafold.git
+```
+### Use almost the same conda environment of previous_release
+```bash
+conda activate alphafold
+conda install -y pandas
+```
+### Download the supplement databases <pdb_seqres, uniprot,params of new release.>
+newer release may conflict with older, change the directory name to `params_af_multimer`
+```bash
+# apply the patch to modify the final directory of newer params
+patch scripts/download_alphafold_params.sh patches/patch_params_update_dir.patch 
+
+# download and setup the params
+bash scripts/download_alphafold_params.sh /mnt/db
+
+# apply the patch to modify the directory in modeling pipeline
+patch alphafold/model/data.py patches/patch_data_params_dir.patch
+```
+download chemical properties
+```bash
+wget -q -P alphafold/common/ https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+```
+
+### Enjoy your folding!
+```bash
+cd <working-directory>
+# for monomer with default template date
+bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh
+
+# for monomer with no template
+bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -t no
+
+# for monomer with custom template date
+bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -t 1994-01-16
+
+# for multimer
+bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -m multimer
+```
+ TODO: mmcif files weekly synchronization.
+
 ## First time setup
 
 The following steps are required in order to run AlphaFold:

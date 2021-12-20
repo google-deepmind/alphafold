@@ -41,12 +41,14 @@ MMCIF_DIR="${ROOT_DIR}/mmcif_files"
 
 echo "Running rsync to fetch all mmCIF files (note that the rsync progress estimate might be inaccurate)..."
 mkdir --parents "${RAW_DIR}"
-rsync --recursive --links --perms --times --compress --info=progress2 --delete --port=33444 \
-  rsync.rcsb.org::ftp_data/structures/divided/mmCIF/ \
-  "${RAW_DIR}"
+#rsync --recursive --links --perms --times --compress --info=progress2 --delete --port=33444 \
+#  rsync.rcsb.org::ftp_data/structures/divided/mmCIF/ \
+#rsync -avz --delete data.pdbj.org::ftp_data/structures/divided/mmCIF/  "${RAW_DIR}"
+# self-managed mirror with weekly updates to PDBj.
+rsync --recursive --links --perms --times --compress --info=progress2 --delete git.yaoyy.moe::db/pdb_mmcif/raw "${RAW_DIR}"
 
 echo "Unzipping all mmCIF files..."
-find "${RAW_DIR}/" -type f -iname "*.gz" -exec gunzip {} +
+find "${RAW_DIR}/" -type f -iname "*.gz" -exec gunzip -k {} +
 
 echo "Flattening all mmCIF files..."
 mkdir --parents "${MMCIF_DIR}"
@@ -56,6 +58,6 @@ for subdir in "${RAW_DIR}"/*; do
 done
 
 # Delete empty download directory structure.
-find "${RAW_DIR}" -type d -empty -delete
+#find "${RAW_DIR}" -type d -empty -delete
 
 aria2c "ftp://ftp.wwpdb.org/pub/pdb/data/status/obsolete.dat" --dir="${ROOT_DIR}"

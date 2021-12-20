@@ -1,0 +1,4 @@
+33c33
+< ROOT_DIR="${DOWNLOAD_DIR}/params"
+---
+> ROOT_DIR="${DOWNLOAD_DIR}/params_af_multimer"
