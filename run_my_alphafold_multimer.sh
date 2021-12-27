@@ -20,7 +20,7 @@ usage() {
         exit 1
 }
 
-while getopts ":m:t" i; do
+while getopts ":m:t:" i; do
         case "${i}" in
 
         m)
