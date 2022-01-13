@@ -74,6 +74,9 @@ flags.DEFINE_boolean(
     'use_precomputed_msas', False,
     'Whether to read MSAs that have been written to disk. WARNING: This will '
     'not check if the sequence, database or configuration have changed.')
+flags.DEFINE_boolean(
+    'use_amber_relaxation', True,
+    'Whether to run the relaxation step on the predicted models using Amber.')
 
 FLAGS = flags.FLAGS
 
@@ -191,6 +194,7 @@ def main(argv):
       f'--model_preset={FLAGS.model_preset}',
       f'--benchmark={FLAGS.benchmark}',
       f'--use_precomputed_msas={FLAGS.use_precomputed_msas}',
+      f'--use_amber_relaxation={FLAGS.use_amber_relaxation}',
       '--logtostderr',
   ])
 
