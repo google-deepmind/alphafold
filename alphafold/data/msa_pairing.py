@@ -16,7 +16,6 @@
 
 import collections
 import functools
-import re
 import string
 from typing import Any, Dict, Iterable, List, Sequence
 
@@ -56,14 +55,6 @@ SEQ_FEATURES = ('residue_index', 'aatype', 'all_atom_positions',
 TEMPLATE_FEATURES = ('template_aatype', 'template_all_atom_positions',
                      'template_all_atom_mask')
 CHAIN_FEATURES = ('num_alignments', 'seq_length')
-
-
-domain_name_pattern = re.compile(
-    r'''^(?P<pdb>[a-z\d]{4})
-    \{(?P<bioassembly>[\d+(\+\d+)?])\}
-    (?P<chain>[a-zA-Z\d]+)
-    \{(?P<transform_index>\d+)\}$
-    ''', re.VERBOSE)
 
 
 def create_paired_features(
@@ -618,6 +609,7 @@ def deduplicate_unpaired_sequences(
   msa_features = MSA_FEATURES
 
   for chain in np_chains:
+    # Convert the msa_all_seq numpy array to a tuple for hashing.
     sequence_set = set(tuple(s) for s in chain['msa_all_seq'])
     keep_rows = []
     # Go through unpaired MSA seqs and remove any rows that correspond to the
@@ -627,12 +619,6 @@ def deduplicate_unpaired_sequences(
         keep_rows.append(row_num)
     for feature_name in feature_names:
       if feature_name in msa_features:
-        if keep_rows:
-          chain[feature_name] = chain[feature_name][keep_rows]
-        else:
-          new_shape = list(chain[feature_name].shape)
-          new_shape[0] = 0
-          chain[feature_name] = np.zeros(new_shape,
-                                         dtype=chain[feature_name].dtype)
+        chain[feature_name] = chain[feature_name][keep_rows]
     chain['num_alignments'] = np.array(chain['msa'].shape[0], dtype=np.int32)
   return np_chains

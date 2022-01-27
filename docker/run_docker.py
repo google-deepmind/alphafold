@@ -28,6 +28,14 @@ from docker import types
 
 flags.DEFINE_bool(
     'use_gpu', True, 'Enable NVIDIA runtime to run with GPUs.')
+flags.DEFINE_boolean(
+    'run_relax', True,
+    'Whether to run the final relaxation step on the predicted models. Turning '
+    'relax off might result in predictions with distracting stereochemical '
+    'violations but might help in case you are having issues with the '
+    'relaxation stage.')
+flags.DEFINE_bool(
+    'enable_gpu_relax', True, 'Run relax on GPU if GPU is enabled.')
 flags.DEFINE_string(
     'gpu_devices', 'all',
     'Comma separated list of devices to pass to NVIDIA_VISIBLE_DEVICES.')
@@ -72,8 +80,17 @@ flags.DEFINE_boolean(
     'for inferencing many proteins.')
 flags.DEFINE_boolean(
     'use_precomputed_msas', False,
-    'Whether to read MSAs that have been written to disk. WARNING: This will '
-    'not check if the sequence, database or configuration have changed.')
+    'Whether to read MSAs that have been written to disk instead of running '
+    'the MSA tools. The MSA files are looked up in the output directory, so it '
+    'must stay the same between multiple runs that are to reuse the MSAs. '
+    'WARNING: This will not check if the sequence, database or configuration '
+    'have changed.')
+flags.DEFINE_string(
+    'docker_user', f'{os.geteuid()}:{os.getegid()}',
+    'UID:GID with which to run the Docker container. The output directories '
+    'will be owned by this user:group. By default, this is the current user. '
+    'Valid options are: uid or uid:gid, non-numeric values are not recognised '
+    'by Docker unless that user has been created within the container.')
 
 FLAGS = flags.FLAGS
 
@@ -84,6 +101,9 @@ def _create_mount(mount_name: str, path: str) -> Tuple[types.Mount, str]:
   path = os.path.abspath(path)
   source_path = os.path.dirname(path)
   target_path = os.path.join(_ROOT_MOUNT_DIRECTORY, mount_name)
+  if not os.path.exists(source_path):
+    raise ValueError(f'Failed to find source directory "{source_path}" to '
+                     'mount in Docker container.')
   logging.info('Mounting %s -> %s', source_path, target_path)
   mount = types.Mount(target_path, source_path, type='bind', read_only=True)
   return mount, os.path.join(target_path, os.path.basename(path))
@@ -184,6 +204,8 @@ def main(argv):
   output_target_path = os.path.join(_ROOT_MOUNT_DIRECTORY, 'output')
   mounts.append(types.Mount(output_target_path, FLAGS.output_dir, type='bind'))
 
+  use_gpu_relax = FLAGS.enable_gpu_relax and FLAGS.use_gpu
+
   command_args.extend([
       f'--output_dir={output_target_path}',
       f'--max_template_date={FLAGS.max_template_date}',
@@ -191,6 +213,8 @@ def main(argv):
       f'--model_preset={FLAGS.model_preset}',
       f'--benchmark={FLAGS.benchmark}',
       f'--use_precomputed_msas={FLAGS.use_precomputed_msas}',
+      f'--run_relax={FLAGS.run_relax}',
+      f'--use_gpu_relax={use_gpu_relax}',
       '--logtostderr',
   ])
 
@@ -206,6 +230,7 @@ def main(argv):
       remove=True,
       detach=True,
       mounts=mounts,
+      user=FLAGS.docker_user,
       environment={
           'NVIDIA_VISIBLE_DEVICES': FLAGS.gpu_devices,
           # The following flags allow us to make predictions on proteins that

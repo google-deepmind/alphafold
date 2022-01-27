@@ -20,6 +20,9 @@ import re
 import string
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Set
 
+# Internal import (7716).
+
+
 DeletionMatrix = Sequence[Sequence[int]]
 
 
@@ -271,24 +274,27 @@ def _keep_line(line: str, seqnames: Set[str]) -> bool:
     return seqname in seqnames
 
 
-def truncate_stockholm_msa(stockholm_msa: str, max_sequences: int) -> str:
-  """Truncates a stockholm file to a maximum number of sequences."""
+def truncate_stockholm_msa(stockholm_msa_path: str, max_sequences: int) -> str:
+  """Reads + truncates a Stockholm file while preventing excessive RAM usage."""
   seqnames = set()
   filtered_lines = []
-  for line in stockholm_msa.splitlines():
-    if line.strip() and not line.startswith(('#', '//')):
-      # Ignore blank lines, markup and end symbols - remainder are alignment
-      # sequence parts.
-      seqname = line.partition(' ')[0]
-      seqnames.add(seqname)
-      if len(seqnames) >= max_sequences:
-        break
 
-  for line in stockholm_msa.splitlines():
-    if _keep_line(line, seqnames):
-      filtered_lines.append(line)
+  with open(stockholm_msa_path) as f:
+    for line in f:
+      if line.strip() and not line.startswith(('#', '//')):
+        # Ignore blank lines, markup and end symbols - remainder are alignment
+        # sequence parts.
+        seqname = line.partition(' ')[0]
+        seqnames.add(seqname)
+        if len(seqnames) >= max_sequences:
+          break
 
-  return '\n'.join(filtered_lines) + '\n'
+    f.seek(0)
+    for line in f:
+      if _keep_line(line, seqnames):
+        filtered_lines.append(line)
+
+  return ''.join(filtered_lines)
 
 
 def remove_empty_columns_from_stockholm_msa(stockholm_msa: str) -> str:
