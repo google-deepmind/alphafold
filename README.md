@@ -230,6 +230,11 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
     pip3 install -r docker/requirements.txt
     ```
 
+1.  Make sure that the output directory exists (the default is `/tmp/alphafold`)
+    and that you have sufficient permissions to write into it. You can make sure
+    that is the case by manually running `mkdir /tmp/alphafold` and
+    `chmod 770 /tmp/alphafold`.
+
 1.  Run `run_docker.py` pointing to a FASTA file containing the protein
     sequence(s) for which you wish to predict the structure. If you are
     predicting the structure of a protein that is already in PDB and you wish to
