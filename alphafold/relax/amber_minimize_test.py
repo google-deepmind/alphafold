@@ -21,6 +21,8 @@ from alphafold.relax import amber_minimize
 import numpy as np
 # Internal import (7716).
 
+_USE_GPU = False
+
 
 def _load_test_protein(data_path):
   pdb_path = os.path.join(absltest.get_default_test_srcdir(), data_path)
@@ -35,7 +37,7 @@ class AmberMinimizeTest(absltest.TestCase):
         'alphafold/relax/testdata/multiple_disulfides_target.pdb'
         )
     ret = amber_minimize.run_pipeline(prot, max_iterations=10, max_attempts=1,
-                                      stiffness=10.)
+                                      stiffness=10., use_gpu=_USE_GPU)
     self.assertIn('opt_time', ret)
     self.assertIn('min_attempts', ret)
 
@@ -50,7 +52,8 @@ class AmberMinimizeTest(absltest.TestCase):
         ' residues. This protein contains at least one residue with no atoms.'):
       amber_minimize.run_pipeline(prot, max_iterations=10,
                                   stiffness=1.,
-                                  max_attempts=1)
+                                  max_attempts=1,
+                                  use_gpu=_USE_GPU)
 
   def test_iterative_relax(self):
     prot = _load_test_protein(
@@ -59,7 +62,7 @@ class AmberMinimizeTest(absltest.TestCase):
     violations = amber_minimize.get_violation_metrics(prot)
     self.assertGreater(violations['num_residue_violations'], 0)
     out = amber_minimize.run_pipeline(
-        prot=prot, max_outer_iterations=10, stiffness=10.)
+        prot=prot, max_outer_iterations=10, stiffness=10., use_gpu=_USE_GPU)
     self.assertLess(out['efinal'], out['einit'])
     self.assertEqual(0, out['num_residue_violations'])
 

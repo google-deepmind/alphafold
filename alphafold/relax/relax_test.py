@@ -34,7 +34,8 @@ class RunAmberRelaxTest(absltest.TestCase):
         'tolerance': 2.39,
         'stiffness': 10.0,
         'exclude_residues': [],
-        'max_outer_iterations': 1}
+        'max_outer_iterations': 1,
+        'use_gpu': False}
 
   def test_process(self):
     amber_relax = relax.AmberRelaxation(**self.test_config)

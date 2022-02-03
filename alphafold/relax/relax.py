@@ -29,7 +29,8 @@ class AmberRelaxation(object):
                tolerance: float,
                stiffness: float,
                exclude_residues: Sequence[int],
-               max_outer_iterations: int):
+               max_outer_iterations: int,
+               use_gpu: bool):
     """Initialize Amber Relaxer.
 
     Args:
@@ -44,6 +45,7 @@ class AmberRelaxation(object):
        CASP14. Use 20 so that >95% of the bad cases are relaxed. Relax finishes
        as soon as there are no violations, hence in most cases this causes no
        slowdown. In the worst case we do 20 outer iterations.
+      use_gpu: Whether to run on GPU.
     """
 
     self._max_iterations = max_iterations
@@ -51,6 +53,7 @@ class AmberRelaxation(object):
     self._stiffness = stiffness
     self._exclude_residues = exclude_residues
     self._max_outer_iterations = max_outer_iterations
+    self._use_gpu = use_gpu
 
   def process(self, *,
               prot: protein.Protein) -> Tuple[str, Dict[str, Any], np.ndarray]:
@@ -59,7 +62,8 @@ class AmberRelaxation(object):
         prot=prot, max_iterations=self._max_iterations,
         tolerance=self._tolerance, stiffness=self._stiffness,
         exclude_residues=self._exclude_residues,
-        max_outer_iterations=self._max_outer_iterations)
+        max_outer_iterations=self._max_outer_iterations,
+        use_gpu=self._use_gpu)
     min_pos = out['pos']
     start_pos = out['posinit']
     rmsd = np.sqrt(np.sum((start_pos - min_pos)**2) / start_pos.shape[0])

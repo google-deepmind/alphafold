@@ -186,7 +186,7 @@ class PointProjection(hk.Module):
 
 
 class InvariantPointAttention(hk.Module):
-  """Covariant attention module.
+  """Invariant point attention module.
 
   The high-level idea is that this attention module works over a set of points
   and associated orientations in 3D space (e.g. protein residues).
