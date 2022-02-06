@@ -71,11 +71,7 @@ RUN wget -q -P /app/alphafold/alphafold/common/ \
 # Install pip packages.
 RUN pip3 install --upgrade pip \
     && pip3 install -r /app/alphafold/requirements.txt \
-<<<<<<< HEAD
-    && pip3 install --upgrade jax jaxlib==0.1.69+cuda${CUDA_JAX/./} -f \
-=======
-    && pip3 install --upgrade jax==0.2.14 jaxlib==0.1.69+cuda${CUDA/./} -f \
->>>>>>> upstream/main
+    && pip3 install --upgrade jax==0.2.14 jaxlib==0.1.69+cuda${CUDA_JAX/./} -f \
       https://storage.googleapis.com/jax-releases/jax_releases.html
 
 # Apply OpenMM patch.
