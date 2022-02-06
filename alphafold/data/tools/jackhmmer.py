@@ -23,6 +23,7 @@ from urllib import request
 
 from absl import logging
 
+from alphafold.data import parsers
 from alphafold.data.tools import utils
 # Internal import (7716).
 
@@ -86,8 +87,10 @@ class Jackhmmer:
     self.get_tblout = get_tblout
     self.streaming_callback = streaming_callback
 
-  def _query_chunk(self, input_fasta_path: str, database_path: str
-                   ) -> Mapping[str, Any]:
+  def _query_chunk(self,
+                   input_fasta_path: str,
+                   database_path: str,
+                   max_sequences: Optional[int] = None) -> Mapping[str, Any]:
     """Queries the database chunk using Jackhmmer."""
     with utils.tmpdir_manager() as query_tmp_dir:
       sto_path = os.path.join(query_tmp_dir, 'output.sto')
@@ -145,8 +148,11 @@ class Jackhmmer:
         with open(tblout_path) as f:
           tbl = f.read()
 
-      with open(sto_path) as f:
-        sto = f.read()
+      if max_sequences is None:
+        with open(sto_path) as f:
+          sto = f.read()
+      else:
+        sto = parsers.truncate_stockholm_msa(sto_path, max_sequences)
 
     raw_output = dict(
         sto=sto,
@@ -157,10 +163,14 @@ class Jackhmmer:
 
     return raw_output
 
-  def query(self, input_fasta_path: str) -> Sequence[Mapping[str, Any]]:
+  def query(self,
+            input_fasta_path: str,
+            max_sequences: Optional[int] = None) -> Sequence[Mapping[str, Any]]:
     """Queries the database using Jackhmmer."""
     if self.num_streamed_chunks is None:
-      return [self._query_chunk(input_fasta_path, self.database_path)]
+      single_chunk_result = self._query_chunk(
+          input_fasta_path, self.database_path, max_sequences)
+      return [single_chunk_result]
 
     db_basename = os.path.basename(self.database_path)
     db_remote_chunk = lambda db_idx: f'{self.database_path}.{db_idx}'
@@ -187,8 +197,8 @@ class Jackhmmer:
 
         # Run Jackhmmer with the chunk
         future.result()
-        chunked_output.append(
-            self._query_chunk(input_fasta_path, db_local_chunk(i)))
+        chunked_output.append(self._query_chunk(
+            input_fasta_path, db_local_chunk(i), max_sequences))
 
         # Remove the local copy of the chunk
         os.remove(db_local_chunk(i))

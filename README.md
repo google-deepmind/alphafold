@@ -145,12 +145,11 @@ is only downloaded if you download the reduced databases.
 ### Model parameters
 
 While the AlphaFold code is licensed under the Apache 2.0 License, the AlphaFold
-parameters are made available for non-commercial use only under the terms of the
-CC BY-NC 4.0 license. Please see the [Disclaimer](#license-and-disclaimer) below
-for more detail.
+parameters are made available under the terms of the CC BY 4.0 license. Please
+see the [Disclaimer](#license-and-disclaimer) below for more detail.
 
 The AlphaFold parameters are available from
-https://storage.googleapis.com/alphafold/alphafold_params_2021-10-27.tar, and
+https://storage.googleapis.com/alphafold/alphafold_params_2022-01-19.tar, and
 are downloaded as part of the `scripts/download_all_data.sh` script. This script
 will download parameters for:
 
@@ -230,6 +229,11 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
     ```bash
     pip3 install -r docker/requirements.txt
     ```
+
+1.  Make sure that the output directory exists (the default is `/tmp/alphafold`)
+    and that you have sufficient permissions to write into it. You can make sure
+    that is the case by manually running `mkdir /tmp/alphafold` and
+    `chmod 770 /tmp/alphafold`.
 
 1.  Run `run_docker.py` pointing to a FASTA file containing the protein
     sequence(s) for which you wish to predict the structure. If you are
@@ -639,10 +643,9 @@ specific language governing permissions and limitations under the License.
 
 ### Model Parameters License
 
-The AlphaFold parameters are made available for non-commercial use only, under
-the terms of the Creative Commons Attribution-NonCommercial 4.0 International
-(CC BY-NC 4.0) license. You can find details at:
-https://creativecommons.org/licenses/by-nc/4.0/legalcode
+The AlphaFold parameters are made available under the terms of the Creative
+Commons Attribution 4.0 International (CC BY 4.0) license. You can find details
+at: https://creativecommons.org/licenses/by/4.0/legalcode
 
 ### Third-party software
 
