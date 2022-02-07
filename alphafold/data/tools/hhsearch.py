@@ -33,7 +33,8 @@ class HHSearch:
                *,
                binary_path: str,
                databases: Sequence[str],
-               maxseq: int = 1_000_000):
+               maxseq: int = 1_000_000,
+               cpus: int = 8):
     """Initializes the Python HHsearch wrapper.
 
     Args:
@@ -47,6 +48,7 @@ class HHSearch:
     Raises:
       RuntimeError: If HHsearch binary not found within the path.
     """
+    self.cpus = cpus
     self.binary_path = binary_path
     self.databases = databases
     self.maxseq = maxseq
@@ -79,7 +81,8 @@ class HHSearch:
       cmd = [self.binary_path,
              '-i', input_path,
              '-o', hhr_path,
-             '-maxseq', str(self.maxseq)
+             '-maxseq', str(self.maxseq),
+             '-cpu', str(self.cpus)
              ] + db_cmd
 
       logging.info('Launching subprocess "%s"', ' '.join(cmd))

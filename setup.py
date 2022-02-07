@@ -27,6 +27,7 @@ setup(
     license='Apache License, Version 2.0',
     url='https://github.com/deepmind/alphafold',
     packages=find_packages(),
+    scripts=['run_alphafold.py', 'run_alphafold_test.py'],
     install_requires=[
         'absl-py',
         'biopython',

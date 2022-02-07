@@ -125,10 +125,11 @@ flags.DEFINE_boolean('run_relax', True, 'Whether to run the final relaxation '
                      'result in predictions with distracting stereochemical '
                      'violations but might help in case you are having issues '
                      'with the relaxation stage.')
-flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
+flags.DEFINE_boolean('use_gpu_relax', False, 'Whether to relax on GPU. '
                      'Relax on GPU can be much faster than CPU, so it is '
                      'recommended to enable if possible. GPUs must be available'
                      ' if this setting is enabled.')
+flags.DEFINE_boolean('cpus', 8, 'Number of cpus/threads to use')
 
 FLAGS = flags.FLAGS
 
@@ -339,7 +340,9 @@ def main(argv):
     template_searcher = hmmsearch.Hmmsearch(
         binary_path=FLAGS.hmmsearch_binary_path,
         hmmbuild_binary_path=FLAGS.hmmbuild_binary_path,
-        database_path=FLAGS.pdb_seqres_database_path)
+        database_path=FLAGS.pdb_seqres_database_path,
+        cpus=FLAGS.cpus
+    )
     template_featurizer = templates.HmmsearchHitFeaturizer(
         mmcif_dir=FLAGS.template_mmcif_dir,
         max_template_date=FLAGS.max_template_date,
@@ -350,6 +353,7 @@ def main(argv):
   else:
     template_searcher = hhsearch.HHSearch(
         binary_path=FLAGS.hhsearch_binary_path,
+        cpus=FLAGS.cpus,
         databases=[FLAGS.pdb70_database_path])
     template_featurizer = templates.HhsearchHitFeaturizer(
         mmcif_dir=FLAGS.template_mmcif_dir,

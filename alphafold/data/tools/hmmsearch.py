@@ -33,6 +33,7 @@ class Hmmsearch(object):
                binary_path: str,
                hmmbuild_binary_path: str,
                database_path: str,
+               cpus: int = 8,
                flags: Optional[Sequence[str]] = None):
     """Initializes the Python hmmsearch wrapper.
 
@@ -46,6 +47,7 @@ class Hmmsearch(object):
     Raises:
       RuntimeError: If hmmsearch binary not found within the path.
     """
+    self.cpus = cpus
     self.binary_path = binary_path
     self.hmmbuild_runner = hmmbuild.Hmmbuild(binary_path=hmmbuild_binary_path)
     self.database_path = database_path
@@ -89,7 +91,7 @@ class Hmmsearch(object):
       cmd = [
           self.binary_path,
           '--noali',  # Don't include the alignment in stdout.
-          '--cpu', '8'
+          '--cpu', str(self.cpus)
       ]
       # If adding flags, we have to do so before the output and input:
       if self.flags:
