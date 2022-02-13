@@ -118,9 +118,22 @@ AF_process(){
 	    else
 	        #
             echo Find feature files in $out_dir/$decoy_name/features.pkl;
-            echo Runing modeling process in background: $decoy_name
-            echo bash $af_official_repo/run_alphafold.sh -d $db_dir -o $out_dir -m $model_preset -f $dir/$i -t $template_date  && \
-		    bash $af_official_repo/run_alphafold.sh -d $db_dir -o $out_dir -m $model_preset -f $dir/$i -t $template_date   && \
+            echo Runing modeling process : $decoy_name
+            echo bash $af_official_repo/run_alphafold.sh \
+                    -d $db_dir \
+                    -o $out_dir \
+                    -m $model_preset \
+                    -f $dir/$i \
+                    -t $template_date \
+                    -e $num_ensemble;
+		    bash $af_official_repo/run_alphafold.sh \
+                    -d $db_dir \
+                    -o $out_dir \
+                    -m $model_preset \
+                    -f $dir/$i \
+                    -t $template_date \
+                    -e $num_ensemble;
+
 		    cd $out_dir && \
 		    echo Collecting results files .... && \
 		    tar jcf $decoy_name\_AF2_lite.tar.bz2  --exclude *.pkl --exclude $decoy_name/msas $decoy_name && \
