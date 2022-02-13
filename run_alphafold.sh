@@ -10,6 +10,7 @@ usage() {
         echo "Required Parameters:"
         echo "-d <data_dir>     Path to directory of supporting data"
         echo "-o <output_dir>   Path to a directory that will store the results."
+        echo "-e <num_ensemble> Override default num_ensemble."
         # edited by Yinying
         echo "-m <model_preset>  Choose preset model configuration - the monomer model, the monomer model with extra ensembling, monomer model with pTM head, or multimer model"
         echo "-f <fasta_path>   Path to a FASTA file containing one sequence"
@@ -25,7 +26,7 @@ usage() {
         exit 1
 }
 
-while getopts ":d:o:m:f:it:a:p:bg" x; do
+while getopts ":d:o:m:e:f:it:a:p:bg" x; do
         case "${x}" in
         d)
                 data_dir=$OPTARG
@@ -35,6 +36,9 @@ while getopts ":d:o:m:f:it:a:p:bg" x; do
         ;;
         m)
                 model_preset=$OPTARG
+        ;;
+        e)
+                num_ensemble=$OPTARG
         ;;
         f)
                 fasta_path=$OPTARG
@@ -139,16 +143,111 @@ fi
 
 if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$model_preset" == "monomer_ptm" ]] ; then
     pdb70_database_path="$data_dir/pdb70/pdb70"
-    echo python $alphafold_script --hhblits_binary_path=$hhblits_binary_path --hhsearch_binary_path=$hhsearch_binary_path --jackhmmer_binary_path=$jackhmmer_binary_path --kalign_binary_path=$kalign_binary_path --bfd_database_path=$bfd_database_path --mgnify_database_path=$mgnify_database_path --template_mmcif_dir=$template_mmcif_dir --obsolete_pdbs_path=$obsolete_pdbs_path --pdb70_database_path=$pdb70_database_path --uniclust30_database_path=$uniclust30_database_path --uniref90_database_path=$uniref90_database_path --data_dir=$data_dir --output_dir=$output_dir --fasta_paths=$fasta_path --model_preset=$model_preset --max_template_date=$max_template_date --db_preset=$db_preset --benchmark=$benchmark --is_prokaryote_list=$is_prokaryote_list --logtostderr
-    $(python $alphafold_script --hhblits_binary_path=$hhblits_binary_path --hhsearch_binary_path=$hhsearch_binary_path --jackhmmer_binary_path=$jackhmmer_binary_path --kalign_binary_path=$kalign_binary_path --bfd_database_path=$bfd_database_path --mgnify_database_path=$mgnify_database_path --template_mmcif_dir=$template_mmcif_dir --obsolete_pdbs_path=$obsolete_pdbs_path --pdb70_database_path=$pdb70_database_path --uniclust30_database_path=$uniclust30_database_path --uniref90_database_path=$uniref90_database_path --data_dir=$data_dir --output_dir=$output_dir --fasta_paths=$fasta_path --model_preset=$model_preset --max_template_date=$max_template_date --db_preset=$db_preset --benchmark=$benchmark --is_prokaryote_list=$is_prokaryote_list --logtostderr)
+    # print out the command
+    echo python $alphafold_script \
+    --use_gpu_relax=$use_gpu \
+    --num_ensemble=$num_ensemble \
+    --hhblits_binary_path=$hhblits_binary_path \
+    --hhsearch_binary_path=$hhsearch_binary_path \
+    --jackhmmer_binary_path=$jackhmmer_binary_path \
+    --kalign_binary_path=$kalign_binary_path \
+    --bfd_database_path=$bfd_database_path \
+    --mgnify_database_path=$mgnify_database_path \
+    --template_mmcif_dir=$template_mmcif_dir \
+    --obsolete_pdbs_path=$obsolete_pdbs_path \
+    --pdb70_database_path=$pdb70_database_path \
+    --uniclust30_database_path=$uniclust30_database_path \
+    --uniref90_database_path=$uniref90_database_path \
+    --data_dir=$data_dir \
+    --output_dir=$output_dir \
+    --fasta_paths=$fasta_path \
+    --model_preset=$model_preset \
+    --max_template_date=$max_template_date \
+    --db_preset=$db_preset \
+    --benchmark=$benchmark \
+    --is_prokaryote_list=$is_prokaryote_list \
+    --logtostderr
+    # run the command
+    $(python $alphafold_script \
+    --use_gpu_relax=$use_gpu \
+    --num_ensemble=$num_ensemble \
+    --hhblits_binary_path=$hhblits_binary_path \
+    --hhsearch_binary_path=$hhsearch_binary_path \
+    --jackhmmer_binary_path=$jackhmmer_binary_path \
+    --kalign_binary_path=$kalign_binary_path \
+    --bfd_database_path=$bfd_database_path \
+    --mgnify_database_path=$mgnify_database_path \
+    --template_mmcif_dir=$template_mmcif_dir \
+    --obsolete_pdbs_path=$obsolete_pdbs_path \
+    --pdb70_database_path=$pdb70_database_path \
+    --uniclust30_database_path=$uniclust30_database_path \
+    --uniref90_database_path=$uniref90_database_path \
+    --data_dir=$data_dir \
+    --output_dir=$output_dir \
+    --fasta_paths=$fasta_path \
+    --model_preset=$model_preset \
+    --max_template_date=$max_template_date \
+    --db_preset=$db_preset \
+    --benchmark=$benchmark \
+    --is_prokaryote_list=$is_prokaryote_list \
+    --logtostderr)
 fi
 
 if [[  "$model_preset" == "multimer" ]] ; then
 
     uniprot_database_path="$data_dir/uniprot/uniprot.fasta"
     pdb_seqres_database_path="$data_dir/pdb_seqres/pdb_seqres.txt"
-    echo python $alphafold_script --hhblits_binary_path=$hhblits_binary_path --hhsearch_binary_path=$hhsearch_binary_path --jackhmmer_binary_path=$jackhmmer_binary_path --kalign_binary_path=$kalign_binary_path --bfd_database_path=$bfd_database_path --mgnify_database_path=$mgnify_database_path --template_mmcif_dir=$template_mmcif_dir --obsolete_pdbs_path=$obsolete_pdbs_path --uniclust30_database_path=$uniclust30_database_path --pdb_seqres_database_path=$pdb_seqres_database_path --uniprot_database_path=$uniprot_database_path --uniref90_database_path=$uniref90_database_path --data_dir=$data_dir --output_dir=$output_dir --fasta_paths=$fasta_path --model_preset=$model_preset --max_template_date=$max_template_date --db_preset=$db_preset --benchmark=$benchmark --is_prokaryote_list=$is_prokaryote_list --logtostderr
-    $(python $alphafold_script --hhblits_binary_path=$hhblits_binary_path --hhsearch_binary_path=$hhsearch_binary_path --jackhmmer_binary_path=$jackhmmer_binary_path --kalign_binary_path=$kalign_binary_path --bfd_database_path=$bfd_database_path --mgnify_database_path=$mgnify_database_path --template_mmcif_dir=$template_mmcif_dir --obsolete_pdbs_path=$obsolete_pdbs_path --uniclust30_database_path=$uniclust30_database_path --pdb_seqres_database_path=$pdb_seqres_database_path --uniprot_database_path=$uniprot_database_path --uniref90_database_path=$uniref90_database_path --data_dir=$data_dir --output_dir=$output_dir --fasta_paths=$fasta_path --model_preset=$model_preset --max_template_date=$max_template_date --db_preset=$db_preset --benchmark=$benchmark --is_prokaryote_list=$is_prokaryote_list --logtostderr)
+    # print out the command
+    echo python $alphafold_script \
+    --use_gpu_relax=$use_gpu \
+    --num_ensemble=$num_ensemble \
+    --hhblits_binary_path=$hhblits_binary_path \
+    --hhsearch_binary_path=$hhsearch_binary_path \
+    --jackhmmer_binary_path=$jackhmmer_binary_path \
+    --kalign_binary_path=$kalign_binary_path \
+    --bfd_database_path=$bfd_database_path \
+    --mgnify_database_path=$mgnify_database_path \
+    --template_mmcif_dir=$template_mmcif_dir \
+    --obsolete_pdbs_path=$obsolete_pdbs_path \
+    --uniclust30_database_path=$uniclust30_database_path \
+    --pdb_seqres_database_path=$pdb_seqres_database_path \
+    --uniprot_database_path=$uniprot_database_path \
+    --uniref90_database_path=$uniref90_database_path \
+    --data_dir=$data_dir \
+    --output_dir=$output_dir \
+    --fasta_paths=$fasta_path \
+    --model_preset=$model_preset \
+    --max_template_date=$max_template_date \
+    --db_preset=$db_preset \
+    --benchmark=$benchmark \
+    --is_prokaryote_list=$is_prokaryote_list \
+    --logtostderr
+
+    # run the command
+    $(python $alphafold_script \
+    --use_gpu_relax=$use_gpu \
+    --num_ensemble=$num_ensemble \
+    --hhblits_binary_path=$hhblits_binary_path \
+    --hhsearch_binary_path=$hhsearch_binary_path \
+    --jackhmmer_binary_path=$jackhmmer_binary_path \
+    --kalign_binary_path=$kalign_binary_path \
+    --bfd_database_path=$bfd_database_path \
+    --mgnify_database_path=$mgnify_database_path \
+    --template_mmcif_dir=$template_mmcif_dir \
+    --obsolete_pdbs_path=$obsolete_pdbs_path \
+    --uniclust30_database_path=$uniclust30_database_path \
+    --pdb_seqres_database_path=$pdb_seqres_database_path \
+    --uniprot_database_path=$uniprot_database_path \
+    --uniref90_database_path=$uniref90_database_path \
+    --data_dir=$data_dir \
+    --output_dir=$output_dir \
+    --fasta_paths=$fasta_path \
+    --model_preset=$model_preset \
+    --max_template_date=$max_template_date \
+    --db_preset=$db_preset \
+    --benchmark=$benchmark \
+    --is_prokaryote_list=$is_prokaryote_list \
+    --logtostderr)
 
 fi
 

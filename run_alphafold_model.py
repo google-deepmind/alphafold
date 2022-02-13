@@ -39,7 +39,6 @@ from alphafold.relax import relax
 import numpy as np
 
 from alphafold.model import data
-
 # Internal import (7716).
 
 logging.set_verbosity(logging.INFO)
@@ -115,8 +114,24 @@ flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
 																					'deterministic, because processes like GPU inference are '
 																					'nondeterministic.')
 flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
-																										'have been written to disk. WARNING: This will not check '
-																										'if the sequence, database or configuration have changed.')
+                     'have been written to disk instead of running the MSA '
+                     'tools. The MSA files are looked up in the output '
+                     'directory, so it must stay the same between multiple '
+                     'runs that are to reuse the MSAs. WARNING: This will not '
+                     'check if the sequence, database or configuration have '
+                     'changed.')
+flags.DEFINE_boolean('run_relax', True, 'Whether to run the final relaxation '
+                     'step on the predicted models. Turning relax off might '
+                     'result in predictions with distracting stereochemical '
+                     'violations but might help in case you are having issues '
+                     'with the relaxation stage.')
+flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
+                     'Relax on GPU can be much faster than CPU, so it is '
+                     'recommended to enable if possible. GPUs must be available'
+                     ' if this setting is enabled.')
+
+# edited by Yinying
+flags.DEFINE_integer('num_ensemble', None, 'Set customized ensemble number')
 
 FLAGS = flags.FLAGS
 
@@ -307,10 +322,14 @@ def main(argv):
 	_check_flag('uniprot_database_path', 'model_preset',
 							should_be_set=run_multimer_system)
 
-	if FLAGS.model_preset == 'monomer_casp14':
-		num_ensemble = 8
+	if FLAGS.num_ensemble == None:
+		if FLAGS.model_preset == 'monomer_casp14':
+			num_ensemble = 8
+		else:
+			num_ensemble = 1
 	else:
-		num_ensemble = 1
+		# Override the default num_ensemble.
+		num_ensemble = FLAGS.num_ensemble
 
 	# Check for duplicate FASTA file names.
 	fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
@@ -395,12 +414,16 @@ def main(argv):
 	logging.info('Have %d models: %s', len(model_runners),
 							 list(model_runners.keys()))
 
-	amber_relaxer = relax.AmberRelaxation(
-		max_iterations=RELAX_MAX_ITERATIONS,
-		tolerance=RELAX_ENERGY_TOLERANCE,
-		stiffness=RELAX_STIFFNESS,
-		exclude_residues=RELAX_EXCLUDE_RESIDUES,
-		max_outer_iterations=RELAX_MAX_OUTER_ITERATIONS)
+	if FLAGS.run_relax:
+		amber_relaxer = relax.AmberRelaxation(
+			max_iterations=RELAX_MAX_ITERATIONS,
+			tolerance=RELAX_ENERGY_TOLERANCE,
+			stiffness=RELAX_STIFFNESS,
+			exclude_residues=RELAX_EXCLUDE_RESIDUES,
+			max_outer_iterations=RELAX_MAX_OUTER_ITERATIONS,
+			use_gpu=FLAGS.use_gpu_relax)
+	else:
+		amber_relaxer = None
 
 	random_seed = FLAGS.random_seed
 	if random_seed is None:

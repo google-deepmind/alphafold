@@ -71,6 +71,11 @@ bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -t 1994
 
 # for multimer
 bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -m multimer
+
+# run w/ customized ensemble numbers
+bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -e 6
+
+
 ```
  TODO: mmcif files weekly synchronization.
 

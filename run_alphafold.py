@@ -130,6 +130,7 @@ flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
                      'recommended to enable if possible. GPUs must be available'
                      ' if this setting is enabled.')
 
+
 FLAGS = flags.FLAGS
 
 MAX_TEMPLATE_HITS = 20

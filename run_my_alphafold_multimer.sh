@@ -20,7 +20,7 @@ usage() {
         exit 1
 }
 
-while getopts ":m:t:" i; do
+while getopts ":m:t:e:" i; do
         case "${i}" in
 
         m)
@@ -29,6 +29,9 @@ while getopts ":m:t:" i; do
 
         t)
                 max_template_date=$OPTARG
+        ;;
+        e)
+                num_ensemble=$OPTARG
         ;;
 
         esac
@@ -42,10 +45,25 @@ if [[ "$max_template_date" == "no" ]] ; then
     template_date=1900-01-01
 fi
 
+
 # edited by Yinying
 if [[ "$model_preset" == "" ]] ; then
     model_preset="monomer"
 fi
+
+# set default num_ensemble
+if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_ptm" || "$model_preset" == "multimer" ]] ; then
+    if [[ "$num_ensemble" == "" ]] ; then
+        num_ensemble=1
+    fi
+fi
+
+if [[ "$model_preset" == "monomer_casp14"  ]] ; then
+    if [[ "$num_ensemble" == "" ]] ; then
+        num_ensemble=8
+    fi
+fi
+
 
 if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" != "multimer" ]] ; then
     echo "Unknown model_preset! "
