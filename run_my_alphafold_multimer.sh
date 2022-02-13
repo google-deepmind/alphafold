@@ -80,7 +80,9 @@ echo "++++++++++++++++++++++++++++++++++++++++"
 # go to alphafold run_feature process
 dir=`pwd`;
 #run_docker_pth=/mnt/data/alphafold/docker;
-af_official_repo=/software/alphafold_multimer/alphafold ;
+
+af_official_repo=/repo/alphafold/ ;
+#af_official_repo=/software/alphafold_multimer/alphafold ;
 out_dir=$dir/output;
 res_dir=$dir/res;
 db_dir=/mnt/db;
