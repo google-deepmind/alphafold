@@ -341,17 +341,18 @@ class AlphaFold(hk.Module):
           compute_loss=compute_loss,
           ensemble_representations=ensemble_representations)
 
-    if self.config.num_recycle:
-      emb_config = self.config.embeddings_and_evoformer
-      prev = {
-          'prev_pos': jnp.zeros(
-              [num_residues, residue_constants.atom_type_num, 3]),
-          'prev_msa_first_row': jnp.zeros(
-              [num_residues, emb_config.msa_channel]),
-          'prev_pair': jnp.zeros(
-              [num_residues, num_residues, emb_config.pair_channel]),
-      }
+    prev = {}
+    emb_config = self.config.embeddings_and_evoformer
+    if emb_config.recycle_pos:
+      prev['prev_pos'] = jnp.zeros(
+          [num_residues, residue_constants.atom_type_num, 3])
+    if emb_config.recycle_features:
+      prev['prev_msa_first_row'] = jnp.zeros(
+          [num_residues, emb_config.msa_channel])
+      prev['prev_pair'] = jnp.zeros(
+          [num_residues, num_residues, emb_config.pair_channel])
 
+    if self.config.num_recycle:
       if 'num_iter_recycling' in batch:
         # Training time: num_iter_recycling is in batch.
         # The value for each ensemble batch is the same, so arbitrarily taking
@@ -378,7 +379,6 @@ class AlphaFold(hk.Module):
             body,
             (0, prev))
     else:
-      prev = {}
       num_iter = 0
 
     ret = do_call(prev=prev, recycle_idx=num_iter)
@@ -1730,7 +1730,7 @@ class EmbeddingsAndEvoformer(hk.Module):
     # Inject previous outputs for recycling.
     # Jumper et al. (2021) Suppl. Alg. 2 "Inference" line 6
     # Jumper et al. (2021) Suppl. Alg. 32 "RecyclingEmbedder"
-    if c.recycle_pos and 'prev_pos' in batch:
+    if c.recycle_pos:
       prev_pseudo_beta = pseudo_beta_fn(
           batch['aatype'], batch['prev_pos'], None)
       dgram = dgram_from_positions(prev_pseudo_beta, **self.config.prev_pos)
@@ -1739,20 +1739,20 @@ class EmbeddingsAndEvoformer(hk.Module):
               dgram)
 
     if c.recycle_features:
-      if 'prev_msa_first_row' in batch:
-        prev_msa_first_row = hk.LayerNorm([-1],
-                                          True,
-                                          True,
-                                          name='prev_msa_first_row_norm')(
-                                              batch['prev_msa_first_row'])
-        msa_activations = msa_activations.at[0].add(prev_msa_first_row)
+      prev_msa_first_row = hk.LayerNorm(
+          axis=[-1],
+          create_scale=True,
+          create_offset=True,
+          name='prev_msa_first_row_norm')(
+              batch['prev_msa_first_row'])
+      msa_activations = msa_activations.at[0].add(prev_msa_first_row)
 
-      if 'prev_pair' in batch:
-        pair_activations += hk.LayerNorm([-1],
-                                         True,
-                                         True,
-                                         name='prev_pair_norm')(
-                                             batch['prev_pair'])
+      pair_activations += hk.LayerNorm(
+          axis=[-1],
+          create_scale=True,
+          create_offset=True,
+          name='prev_pair_norm')(
+              batch['prev_pair'])
 
     # Relative position encoding.
     # Jumper et al. (2021) Suppl. Alg. 4 "relpos"

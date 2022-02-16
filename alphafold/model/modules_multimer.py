@@ -451,17 +451,18 @@ class AlphaFold(hk.Module):
           is_training=is_training,
           safe_key=safe_key)
 
-    if self.config.num_recycle:
-      emb_config = self.config.embeddings_and_evoformer
-      prev = {
-          'prev_pos':
-              jnp.zeros([num_res, residue_constants.atom_type_num, 3]),
-          'prev_msa_first_row':
-              jnp.zeros([num_res, emb_config.msa_channel]),
-          'prev_pair':
-              jnp.zeros([num_res, num_res, emb_config.pair_channel]),
-      }
+    prev = {}
+    emb_config = self.config.embeddings_and_evoformer
+    if emb_config.recycle_pos:
+      prev['prev_pos'] = jnp.zeros(
+          [num_res, residue_constants.atom_type_num, 3])
+    if emb_config.recycle_features:
+      prev['prev_msa_first_row'] = jnp.zeros(
+          [num_res, emb_config.msa_channel])
+      prev['prev_pair'] = jnp.zeros(
+          [num_res, num_res, emb_config.pair_channel])
 
+    if self.config.num_recycle:
       if 'num_iter_recycling' in batch:
         # Training time: num_iter_recycling is in batch.
         # Value for each ensemble batch is the same, so arbitrarily taking 0-th.
@@ -482,8 +483,6 @@ class AlphaFold(hk.Module):
         return get_prev(ret), safe_key1
 
       prev, safe_key = hk.fori_loop(0, num_iter, recycle_body, (prev, safe_key))
-    else:
-      prev = {}
 
     # Run extra iteration.
     ret = apply_network(prev=prev, safe_key=safe_key)
@@ -619,7 +618,7 @@ class EmbeddingsAndEvoformer(hk.Module):
     mask_2d = batch['seq_mask'][:, None] * batch['seq_mask'][None, :]
     mask_2d = mask_2d.astype(jnp.float32)
 
-    if c.recycle_pos and 'prev_pos' in batch:
+    if c.recycle_pos:
       prev_pseudo_beta = modules.pseudo_beta_fn(
           batch['aatype'], batch['prev_pos'], None)
 
@@ -630,22 +629,20 @@ class EmbeddingsAndEvoformer(hk.Module):
               dgram)
 
     if c.recycle_features:
-      if 'prev_msa_first_row' in batch:
-        prev_msa_first_row = hk.LayerNorm(
-            axis=[-1],
-            create_scale=True,
-            create_offset=True,
-            name='prev_msa_first_row_norm')(
-                batch['prev_msa_first_row'])
-        msa_activations = msa_activations.at[0].add(prev_msa_first_row)
+      prev_msa_first_row = hk.LayerNorm(
+          axis=[-1],
+          create_scale=True,
+          create_offset=True,
+          name='prev_msa_first_row_norm')(
+              batch['prev_msa_first_row'])
+      msa_activations = msa_activations.at[0].add(prev_msa_first_row)
 
-      if 'prev_pair' in batch:
-        pair_activations += hk.LayerNorm(
-            axis=[-1],
-            create_scale=True,
-            create_offset=True,
-            name='prev_pair_norm')(
-                batch['prev_pair'])
+      pair_activations += hk.LayerNorm(
+          axis=[-1],
+          create_scale=True,
+          create_offset=True,
+          name='prev_pair_norm')(
+              batch['prev_pair'])
 
     if c.max_relative_idx:
       pair_activations += self._relative_encoding(batch)
