@@ -73,6 +73,11 @@ flags.DEFINE_enum(
     ['monomer', 'monomer_casp14', 'monomer_ptm', 'multimer'],
     'Choose preset model configuration - the monomer model, the monomer model '
     'with extra ensembling, monomer model with pTM head, or multimer model')
+flags.DEFINE_integer('num_multimer_predictions_per_model', 5, 'How many '
+                     'predictions (each with a different random seed) will be '
+                     'generated per model. E.g. if this is 2 and there are 5 '
+                     'models then there will be 10 predictions per input. '
+                     'Note: this FLAG only applies if model_preset=multimer')
 flags.DEFINE_boolean(
     'benchmark', False,
     'Run multiple JAX model evaluations to obtain a timing that excludes the '
@@ -213,6 +218,7 @@ def main(argv):
       f'--model_preset={FLAGS.model_preset}',
       f'--benchmark={FLAGS.benchmark}',
       f'--use_precomputed_msas={FLAGS.use_precomputed_msas}',
+      f'--num_multimer_predictions_per_model={FLAGS.num_multimer_predictions_per_model}',
       f'--run_relax={FLAGS.run_relax}',
       f'--use_gpu_relax={use_gpu_relax}',
       '--logtostderr',

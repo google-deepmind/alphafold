@@ -318,6 +318,11 @@ python3 docker/run_docker.py \
   --data_dir=$DOWNLOAD_DIR
 ```
 
+By default the multimer system will run 5 seeds per model (25 total predictions)
+for a small drop in accuracy you may wish to run a single seed per model.  This
+can be done via the `--num_multimer_predictions_per_model` flag, e.g. set it to
+`--num_multimer_predictions_per_model=1` to run a single seed per model.
+
 ### Examples
 
 Below are examples on how to use AlphaFold in different scenarios.
