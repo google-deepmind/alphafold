@@ -45,12 +45,6 @@ flags.DEFINE_list(
     'multiple sequences, then it will be folded as a multimer. Paths should be '
     'separated by commas. All FASTA paths must have a unique basename as the '
     'basename is used to name the output directories for each prediction.')
-flags.DEFINE_list(
-    'is_prokaryote_list', None, 'Optional for multimer system, not used by the '
-    'single chain system. This list should contain a boolean for each fasta '
-    'specifying true where the target complex is from a prokaryote, and false '
-    'where it is not, or where the origin is unknown. These values determine '
-    'the pairing method for the MSA.')
 flags.DEFINE_string(
     'output_dir', '/tmp/alphafold',
     'Path to a directory that will store the results.')
@@ -223,10 +217,6 @@ def main(argv):
       f'--use_gpu_relax={use_gpu_relax}',
       '--logtostderr',
   ])
-
-  if FLAGS.is_prokaryote_list:
-    command_args.append(
-        f'--is_prokaryote_list={",".join(FLAGS.is_prokaryote_list)}')
 
   client = docker.from_env()
   container = client.containers.run(
