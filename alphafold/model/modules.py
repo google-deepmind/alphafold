@@ -632,7 +632,7 @@ class GlobalAttention(hk.Module):
     self.global_config = global_config
     self.output_dim = output_dim
 
-  def __call__(self, q_data, m_data, q_mask, bias):
+  def __call__(self, q_data, m_data, q_mask):
     """Builds GlobalAttention module.
 
     Arguments:
@@ -643,7 +643,6 @@ class GlobalAttention(hk.Module):
       q_mask: A binary mask for q_data with zeros in the padded sequence
         elements and ones otherwise. Size [batch_size, N_queries, q_channels]
         (or broadcastable to this shape).
-      bias: A bias for the attention.
 
     Returns:
       A float32 tensor of size [batch_size, N_queries, output_dim].
@@ -880,7 +879,7 @@ class MSAColumnGlobalAttention(hk.Module):
     msa_act = mapping.inference_subbatch(
         attn_mod,
         self.global_config.subbatch_size,
-        batched_args=[msa_act, msa_act, msa_mask, bias],
+        batched_args=[msa_act, msa_act, msa_mask],
         nonbatched_args=[],
         low_memory=not is_training)
 
