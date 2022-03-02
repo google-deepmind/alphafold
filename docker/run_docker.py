@@ -227,10 +227,14 @@ def main(argv):
   ])
 
   client = docker.from_env()
+  device_requests = [
+      docker.types.DeviceRequest(driver='nvidia', capabilities=[['gpu']])
+  ] if FLAGS.use_gpu else None
+
   container = client.containers.run(
       image=FLAGS.docker_image_name,
       command=command_args,
-      runtime='nvidia' if FLAGS.use_gpu else None,
+      device_requests=device_requests,
       remove=True,
       detach=True,
       mounts=mounts,
