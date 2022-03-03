@@ -149,7 +149,7 @@ parameters are made available under the terms of the CC BY 4.0 license. Please
 see the [Disclaimer](#license-and-disclaimer) below for more detail.
 
 The AlphaFold parameters are available from
-https://storage.googleapis.com/alphafold/alphafold_params_2022-01-19.tar, and
+https://storage.googleapis.com/alphafold/alphafold_params_2022-03-02.tar, and
 are downloaded as part of the `scripts/download_all_data.sh` script. This script
 will download parameters for:
 
