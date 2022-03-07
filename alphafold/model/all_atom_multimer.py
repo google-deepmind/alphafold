@@ -598,6 +598,7 @@ def between_residue_clash_loss(
     atom_exists: jnp.ndarray,  # (N, 14)
     atom_radius: jnp.ndarray,  # (N, 14)
     residue_index: jnp.ndarray,  # (N)
+    asym_id: jnp.ndarray,  # (N)
     overlap_tolerance_soft=1.5,
     overlap_tolerance_hard=1.5) -> Dict[Text, jnp.ndarray]:
   """Loss to penalize steric clashes between residues."""
@@ -624,8 +625,9 @@ def between_residue_clash_loss(
   # Backbone C--N bond between subsequent residues is no clash.
   c_one_hot = jax.nn.one_hot(2, num_classes=14)
   n_one_hot = jax.nn.one_hot(0, num_classes=14)
-  neighbour_mask = ((residue_index[:, None, None, None] +
-                     1) == residue_index[None, :, None, None])
+  neighbour_mask = ((residue_index[:, None] + 1) == residue_index[None, :])
+  neighbour_mask &= (asym_id[:, None] == asym_id[None, :])
+  neighbour_mask = neighbour_mask[..., None, None]
   c_n_bonds = neighbour_mask * c_one_hot[None, None, :,
                                          None] * n_one_hot[None, None, None, :]
   dists_mask *= (1. - c_n_bonds)

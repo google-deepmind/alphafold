@@ -664,7 +664,8 @@ class StructureModule(hk.Module):
         residue_index=residue_index,
         mask=pred_mask,
         pred_positions=pred_positions,
-        config=self.config)
+        config=self.config,
+        asym_id=batch['asym_id'])
 
     sidechains = value['sidechains']
 
@@ -890,7 +891,8 @@ def find_structural_violations(
     residue_index: jnp.ndarray,
     mask: jnp.ndarray,
     pred_positions: geometry.Vec3Array,  # (N, 14)
-    config: ml_collections.ConfigDict
+    config: ml_collections.ConfigDict,
+    asym_id: jnp.ndarray,
     ) -> Dict[str, Any]:
   """Computes several checks for structural Violations."""
 
@@ -921,7 +923,8 @@ def find_structural_violations(
       atom_radius=atom_radius,
       residue_index=residue_index,
       overlap_tolerance_soft=config.clash_overlap_tolerance,
-      overlap_tolerance_hard=config.clash_overlap_tolerance)
+      overlap_tolerance_hard=config.clash_overlap_tolerance,
+      asym_id=asym_id)
 
   # Compute all within-residue violations (clashes,
   # bond length and angle violations).
