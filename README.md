@@ -203,6 +203,13 @@ change the following:
 
 ### API changes between v2.1.0 and v2.2.0
 
+The AlphaFold-Multimer model weights have been updated, these new models have
+greatly reduced numbers of clashes on average and are slightly more accurate.
+
+A flag `--num_multimer_predictions_per_model` has been added that controls how
+many predictions will be made per model, by default the offline system will run
+each model 5 times for a total of 25 predictions.
+
 The `--is_prokaryote_list` flag has been removed along with the `is_prokaryote`
 argument in `run_alphafold.predict_structure()`, eukaryotes and prokaryotes are
 now paired in the same way.
