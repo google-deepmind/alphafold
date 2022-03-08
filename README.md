@@ -214,6 +214,13 @@ The `--is_prokaryote_list` flag has been removed along with the `is_prokaryote`
 argument in `run_alphafold.predict_structure()`, eukaryotes and prokaryotes are
 now paired in the same way.
 
+To use the deprecated v2.1.0 AlphaFold-Multimer model weights:
+
+1.  Change `SOURCE_URL` in `scripts/download_alphafold_params.sh` to
+`https://storage.googleapis.com/alphafold/alphafold_params_2022-01-19.tar`,
+and download the old parameters.
+2.  Remove the `_v2` in the multimer `MODEL_PRESETS` in `config.py`.
+
 ## Running AlphaFold
 
 **The simplest way to run AlphaFold is using the provided Docker script.** This
