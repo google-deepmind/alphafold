@@ -57,7 +57,6 @@ def make_msa_features(msas: Sequence[parsers.Msa]) -> FeatureDict:
 
   int_msa = []
   deletion_matrix = []
-  uniprot_accession_ids = []
   species_ids = []
   seen_sequences = set()
   for msa_index, msa in enumerate(msas):
@@ -72,8 +71,6 @@ def make_msa_features(msas: Sequence[parsers.Msa]) -> FeatureDict:
       deletion_matrix.append(msa.deletion_matrix[sequence_index])
       identifiers = msa_identifiers.get_identifiers(
           msa.descriptions[sequence_index])
-      uniprot_accession_ids.append(
-          identifiers.uniprot_accession_id.encode('utf-8'))
       species_ids.append(identifiers.species_id.encode('utf-8'))
 
   num_res = len(msas[0].sequences[0])
@@ -83,8 +80,6 @@ def make_msa_features(msas: Sequence[parsers.Msa]) -> FeatureDict:
   features['msa'] = np.array(int_msa, dtype=np.int32)
   features['num_alignments'] = np.array(
       [num_alignments] * num_res, dtype=np.int32)
-  features['msa_uniprot_accession_identifiers'] = np.array(
-      uniprot_accession_ids, dtype=np.object_)
   features['msa_species_identifiers'] = np.array(species_ids, dtype=np.object_)
   return features
 

@@ -48,12 +48,11 @@ _UNIPROT_PATTERN = re.compile(
 
 @dataclasses.dataclass(frozen=True)
 class Identifiers:
-  uniprot_accession_id: str = ''
   species_id: str = ''
 
 
 def _parse_sequence_identifier(msa_sequence_identifier: str) -> Identifiers:
-  """Gets accession id and species from an msa sequence identifier.
+  """Gets species from an msa sequence identifier.
 
   The sequence identifier has the format specified by
   _UNIPROT_TREMBL_ENTRY_NAME_PATTERN or _UNIPROT_SWISSPROT_ENTRY_NAME_PATTERN.
@@ -63,13 +62,12 @@ def _parse_sequence_identifier(msa_sequence_identifier: str) -> Identifiers:
     msa_sequence_identifier: a sequence identifier.
 
   Returns:
-    An `Identifiers` instance with a uniprot_accession_id and species_id. These
+    An `Identifiers` instance with species_id. These
     can be empty in the case where no identifier was found.
   """
   matches = re.search(_UNIPROT_PATTERN, msa_sequence_identifier.strip())
   if matches:
     return Identifiers(
-        uniprot_accession_id=matches.group('AccessionIdentifier'),
         species_id=matches.group('SpeciesIdentifier'))
   return Identifiers()
 

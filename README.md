@@ -149,7 +149,7 @@ parameters are made available under the terms of the CC BY 4.0 license. Please
 see the [Disclaimer](#license-and-disclaimer) below for more detail.
 
 The AlphaFold parameters are available from
-https://storage.googleapis.com/alphafold/alphafold_params_2022-01-19.tar, and
+https://storage.googleapis.com/alphafold/alphafold_params_2022-03-02.tar, and
 are downloaded as part of the `scripts/download_all_data.sh` script. This script
 will download parameters for:
 
@@ -201,6 +201,25 @@ change the following:
     `alphafold/model/config.py`.
 *   Setting the `data_dir` flag is now needed when using `run_docker.py`.
 
+### API changes between v2.1.0 and v2.2.0
+
+The AlphaFold-Multimer model weights have been updated, these new models have
+greatly reduced numbers of clashes on average and are slightly more accurate.
+
+A flag `--num_multimer_predictions_per_model` has been added that controls how
+many predictions will be made per model, by default the offline system will run
+each model 5 times for a total of 25 predictions.
+
+The `--is_prokaryote_list` flag has been removed along with the `is_prokaryote`
+argument in `run_alphafold.predict_structure()`, eukaryotes and prokaryotes are
+now paired in the same way.
+
+To use the deprecated v2.1.0 AlphaFold-Multimer model weights:
+
+1.  Change `SOURCE_URL` in `scripts/download_alphafold_params.sh` to
+`https://storage.googleapis.com/alphafold/alphafold_params_2022-01-19.tar`,
+and download the old parameters.
+2.  Remove the `_v2` in the multimer `MODEL_PRESETS` in `config.py`.
 
 ## Running AlphaFold
 
@@ -303,20 +322,21 @@ All steps are the same as when running the monomer system, but you will have to
 
 *   provide an input fasta with multiple sequences,
 *   set `--model_preset=multimer`,
-*   optionally set the `--is_prokaryote_list` flag with booleans that determine
-    whether all input sequences in the given fasta file are prokaryotic. If that
-    is not the case or the origin is unknown, set to `false` for that fasta.
 
-An example that folds a protein complex `multimer.fasta` that is prokaryotic:
+An example that folds a protein complex `multimer.fasta`:
 
 ```bash
 python3 docker/run_docker.py \
   --fasta_paths=multimer.fasta \
-  --is_prokaryote_list=true \
   --max_template_date=2020-05-14 \
   --model_preset=multimer \
   --data_dir=$DOWNLOAD_DIR
 ```
+
+By default the multimer system will run 5 seeds per model (25 total predictions)
+for a small drop in accuracy you may wish to run a single seed per model.  This
+can be done via the `--num_multimer_predictions_per_model` flag, e.g. set it to
+`--num_multimer_predictions_per_model=1` to run a single seed per model.
 
 ### Examples
 
@@ -343,7 +363,7 @@ python3 docker/run_docker.py \
 
 #### Folding a homomer
 
-Say we have a homomer from a prokaryote with 3 copies of the same sequence
+Say we have a homomer with 3 copies of the same sequence
 `<SEQUENCE>`. The input fasta should be:
 
 ```fasta
@@ -360,7 +380,6 @@ Then run the following command:
 ```bash
 python3 docker/run_docker.py \
   --fasta_paths=homomer.fasta \
-  --is_prokaryote_list=true \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
   --data_dir=$DOWNLOAD_DIR
@@ -368,7 +387,7 @@ python3 docker/run_docker.py \
 
 #### Folding a heteromer
 
-Say we have a heteromer A2B3 of unknown origin, i.e. with 2 copies of
+Say we have an A2B3 heteromer, i.e. with 2 copies of
 `<SEQUENCE A>` and 3 copies of `<SEQUENCE B>`. The input fasta should be:
 
 ```fasta
@@ -389,7 +408,6 @@ Then run the following command:
 ```bash
 python3 docker/run_docker.py \
   --fasta_paths=heteromer.fasta \
-  --is_prokaryote_list=false \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
   --data_dir=$DOWNLOAD_DIR
@@ -411,15 +429,13 @@ python3 docker/run_docker.py \
 
 #### Folding multiple multimers one after another
 
-Say we have a two multimers, `multimer1.fasta` and `multimer2.fasta`. Both are
-from a prokaryotic organism.
+Say we have a two multimers, `multimer1.fasta` and `multimer2.fasta`.
 
 We can fold both sequentially by using the following command:
 
 ```bash
 python3 docker/run_docker.py \
   --fasta_paths=multimer1.fasta,multimer2.fasta \
-  --is_prokaryote_list=true,true \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
   --data_dir=$DOWNLOAD_DIR

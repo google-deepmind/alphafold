@@ -49,12 +49,6 @@ flags.DEFINE_list(
     'multiple sequences, then it will be folded as a multimer. Paths should be '
     'separated by commas. All FASTA paths must have a unique basename as the '
     'basename is used to name the output directories for each prediction.')
-flags.DEFINE_list(
-    'is_prokaryote_list', None, 'Optional for multimer system, not used by the '
-    'single chain system. This list should contain a boolean for each fasta '
-    'specifying true where the target complex is from a prokaryote, and false '
-    'where it is not, or where the origin is unknown. These values determine '
-    'the pairing method for the MSA.')
 
 flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
 flags.DEFINE_string('output_dir', None, 'Path to a directory that will '
@@ -113,6 +107,11 @@ flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
                      'that even if this is set, Alphafold may still not be '
                      'deterministic, because processes like GPU inference are '
                      'nondeterministic.')
+flags.DEFINE_integer('num_multimer_predictions_per_model', 5, 'How many '
+                     'predictions (each with a different random seed) will be '
+                     'generated per model. E.g. if this is 2 and there are 5 '
+                     'models then there will be 10 predictions per input. '
+                     'Note: this FLAG only applies if model_preset=multimer')
 flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'have been written to disk instead of running the MSA '
                      'tools. The MSA files are looked up in the output '
@@ -157,8 +156,7 @@ def predict_structure(
     model_runners: Dict[str, model.RunModel],
     amber_relaxer: relax.AmberRelaxation,
     benchmark: bool,
-    random_seed: int,
-    is_prokaryote: Optional[bool] = None):
+    random_seed: int):
   """Predicts structure using AlphaFold for the given sequence."""
   logging.info('Predicting %s', fasta_name)
   timings = {}
@@ -171,15 +169,9 @@ def predict_structure(
 
   # Get features.
   t_0 = time.time()
-  if is_prokaryote is None:
-    feature_dict = data_pipeline.process(
-        input_fasta_path=fasta_path,
-        msa_output_dir=msa_output_dir)
-  else:
-    feature_dict = data_pipeline.process(
-        input_fasta_path=fasta_path,
-        msa_output_dir=msa_output_dir,
-        is_prokaryote=is_prokaryote)
+  feature_dict = data_pipeline.process(
+      input_fasta_path=fasta_path,
+      msa_output_dir=msa_output_dir)
   timings['features'] = time.time() - t_0
 
   # Write out features as a pickled dictionary.
@@ -319,22 +311,6 @@ def main(argv):
   if len(fasta_names) != len(set(fasta_names)):
     raise ValueError('All FASTA paths must have a unique basename.')
 
-  # Check that is_prokaryote_list has same number of elements as fasta_paths,
-  # and convert to bool.
-  if FLAGS.is_prokaryote_list:
-    if len(FLAGS.is_prokaryote_list) != len(FLAGS.fasta_paths):
-      raise ValueError('--is_prokaryote_list must either be omitted or match '
-                       'length of --fasta_paths.')
-    is_prokaryote_list = []
-    for s in FLAGS.is_prokaryote_list:
-      if s in ('true', 'false'):
-        is_prokaryote_list.append(s == 'true')
-      else:
-        raise ValueError('--is_prokaryote_list must contain comma separated '
-                         'true or false values.')
-  else:  # Default is_prokaryote to False.
-    is_prokaryote_list = [False] * len(fasta_names)
-
   if run_multimer_system:
     template_searcher = hmmsearch.Hmmsearch(
         binary_path=FLAGS.hmmsearch_binary_path,
@@ -373,12 +349,14 @@ def main(argv):
       use_precomputed_msas=FLAGS.use_precomputed_msas)
 
   if run_multimer_system:
+    num_predictions_per_model = FLAGS.num_multimer_predictions_per_model
     data_pipeline = pipeline_multimer.DataPipeline(
         monomer_data_pipeline=monomer_data_pipeline,
         jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
         uniprot_database_path=FLAGS.uniprot_database_path,
         use_precomputed_msas=FLAGS.use_precomputed_msas)
   else:
+    num_predictions_per_model = 1
     data_pipeline = monomer_data_pipeline
 
   model_runners = {}
@@ -392,7 +370,8 @@ def main(argv):
     model_params = data.get_model_haiku_params(
         model_name=model_name, data_dir=FLAGS.data_dir)
     model_runner = model.RunModel(model_config, model_params)
-    model_runners[model_name] = model_runner
+    for i in range(num_predictions_per_model):
+      model_runners[f'{model_name}_pred_{i}'] = model_runner
 
   logging.info('Have %d models: %s', len(model_runners),
                list(model_runners.keys()))
@@ -410,12 +389,11 @@ def main(argv):
 
   random_seed = FLAGS.random_seed
   if random_seed is None:
-    random_seed = random.randrange(sys.maxsize // len(model_names))
+    random_seed = random.randrange(sys.maxsize // len(model_runners))
   logging.info('Using random seed %d for the data pipeline', random_seed)
 
   # Predict structure for each of the sequences.
   for i, fasta_path in enumerate(FLAGS.fasta_paths):
-    is_prokaryote = is_prokaryote_list[i] if run_multimer_system else None
     fasta_name = fasta_names[i]
     predict_structure(
         fasta_path=fasta_path,
@@ -425,8 +403,7 @@ def main(argv):
         model_runners=model_runners,
         amber_relaxer=amber_relaxer,
         benchmark=FLAGS.benchmark,
-        random_seed=random_seed,
-        is_prokaryote=is_prokaryote)
+        random_seed=random_seed)
 
 
 if __name__ == '__main__':

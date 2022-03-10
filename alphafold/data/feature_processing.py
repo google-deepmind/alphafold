@@ -46,14 +46,12 @@ def _is_homomer_or_monomer(chains: Iterable[pipeline.FeatureDict]) -> bool:
 
 
 def pair_and_merge(
-    all_chain_features: MutableMapping[str, pipeline.FeatureDict],
-    is_prokaryote: bool) -> pipeline.FeatureDict:
+    all_chain_features: MutableMapping[str, pipeline.FeatureDict]
+    ) -> pipeline.FeatureDict:
   """Runs processing on features to augment, pair and merge.
 
   Args:
     all_chain_features: A MutableMap of dictionaries of features for each chain.
-    is_prokaryote: Whether the target complex is from a prokaryotic or
-    eukaryotic organism.
 
   Returns:
     A dictionary of features.
@@ -67,7 +65,7 @@ def pair_and_merge(
 
   if pair_msa_sequences:
     np_chains_list = msa_pairing.create_paired_features(
-        chains=np_chains_list, prokaryotic=is_prokaryote)
+        chains=np_chains_list)
     np_chains_list = msa_pairing.deduplicate_unpaired_sequences(np_chains_list)
   np_chains_list = crop_chains(
       np_chains_list,
