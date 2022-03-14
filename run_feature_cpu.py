@@ -133,6 +133,8 @@ flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
                      'recommended to enable if possible. GPUs must be available'
                      ' if this setting is enabled.')
 
+# added by Yinying
+flags.DEFINE_integer('num_ensemble', None, 'Set customized ensemble number')
 
 FLAGS = flags.FLAGS
 
@@ -310,10 +312,14 @@ def main(argv):
 	_check_flag('uniprot_database_path', 'model_preset',
 							should_be_set=run_multimer_system)
 
-	if FLAGS.model_preset == 'monomer_casp14':
-		num_ensemble = 8
+	if FLAGS.num_ensemble == None:
+		if FLAGS.model_preset == 'monomer_casp14':
+			num_ensemble = 8
+		else:
+			num_ensemble = 1
 	else:
-		num_ensemble = 1
+		# Override the default num_ensemble.
+		num_ensemble = FLAGS.num_ensemble
 
 	# Check for duplicate FASTA file names.
 	fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
