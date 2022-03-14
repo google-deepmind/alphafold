@@ -36,6 +36,7 @@ from alphafold.data.tools import hhsearch
 from alphafold.data.tools import hmmsearch
 # edited by Yinying
 from alphafold.model import config
+from alphafold.model import data
 # from alphafold.model import model
 # from alphafold.relax import relax
 import numpy as np
@@ -52,16 +53,10 @@ flags.DEFINE_list(
 											 'multiple sequences, then it will be folded as a multimer. Paths should be '
 											 'separated by commas. All FASTA paths must have a unique basename as the '
 											 'basename is used to name the output directories for each prediction.')
-flags.DEFINE_list(
-	'is_prokaryote_list', None, 'Optional for multimer system, not used by the '
-															'single chain system. This list should contain a boolean for each fasta '
-															'specifying true where the target complex is from a prokaryote, and false '
-															'where it is not, or where the origin is unknown. These values determine '
-															'the pairing method for the MSA.')
 
+flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
 flags.DEFINE_string('output_dir', None, 'Path to a directory that will '
 																				'store the results.')
-flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
 flags.DEFINE_string('jackhmmer_binary_path', shutil.which('jackhmmer'),
 										'Path to the JackHMMER executable.')
 flags.DEFINE_string('hhblits_binary_path', shutil.which('hhblits'),
@@ -116,9 +111,28 @@ flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
 																					'that even if this is set, Alphafold may still not be '
 																					'deterministic, because processes like GPU inference are '
 																					'nondeterministic.')
+flags.DEFINE_integer('num_multimer_predictions_per_model', 5, 'How many '
+                     'predictions (each with a different random seed) will be '
+                     'generated per model. E.g. if this is 2 and there are 5 '
+                     'models then there will be 10 predictions per input. '
+                     'Note: this FLAG only applies if model_preset=multimer')
 flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
-																										'have been written to disk. WARNING: This will not check '
-																										'if the sequence, database or configuration have changed.')
+                     'have been written to disk instead of running the MSA '
+                     'tools. The MSA files are looked up in the output '
+                     'directory, so it must stay the same between multiple '
+                     'runs that are to reuse the MSAs. WARNING: This will not '
+                     'check if the sequence, database or configuration have '
+                     'changed.')
+flags.DEFINE_boolean('run_relax', True, 'Whether to run the final relaxation '
+                     'step on the predicted models. Turning relax off might '
+                     'result in predictions with distracting stereochemical '
+                     'violations but might help in case you are having issues '
+                     'with the relaxation stage.')
+flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
+                     'Relax on GPU can be much faster than CPU, so it is '
+                     'recommended to enable if possible. GPUs must be available'
+                     ' if this setting is enabled.')
+
 
 FLAGS = flags.FLAGS
 
@@ -148,8 +162,7 @@ def predict_structure(
 				# model_runners: Dict[str, model.RunModel],
 				# amber_relaxer: relax.AmberRelaxation,
 				# benchmark: bool,
-				random_seed: int,
-				is_prokaryote: Optional[bool] = None):
+				random_seed: int):
 	"""Predicts structure using AlphaFold for the given sequence."""
 	logging.info('Predicting %s', fasta_name)
 	timings = {}
@@ -162,21 +175,16 @@ def predict_structure(
 
 	# Get features.
 	t_0 = time.time()
-	if is_prokaryote is None:
-		feature_dict = data_pipeline.process(
-			input_fasta_path=fasta_path,
-			msa_output_dir=msa_output_dir)
-	else:
-		feature_dict = data_pipeline.process(
-			input_fasta_path=fasta_path,
-			msa_output_dir=msa_output_dir,
-			is_prokaryote=is_prokaryote)
+	feature_dict = data_pipeline.process(
+		input_fasta_path=fasta_path,
+		msa_output_dir=msa_output_dir)
 	timings['features'] = time.time() - t_0
 
 	# Write out features as a pickled dictionary.
 	features_output_path = os.path.join(output_dir, 'features.pkl')
 	with open(features_output_path, 'wb') as f:
 		pickle.dump(feature_dict, f, protocol=4)
+
 	# edited by Yinying
 	"""
 	unrelaxed_pdbs = {}
@@ -312,22 +320,6 @@ def main(argv):
 	if len(fasta_names) != len(set(fasta_names)):
 		raise ValueError('All FASTA paths must have a unique basename.')
 
-	# Check that is_prokaryote_list has same number of elements as fasta_paths,
-	# and convert to bool.
-	if FLAGS.is_prokaryote_list:
-		if len(FLAGS.is_prokaryote_list) != len(FLAGS.fasta_paths):
-			raise ValueError('--is_prokaryote_list must either be omitted or match '
-											 'length of --fasta_paths.')
-		is_prokaryote_list = []
-		for s in FLAGS.is_prokaryote_list:
-			if s in ('true', 'false'):
-				is_prokaryote_list.append(s == 'true')
-			else:
-				raise ValueError('--is_prokaryote_list must contain comma separated '
-												 'true or false values.')
-	else:  # Default is_prokaryote to False.
-		is_prokaryote_list = [False] * len(fasta_names)
-
 	if run_multimer_system:
 		template_searcher = hmmsearch.Hmmsearch(
 			binary_path=FLAGS.hmmsearch_binary_path,
@@ -407,7 +399,6 @@ def main(argv):
 
 	# Predict structure for each of the sequences.
 	for i, fasta_path in enumerate(FLAGS.fasta_paths):
-		is_prokaryote = is_prokaryote_list[i] if run_multimer_system else None
 		fasta_name = fasta_names[i]
 		predict_structure(
 			fasta_path=fasta_path,
@@ -418,8 +409,7 @@ def main(argv):
 			# model_runners=model_runners,
 			# amber_relaxer=amber_relaxer,
 			# benchmark=FLAGS.benchmark,
-			random_seed=random_seed,
-			is_prokaryote=is_prokaryote)
+			random_seed=random_seed)
 
 if __name__ == '__main__':
 	flags.mark_flags_as_required([
@@ -431,6 +421,7 @@ if __name__ == '__main__':
 		'template_mmcif_dir',
 		'max_template_date',
 		'obsolete_pdbs_path',
+		'use_gpu_relax',
 	])
 
 app.run(main)

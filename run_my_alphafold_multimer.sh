@@ -15,6 +15,7 @@ usage() {
         echo "Required Parameters:"
         # edited by Yinying
         echo "-m <model_preset>  Choose preset model configuration - the monomer model, the monomer model with extra ensembling, monomer model with pTM head, or multimer model"
+        echo "-n <num_multimer_predictions_per_model>       How many predictions (each with a different random seed) will be generated per model"
         echo "-t <template_date> Maximum template release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
         echo ""
         exit 1
@@ -30,8 +31,15 @@ while getopts ":m:t:e:" i; do
         t)
                 max_template_date=$OPTARG
         ;;
+        n)
+                num_multimer_predictions_per_model=$OPTARG
+        ;;
         e)
                 num_ensemble=$OPTARG
+        ;;
+        *)
+                echo Unknown argument!
+                usage
         ;;
 
         esac
@@ -64,6 +72,13 @@ if [[ "$model_preset" == "monomer_casp14"  ]] ; then
     fi
 fi
 
+if [[ "$model_preset" == "multimer" ]] ; then
+    if [[ "$num_multimer_predictions_per_model" == "" ]];then
+        num_multimer_predictions_per_model=5
+    fi
+fi
+
+
 
 if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" != "multimer" ]] ; then
     echo "Unknown model_preset! "
@@ -81,7 +96,7 @@ echo "++++++++++++++++++++++++++++++++++++++++"
 dir=`pwd`;
 #run_docker_pth=/mnt/data/alphafold/docker;
 
-af_official_repo=/repo/alphafold/ ;
+af_official_repo=$(readlink -f $(dirname $0)) ;
 #af_official_repo=/software/alphafold_multimer/alphafold ;
 out_dir=$dir/output;
 res_dir=$dir/res;
@@ -106,8 +121,8 @@ AF_process(){
 		if [ ! -f $out_dir/$decoy_name/features.pkl ]; then
             echo File does not exist: $out_dir/$decoy_name/features.pkl;
         	echo Modeling is not started: $i;
-	        echo bash $af_official_repo/run_feature_cpu.sh -d $db_dir -o $out_dir -m $model_preset -f $dir/$i -t $template_date;
-	        bash $af_official_repo/run_feature_cpu.sh -d $db_dir -o $out_dir -m $model_preset -f $dir/$i -t $template_date;
+	        cmd="bash $af_official_repo/run_feature_cpu.sh -d $db_dir -o $out_dir -m $model_preset -n $num_multimer_predictions_per_model -f $dir/$i -t $template_date";
+	        echo "$cmd";eval "$cmd"
         else
             echo Find feature files in $out_dir/$decoy_name/features.pkl;
             echo Skip the run_feature process: $decoy_name
@@ -121,29 +136,24 @@ AF_process(){
 	        #
             echo Find feature files in $out_dir/$decoy_name/features.pkl;
             echo Runing modeling process : $decoy_name
-            echo bash $af_official_repo/run_alphafold.sh \
+            cmd="bash $af_official_repo/run_alphafold.sh \
                     -d $db_dir \
                     -o $out_dir \
                     -m $model_preset \
                     -f $dir/$i \
+                    -n $num_multimer_predictions_per_model \
                     -t $template_date \
-                    -e $num_ensemble;
-		    bash $af_official_repo/run_alphafold.sh \
-                    -d $db_dir \
-                    -o $out_dir \
-                    -m $model_preset \
-                    -f $dir/$i \
-                    -t $template_date \
-                    -e $num_ensemble;
+                    -e $num_ensemble";
+
+		    echo "$cmd";eval "$cmd"
 
 		    cd $out_dir && \
 		    echo Collecting results files .... && \
 		    tar jcf $decoy_name\_AF2_lite.tar.bz2  --exclude *.pkl --exclude $decoy_name/msas $decoy_name && \
 		    mv $decoy_name\_AF2_lite.tar.bz2 $res_dir/lite && \
-		    tar jcf $decoy_name\_AF2_full.tar.bz2 $decoy_name &&  \
+		    tar jcf $decoy_name\_AF2_full.tar.bz2 --remove-files $decoy_name &&  \
 		    mv $decoy_name\_AF2_full.tar.bz2 $res_dir/full && \
-		    mv $dir/$i $dir/processed && \
-		    rm -rf $decoy_name &
+		    mv $dir/$i $dir/processed &
         fi
     else
             echo Find modeling files in $res_dir/lite/$decoy_name\_AF2_lite.tar.bz2;
