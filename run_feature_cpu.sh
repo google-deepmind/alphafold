@@ -153,7 +153,6 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$m
     pdb70_database_path="$data_dir/pdb70/pdb70"
     cmd="python $alphafold_script \
         --use_gpu_relax=$use_gpu \
-        --num_ensemble=$num_ensemble \
         --hhblits_binary_path=$hhblits_binary_path \
         --hhsearch_binary_path=$hhsearch_binary_path \
         --jackhmmer_binary_path=$jackhmmer_binary_path \
@@ -183,7 +182,6 @@ if [[  "$model_preset" == "multimer" ]] ; then
     pdb_seqres_database_path="$data_dir/pdb_seqres/pdb_seqres.txt"
     cmd="python $alphafold_script \
         --use_gpu_relax=$use_gpu \
-        --num_ensemble=$num_ensemble \
         --hhblits_binary_path=$hhblits_binary_path \
         --hhsearch_binary_path=$hhsearch_binary_path \
         --jackhmmer_binary_path=$jackhmmer_binary_path \

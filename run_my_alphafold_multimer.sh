@@ -121,7 +121,13 @@ AF_process(){
 		if [ ! -f $out_dir/$decoy_name/features.pkl ]; then
             echo File does not exist: $out_dir/$decoy_name/features.pkl;
         	echo Modeling is not started: $i;
-	        cmd="bash $af_official_repo/run_feature_cpu.sh -d $db_dir -o $out_dir -m $model_preset -n $num_multimer_predictions_per_model -f $dir/$i -t $template_date";
+	        cmd="bash $af_official_repo/run_feature_cpu.sh \
+                -d $db_dir \
+                -o $out_dir \
+                -m $model_preset \
+                -n $num_multimer_predictions_per_model \
+                -f $dir/$i \
+                -t $template_date";
 	        echo "$cmd";eval "$cmd"
         else
             echo Find feature files in $out_dir/$decoy_name/features.pkl;
