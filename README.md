@@ -645,8 +645,8 @@ We thank all their contributors and maintainers!
 
 ## Get in Touch
 
-If you have any questions not covered in the FAQ, please contact the AlphaFold
-team at [alphafold@deepmind.com](mailto:alphafold@deepmind.com).
+If you have any questions not covered in this overview, please contact the
+AlphaFold team at [alphafold@deepmind.com](mailto:alphafold@deepmind.com).
 
 We would love to hear your feedback and understand how AlphaFold has been
 useful in your research. Share your stories with us at
