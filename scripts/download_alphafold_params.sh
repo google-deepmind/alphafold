@@ -40,6 +40,7 @@ if [ -d "${ROOT_DIR}" ]; then
     echo
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "Aborting download."
+        exit 0
     else
         rm -rf "${ROOT_DIR}"
     fi
