@@ -42,6 +42,7 @@ if [ -d "${ROOT_DIR}" ]; then
         echo "Aborting download."
         exit 0
     else
+        echo "INFO: Deleting previous download directory: '${ROOT_DIR}'"
         rm -rf "${ROOT_DIR}"
     fi
 fi
