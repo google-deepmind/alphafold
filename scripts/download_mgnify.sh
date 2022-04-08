@@ -40,12 +40,12 @@ if [ -d "${ROOT_DIR}" ]; then
     echo "WARNING: Destination directory '${ROOT_DIR}' does already exist."
     read -p "Proceed by deleting existing download directory? [Y/n]" -n1 -r
     echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Aborting download."
-        exit 0
-    else
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         echo "INFO: Deleting previous download directory: '${ROOT_DIR}'"
         rm -rf "${ROOT_DIR}"
+    else
+        echo "Aborting download."
+        exit 0
     fi
 fi
 

@@ -40,17 +40,28 @@ if [ -d "${ROOT_DIR}" ]; then
     echo "WARNING: Destination directory '${ROOT_DIR}' does already exist."
     read -p "Proceed by deleting existing download directory? [Y/n]" -n1 -r
     echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Aborting download."
-        exit 0
-    else
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         echo "INFO: Deleting previous download directory: '${ROOT_DIR}'"
         rm -rf "${ROOT_DIR}"
+    else
+        echo "Aborting download."
+        exit 0
     fi
 fi
 
 mkdir --parents "${ROOT_DIR}"
 aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}"
-tar --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
-  --directory="${ROOT_DIR}"
+
+# test whether a parallel uncompress step is possible
+# -- considering the size of the compressed tarball, the
+#    potential speedup is worth it. (If pigz is not in PATH
+#    it is ignored.)
+if ! command -v pigz &> /dev/null
+then
+    tar --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
+        --directory="${ROOT_DIR}"
+else
+    tar -I pigz --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
+        --directory="${ROOT_DIR}"
+fi
 rm "${ROOT_DIR}/${BASENAME}"
