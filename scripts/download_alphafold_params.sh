@@ -34,6 +34,17 @@ ROOT_DIR="${DOWNLOAD_DIR}/params"
 SOURCE_URL="https://storage.googleapis.com/alphafold/alphafold_params_2022-03-02.tar"
 BASENAME=$(basename "${SOURCE_URL}")
 
+if [ -d "${ROOT_DIR}" ]; then
+    echo "WARNING: Destination directory '${ROOT_DIR}' does already exist."
+    read -p "Proceed by deleting existing download directory? [Y/n]" -n1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Aborting download."
+    else
+        rm -rf "${ROOT_DIR}"
+    fi
+fi
+
 mkdir --parents "${ROOT_DIR}"
 aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}"
 tar --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
