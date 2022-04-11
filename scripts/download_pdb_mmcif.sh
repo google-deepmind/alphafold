@@ -39,6 +39,19 @@ ROOT_DIR="${DOWNLOAD_DIR}/pdb_mmcif"
 RAW_DIR="${ROOT_DIR}/raw"
 MMCIF_DIR="${ROOT_DIR}/mmcif_files"
 
+if [ -d "${ROOT_DIR}" ]; then
+    echo "WARNING: Destination directory '${ROOT_DIR}' does already exist."
+    read -p "Proceed by deleting existing download directory? [Y/n]" -n1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        echo "INFO: Deleting previous download directory: '${ROOT_DIR}'"
+        rm -rf "${ROOT_DIR}"
+    else
+        echo "Aborting download."
+        exit 0
+    fi
+fi
+
 echo "Running rsync to fetch all mmCIF files (note that the rsync progress estimate might be inaccurate)..."
 echo "If the download speed is too slow, try changing the mirror to:"
 echo "  * rsync.ebi.ac.uk::pub/databases/pdb/data/structures/divided/mmCIF/ (Europe)"
@@ -49,8 +62,26 @@ rsync --recursive --links --perms --times --compress --info=progress2 --delete -
   rsync.rcsb.org::ftp_data/structures/divided/mmCIF/ \
   "${RAW_DIR}"
 
+# now we test whether we have run into a timeout
+# if this happens, give a reasonable hint to the user
+if [ $? -eq 10 ]; then
+    echo
+    echo "ERROR: rsync ran into a timeout. Possible reasons include"
+    echo "       not setting the RSYNC_PROXY variable in an environment"
+    echo "       where a webproxy is used."
+    exit 10
+fi
+
+# if we have pigz in PATH, we can attempt to decompress in parallel
+if ! command -v unpigz &> /dev/null
+then
+    uncompress_cmd=gunzip
+else
+    uncompress_cmd=unpigz
+fi
+
 echo "Unzipping all mmCIF files..."
-find "${RAW_DIR}/" -type f -iname "*.gz" -exec gunzip {} +
+find "${RAW_DIR}/" -type f -iname "*.gz" -exec "${uncompress_cmd}" {} +
 
 echo "Flattening all mmCIF files..."
 mkdir --parents "${MMCIF_DIR}"
