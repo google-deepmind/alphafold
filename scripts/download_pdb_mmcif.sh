@@ -52,6 +52,9 @@ if [ -d "${ROOT_DIR}" ]; then
     fi
 fi
 
+# as we want to catch timeout errors, we turn abort-upon error off:
+set +e
+
 echo "Running rsync to fetch all mmCIF files (note that the rsync progress estimate might be inaccurate)..."
 echo "If the download speed is too slow, try changing the mirror to:"
 echo "  * rsync.ebi.ac.uk::pub/databases/pdb/data/structures/divided/mmCIF/ (Europe)"
@@ -62,15 +65,25 @@ rsync --recursive --links --perms --times --compress --info=progress2 --delete -
   rsync.rcsb.org::ftp_data/structures/divided/mmCIF/ \
   "${RAW_DIR}"
 
+# we save this rsync's return code for multiple use
+rsync_ret_code=$?
+
 # now we test whether we have run into a timeout
 # if this happens, give a reasonable hint to the user
-if [ $? -eq 10 ]; then
+if [ $rsync_ret_code -eq 10 ]; then
     echo
     echo "ERROR: rsync ran into a timeout. Possible reasons include"
     echo "       not setting the RSYNC_PROXY variable in an environment"
     echo "       where a webproxy is used."
-    exit 10
+    exit $rsync_ret_code
+elif [ $rsync_ret_code -ne 0 ]; then
+    echo 
+    echo "ERROR: caught unkwon rsync-download error"
+    exit $rsync_ret_code
 fi
+
+# finally, we turn abort-upon-error on again
+set -e
 
 # if we have pigz in PATH, we can attempt to decompress in parallel
 if ! command -v unpigz &> /dev/null
@@ -81,7 +94,8 @@ else
 fi
 
 echo "Unzipping all mmCIF files..."
-find "${RAW_DIR}/" -type f -iname "*.gz" -exec "${uncompress_cmd}" {} +
+# unsure how many processors may be used, yet 2 is faster than 1 in any case
+find "${RAW_DIR}/" -type f -iname "*.gz" -print0 | xargs -0 -P2 "${uncompress_cmd}"
 
 echo "Flattening all mmCIF files..."
 mkdir --parents "${MMCIF_DIR}"
