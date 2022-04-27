@@ -34,8 +34,30 @@ ROOT_DIR="${DOWNLOAD_DIR}/uniref90"
 SOURCE_URL="ftp://ftp.uniprot.org/pub/databases/uniprot/uniref/uniref90/uniref90.fasta.gz"
 BASENAME=$(basename "${SOURCE_URL}")
 
+if [ -d "${ROOT_DIR}" ]; then
+    echo "WARNING: Destination directory '${ROOT_DIR}' does already exist."
+    read -p "Proceed by deleting existing download directory? [Y/n]" -n1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        echo "INFO: Deleting previous download directory: '${ROOT_DIR}'"
+        rm -rf "${ROOT_DIR}"
+    else
+        echo "Aborting download."
+        exit 0
+    fi
+fi
+
 mkdir --parents "${ROOT_DIR}"
 aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}"
+
+# if we have pigz in PATH, we can attempt to decompress in parallel
+if ! command -v unpigz &> /dev/null
+then
+    uncompress_cmd=gunzip
+else
+    uncompress_cmd=unpigz
+fi
+
 pushd "${ROOT_DIR}"
-gunzip "${ROOT_DIR}/${BASENAME}"
+$uncompress_cmd "${BASENAME}"
 popd
