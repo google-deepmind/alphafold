@@ -59,4 +59,7 @@ else
         --directory="${ROOT_DIR}"
 fi
 
+# the files are only user-readable. For multi-user systems we need to correct:
+chmod 444 "${ROOT_DIR}"/*
+
 rm "${ROOT_DIR}/${BASENAME}"
