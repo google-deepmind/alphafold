@@ -64,4 +64,9 @@ else
     tar -I pigz --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
         --directory="${ROOT_DIR}"
 fi
+
+# The extracted files are only user-readable (in parts). On a multi-user system
+# this is problematic, therefore:
+find "${ROOT_DIR}" -type f exec chmod 444 {} \;
+
 rm "${ROOT_DIR}/${BASENAME}"
