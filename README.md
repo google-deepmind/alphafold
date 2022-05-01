@@ -26,6 +26,9 @@ for a detailed description of the method.
 notebook](https://colab.research.google.com/github/deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb)**
 or community-supported versions (see below).
 
+If you have any questions, please contact the AlphaFold team at
+[alphafold@deepmind.com](mailto:alphafold@deepmind.com).
+
 ![CASP14 predictions](imgs/casp14_predictions.gif)
 
 ## Non-docker, separated version 
@@ -252,7 +255,7 @@ change the following:
     `alphafold/model/config.py`.
 *   Setting the `data_dir` flag is now needed when using `run_docker.py`.
 
-### API changes between v2.1.0 and v2.2.0
+#### API changes between v2.1.0 and v2.2.0
 
 The AlphaFold-Multimer model weights have been updated, these new models have
 greatly reduced numbers of clashes on average and are slightly more accurate.
@@ -690,6 +693,15 @@ and packages:
 *   [tqdm](https://github.com/tqdm/tqdm)
 
 We thank all their contributors and maintainers!
+
+## Get in Touch
+
+If you have any questions not covered in this overview, please contact the
+AlphaFold team at [alphafold@deepmind.com](mailto:alphafold@deepmind.com).
+
+We would love to hear your feedback and understand how AlphaFold has been
+useful in your research. Share your stories with us at
+[alphafold@deepmind.com](mailto:alphafold@deepmind.com).
 
 ## License and Disclaimer
 

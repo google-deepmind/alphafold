@@ -59,13 +59,11 @@ class RunAlphafoldTest(parameterized.TestCase):
     model_runner_mock.multimer_mode = False
     amber_relaxer_mock.process.return_value = ('RELAXED', None, None)
 
-    fasta_path = os.path.join(absltest.get_default_test_tmpdir(),
-                              'target.fasta')
+    out_dir = self.create_tempdir().full_path
+    fasta_path = os.path.join(out_dir, 'target.fasta')
     with open(fasta_path, 'wt') as f:
       f.write('>A\nAAAAAAAAAAAAA')
     fasta_name = 'test'
-
-    out_dir = absltest.get_default_test_tmpdir()
 
     run_alphafold.predict_structure(
         fasta_path=fasta_path,
