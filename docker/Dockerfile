@@ -21,6 +21,10 @@ ARG CUDA
 # Use bash to support string substitution.
 SHELL ["/bin/bash", "-c"]
 
+# update the GPG signing key for the CUDA repositories. NVIDIA updated on Apr 29
+# https://forums.developer.nvidia.com/t/the-repository-https-developer-download-nvidia-com-compute-cuda-repos-ubuntu1804-x86-64-release-is-not-signed/193764/9
+RUN apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
       build-essential \
       cmake \
