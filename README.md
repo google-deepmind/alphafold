@@ -243,6 +243,16 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
     docker build -f docker/Dockerfile -t alphafold .
     ```
 
+    If you encounter the following error:
+
+    ```
+    W: GPG error: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A4B469963BF863CC
+    E: The repository 'https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 InRelease' is not signed.
+    ```
+
+    use the workaround described in
+    https://github.com/deepmind/alphafold/issues/463#issuecomment-1124881779.
+
 1.  Install the `run_docker.py` dependencies. Note: You may optionally wish to
     create a
     [Python Virtual Environment](https://docs.python.org/3/tutorial/venv.html)
