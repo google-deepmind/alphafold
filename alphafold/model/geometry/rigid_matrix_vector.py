@@ -65,7 +65,7 @@ class Rigid3Array:
     """Return identity Rigid3Array of given shape."""
     return cls(
         rotation_matrix.Rot3Array.identity(shape, dtype=dtype),
-        vector.Vec3Array.zeros(shape, dtype=dtype))
+        vector.Vec3Array.zeros(shape, dtype=dtype))  # pytype: disable=wrong-arg-count  # trace-all-classes
 
   def scale_translation(self, factor: Float) -> Rigid3Array:
     """Scale translation in Rigid3Array by 'factor'."""
@@ -80,7 +80,7 @@ class Rigid3Array:
   def from_array(cls, array):
     rot = rotation_matrix.Rot3Array.from_array(array[..., :3])
     vec = vector.Vec3Array.from_array(array[..., -1])
-    return cls(rot, vec)
+    return cls(rot, vec)  # pytype: disable=wrong-arg-count  # trace-all-classes
 
   @classmethod
   def from_array4x4(cls, array: jnp.ndarray) -> Rigid3Array:
@@ -94,7 +94,7 @@ class Rigid3Array:
         )
     translation = vector.Vec3Array(
         array[..., 0, 3], array[..., 1, 3], array[..., 2, 3])
-    return cls(rotation, translation)
+    return cls(rotation, translation)  # pytype: disable=wrong-arg-count  # trace-all-classes
 
   def __getstate__(self):
     return (VERSION, (self.rotation, self.translation))
