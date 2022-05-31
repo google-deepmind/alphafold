@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG CUDA=11.1
+ARG CUDA=11.1.1
 FROM nvidia/cuda:${CUDA}-cudnn8-runtime-ubuntu18.04
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
@@ -21,15 +21,16 @@ ARG CUDA
 # Use bash to support string substitution.
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-      build-essential \
-      cmake \
-      cuda-command-line-tools-${CUDA/./-} \
-      git \
-      hmmer \
-      kalign \
-      tzdata \
-      wget \
+RUN apt-get update && CUDA_HYPHENS=${CUDA//./-} DEBIAN_FRONTEND=noninteractive \
+      apt-get install -y \
+        build-essential \
+        cmake \
+        cuda-command-line-tools-$(cut -f1,2 -d- <<< ${CUDA_HYPHENS}) \
+        git \
+        hmmer \
+        kalign \
+        tzdata \
+        wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Compile HHsuite from source.
@@ -65,8 +66,10 @@ RUN wget -q -P /app/alphafold/alphafold/common/ \
 # Install pip packages.
 RUN pip3 install --upgrade pip \
     && pip3 install -r /app/alphafold/requirements.txt \
-    && pip3 install --upgrade jax==0.2.14 jaxlib==0.1.69+cuda${CUDA/./} -f \
-      https://storage.googleapis.com/jax-releases/jax_releases.html
+    && pip3 install --upgrade \
+      jax==0.2.14 \
+      jaxlib==0.1.69+cuda$(cut -f1,2 -d. <<< ${CUDA} | sed 's/\.//g') \
+      -f https://storage.googleapis.com/jax-releases/jax_releases.html
 
 # Apply OpenMM patch.
 WORKDIR /opt/conda/lib/python3.7/site-packages
