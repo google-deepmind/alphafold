@@ -33,6 +33,9 @@ If you have any questions, please contact the AlphaFold team at
 
 ## First time setup
 
+You will need a machine running Linux, AlphaFold does not support other
+operating systems.
+
 The following steps are required in order to run AlphaFold:
 
 1.  Install [Docker](https://www.docker.com/).
