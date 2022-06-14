@@ -3,12 +3,12 @@ biopython==1.79
 chex==0.0.7
 dm-haiku==0.0.4
 dm-tree==0.1.6
-docker==5.0.0
 immutabledict==2.0.0
 jax==0.2.14
 ml-collections==0.1.0
 numpy==1.19.5
-pandas==1.3.4
-protobuf==3.20.1
+pandas==1.3.0
+protobuf==3.19.4
 scipy==1.7.0
-tensorflow-cpu==2.5.0
+simtk
+tensorflow-cpu==2.4.1
