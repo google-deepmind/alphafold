@@ -68,7 +68,7 @@ RUN pip3 install --upgrade pip \
     && pip3 install --upgrade \
       jax==0.2.14 \
       jaxlib==0.1.69+cuda$(cut -f1,2 -d. <<< ${CUDA} | sed 's/\.//g') \
-      -f https://storage.googleapis.com/jax-releases/jax_releases.html
+      -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
 # Apply OpenMM patch.
 WORKDIR /opt/conda/lib/python3.7/site-packages
