@@ -1,8 +1,0 @@
-27c27
-<   params = os.listdir(os.path.join(data_dir, 'params'))
----
->   params = os.listdir(os.path.join(data_dir, 'params_af_multimer'))
-34c34
-<   path = os.path.join(data_dir, 'params', f'params_{model_name}.npz')
----
->   path = os.path.join(data_dir, 'params_af_multimer', f'params_{model_name}.npz')
