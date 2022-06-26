@@ -84,6 +84,9 @@ bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -e 6
 
 ## First time setup
 
+You will need a machine running Linux, AlphaFold does not support other
+operating systems.
+
 The following steps are required in order to run AlphaFold:
 
 1.  Install [Docker](https://www.docker.com/).

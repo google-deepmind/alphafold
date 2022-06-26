@@ -53,10 +53,10 @@ class Vec3Array:
       assert all([x == z for x, z in zip(self.x.shape, self.z.shape)])
 
   def __add__(self, other: Vec3Array) -> Vec3Array:
-    return jax.tree_multimap(lambda x, y: x + y, self, other)
+    return jax.tree_map(lambda x, y: x + y, self, other)
 
   def __sub__(self, other: Vec3Array) -> Vec3Array:
-    return jax.tree_multimap(lambda x, y: x - y, self, other)
+    return jax.tree_map(lambda x, y: x - y, self, other)
 
   def __mul__(self, other: Float) -> Vec3Array:
     return jax.tree_map(lambda x: x * other, self)
