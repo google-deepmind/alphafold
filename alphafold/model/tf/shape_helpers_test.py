@@ -21,6 +21,10 @@ import tensorflow.compat.v1 as tf
 
 class ShapeTest(tf.test.TestCase):
 
+  def setUp(self):
+    super().setUp()
+    tf.disable_v2_behavior()
+
   def test_shape_list(self):
     """Test that shape_list can allow for reshaping to dynamic shapes."""
     a = tf.zeros([10, 4, 4, 2])
@@ -35,5 +39,4 @@ class ShapeTest(tf.test.TestCase):
 
 
 if __name__ == '__main__':
-  tf.disable_v2_behavior()
   tf.test.main()

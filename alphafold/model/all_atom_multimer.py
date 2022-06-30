@@ -426,7 +426,7 @@ def torsion_angles_to_frames(
   chi3_frame_to_backb = chi2_frame_to_backb @ all_frames[:, 6]
   chi4_frame_to_backb = chi3_frame_to_backb @ all_frames[:, 7]
 
-  all_frames_to_backb = jax.tree_multimap(
+  all_frames_to_backb = jax.tree_map(
       lambda *x: jnp.concatenate(x, axis=-1), all_frames[:, 0:5],
       chi2_frame_to_backb[:, None], chi3_frame_to_backb[:, None],
       chi4_frame_to_backb[:, None])

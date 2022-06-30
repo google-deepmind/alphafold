@@ -28,14 +28,14 @@ ARG CUDA_JAX=11.1
 SHELL ["/bin/bash", "-c"]
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-      build-essential \
-      cmake \
-      cuda-command-line-tools-${CUDA/./-} \
-      git \
-      hmmer \
-      kalign \
-      tzdata \
-      wget \
+        build-essential \
+        cmake \
+        cuda-command-line-tools-$(cut -f1,2 -d- <<< ${CUDA//./-}) \
+        git \
+        hmmer \
+        kalign \
+        tzdata \
+        wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Compile HHsuite from source.
@@ -71,8 +71,10 @@ RUN wget -q -P /app/alphafold/alphafold/common/ \
 # Install pip packages.
 RUN pip3 install --upgrade pip \
     && pip3 install -r /app/alphafold/requirements.txt \
-    && pip3 install --upgrade jax==0.2.14 jaxlib==0.1.69+cuda${CUDA_JAX/./} -f \
-      https://storage.googleapis.com/jax-releases/jax_releases.html
+    && pip3 install --upgrade \
+      jax==0.2.14 \
+      jaxlib==0.1.69+cuda${CUDA_JAX/./} \
+      -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
 # Apply OpenMM patch.
 WORKDIR /opt/conda/lib/python3.7/site-packages

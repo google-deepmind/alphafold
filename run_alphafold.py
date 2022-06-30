@@ -21,7 +21,7 @@ import random
 import shutil
 import sys
 import time
-from typing import Dict, Union, Optional
+from typing import Dict, Union
 
 from absl import app
 from absl import flags
