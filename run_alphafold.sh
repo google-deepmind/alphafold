@@ -2,7 +2,7 @@
 # Description: AlphaFold non-docker version
 # Author: Sanjay Kumar Srikakulam
 # Modified by Bozitao Zhong
-# Edited by Yinying Yao for AF-Multimeter version
+# Edited by Yinying Yao for AF-Multimer version
 
 usage() {
         echo ""
