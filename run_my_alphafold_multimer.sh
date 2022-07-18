@@ -160,6 +160,11 @@ AF_process(){
 		    pushd $decoy_name
 		        for f in ranked*.pdb;do cp ${f} ${res_dir}/models/${decoy_name}_${f};done
 		    popd
+
+		    # plot summary of af modeling results
+		    mkdir -p $res_dir/models/plot/$decoy_name
+		    python ${af_official_repo}/AlphaPickle.py --res_dir $decoy_name --save_dir $res_dir/models/plot/$decoy_name
+
 		    #cp $decoy_name/ranked_0.pdb $res_dir/best_model/${decoy_name}_ranked_0.pdb &&
 		    echo Collecting results files .... && \
 		    tar jcf $decoy_name\_AF2_lite.tar.bz2  --exclude *.pkl --exclude $decoy_name/msas $decoy_name && \
