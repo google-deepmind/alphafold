@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 # use traditional way for conda environment
@@ -9,6 +8,20 @@ conda activate alphafold
 #setting environment for cuda-11.0 gpu2-5
 export PATH=/usr/local/cuda-11.4/bin:$PATH
 export LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64:$LD_LIBRARY_PATH
+
+# User configuration
+db_dir=/mnt/db;
+pretrained_data_dir=/mnt/db/alphafold/
+
+# automatically determined directory
+af_official_repo=$(readlink -f $(dirname $0)) ;
+dir=`pwd`;
+
+
+out_dir=$dir/output;
+res_dir=$dir/res;
+
+
 
 usage() {
         echo ""
@@ -65,14 +78,8 @@ fi
 
 if [[ "$pretrained_data_date" == ""  ]] ; then
     pretrained_data_date=2022-03-02
-elif [[ "$pretrained_data_date" != "2021-07-14" && \
-        "$pretrained_data_date" != "2021-10-27" && \
-        "$pretrained_data_date" != "2022-01-19" && \
-        "$pretrained_data_date" != "2022-03-02" && \
-        "$pretrained_data_date" != "colab_2021-10-27" && \
-        "$pretrained_data_date" != "colab_2022-03-02" \
-        ]];then
-            echo "ERROR: Unknown pretrained_data_date! ${pretrained_data_date}"
+elif [[ ! -d ${pretrained_data_dir}/${pretrained_data_date}/ ]];then
+            echo "ERROR: Unknown pretrained_data_date ${pretrained_data_date} or the pretrained_data_dir ${pretrained_data_dir} inaccessible. "
             usage
 
 fi
@@ -124,16 +131,7 @@ echo "++++++++++++++++++++++++++++++++++++++++"
 
 
 
-# go to alphafold run_feature process
-dir=`pwd`;
 
-
-af_official_repo=$(readlink -f $(dirname $0)) ;
-
-out_dir=$dir/output;
-res_dir=$dir/res;
-db_dir=/mnt/db;
-pretrained_data_dir="/mnt/db/alphafold/${pretrained_data_date}/"
 
 
 mkdir $res_dir;
@@ -157,7 +155,7 @@ AF_process(){
         	echo Modeling is not started: $i;
 	        cmd="bash $af_official_repo/run_feature_cpu.sh \
                 -d $db_dir \
-                -P ${pretrained_data_dir} \
+                -P ${pretrained_data_dir}/${pretrained_data_date}/ \
                 -o $out_dir \
                 -m $model_preset \
                 -n $num_multimer_predictions_per_model \
@@ -179,7 +177,7 @@ AF_process(){
             echo Runing modeling process : $decoy_name
             cmd="bash $af_official_repo/run_alphafold.sh \
                     -d $db_dir \
-                    -P ${pretrained_data_dir} \
+                    -P ${pretrained_data_dir}/${pretrained_data_date}/ \
                     -o $out_dir \
                     -m $model_preset \
                     -f $dir/$i \
