@@ -19,11 +19,12 @@ usage() {
         echo "-n <num_multimer_predictions_per_model>       How many predictions (each with a different random seed) will be generated per model"
         echo "-t <template_date> Maximum template release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
         echo "-p <pretrained_data_date> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
+        echo "-r <run_relax> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
         echo ""
         exit 1
 }
 
-while getopts ":m:t:n:e:p:" i; do
+while getopts ":m:t:n:e:p:r:" i; do
         case "${i}" in
 
         m)
@@ -42,6 +43,9 @@ while getopts ":m:t:n:e:p:" i; do
         p)
                 pretrained_data_date=$OPTARG
         ;;
+        r)
+                run_relax=$OPTARG
+        ;;
         *)
                 echo Unknown argument!
                 usage
@@ -57,6 +61,7 @@ fi
 if [[ "$max_template_date" == "no" ]] ; then
     max_template_date=1900-01-01
 fi
+
 
 if [[ "$pretrained_data_date" == ""  ]] ; then
     pretrained_data_date=2022-03-02
@@ -96,14 +101,21 @@ if [[ "$model_preset" == "multimer" ]] ; then
     if [[ "$num_multimer_predictions_per_model" == "" ]];then
         num_multimer_predictions_per_model=5
     fi
+else
+    num_multimer_predictions_per_model=1
 fi
 
-
+if [[ "$run_relax" == "" || "$run_relax" == "true" ]] ; then
+    run_relax=true
+else
+    run_relax=false
+fi
 
 if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" != "multimer" ]] ; then
     echo "Unknown model_preset! "
     usage
 fi
+
 
 
 echo "process will start at : "
@@ -171,7 +183,8 @@ AF_process(){
                     -f $dir/$i \
                     -n $num_multimer_predictions_per_model \
                     -t $max_template_date \
-                    -e $num_ensemble";
+                    -e $num_ensemble \
+                    -r $run_relax" ;
 
 		    echo "$cmd";eval "$cmd"
 

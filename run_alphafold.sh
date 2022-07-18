@@ -21,13 +21,14 @@ usage() {
         echo "-b <benchmark>                                Run multiple JAX model evaluations to obtain a timing that excludes the compilation time, which should be more indicative of the time required for inferencing many
     proteins (default: 'False')"
         echo "-g <use_gpu>                                  Enable NVIDIA runtime to run with GPUs (default: 'True')"
+        echo "-r <run_relax>                                  Enable NVIDIA runtime to run with GPUs (default: 'True')"
         echo "-a <gpu_devices>                              Comma separated list of devices to pass to 'CUDA_VISIBLE_DEVICES' (default: 'all')"
         echo "-p <db_preset>                                Choose db_preset model configuration - no ensembling (full_dbs) or 8 model ensemblings (casp14) (default: 'full_dbs')"
         echo ""
         exit 1
 }
 
-while getopts ":d:P:o:m:e:f:it:a:n:p:bg" x; do
+while getopts ":d:P:o:m:e:r:f:it:a:n:p:bg" x; do
         case "${x}" in
         d)
                 data_dir=$OPTARG
@@ -40,6 +41,9 @@ while getopts ":d:P:o:m:e:f:it:a:n:p:bg" x; do
         ;;
         e)
                 num_ensemble=$OPTARG
+        ;;
+        r)
+                run_relax=$OPTARG
         ;;
         f)
                 fasta_path=$OPTARG
@@ -88,6 +92,11 @@ fi
 
 if [[ "$use_gpu" == "" ]] ; then
     use_gpu=true
+fi
+if [[ "$run_relax" == "" || "$run_relax" == "true" ]] ; then
+    run_relax=true
+else
+    run_relax=false
 fi
 
 if [[ "$gpu_devices" == "" ]] ; then
@@ -154,6 +163,7 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$m
     pdb70_database_path="$data_dir/pdb70/pdb70"
     cmd="python $alphafold_script \
         --use_gpu_relax=$use_gpu \
+        --run_relax=$run_relax \
         --num_ensemble=$num_ensemble \
         --hhblits_binary_path=$hhblits_binary_path \
         --hhsearch_binary_path=$hhsearch_binary_path \
@@ -184,6 +194,7 @@ if [[  "$model_preset" == "multimer" ]] ; then
     pdb_seqres_database_path="$data_dir/pdb_seqres/pdb_seqres.txt"
     cmd="python $alphafold_script \
         --use_gpu_relax=$use_gpu \
+        --run_relax=$run_relax \
         --num_ensemble=$num_ensemble \
         --hhblits_binary_path=$hhblits_binary_path \
         --hhsearch_binary_path=$hhsearch_binary_path \
