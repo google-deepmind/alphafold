@@ -69,7 +69,7 @@ elif [[ "$pretrained_data_date" != "2021-07-14" && \
         ]];then
             echo "ERROR: Unknown pretrained_data_date! ${pretrained_data_date}"
             usage
-    fi
+
 fi
 
 
