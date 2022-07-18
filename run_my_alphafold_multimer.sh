@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 # use traditional way for conda environment
@@ -105,6 +106,7 @@ db_dir=/mnt/db;
 
 mkdir $res_dir;
 mkdir $out_dir;
+mkdir $res_dir/models
 mkdir $res_dir/lite;
 mkdir $res_dir/full;
 mkdir $dir/processed;
@@ -154,6 +156,11 @@ AF_process(){
 		    echo "$cmd";eval "$cmd"
 
 		    cd $out_dir && \
+		    echo Selecting best_model ...
+		    pushd $decoy_name
+		        for f in ranked*.pdb;do cp ${f} ${res_dir}/models/${decoy_name}_${f};done
+		    popd
+		    #cp $decoy_name/ranked_0.pdb $res_dir/best_model/${decoy_name}_ranked_0.pdb &&
 		    echo Collecting results files .... && \
 		    tar jcf $decoy_name\_AF2_lite.tar.bz2  --exclude *.pkl --exclude $decoy_name/msas $decoy_name && \
 		    mv $decoy_name\_AF2_lite.tar.bz2 $res_dir/lite && \
