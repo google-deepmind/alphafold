@@ -85,9 +85,6 @@ if [[ "$benchmark" == "" ]] ; then
     benchmark=false
 fi
 
-if [[ "$is_prokaryote_list" == "" ]] ; then
-    is_prokaryote_list=false
-fi
 
 if [[ "$use_gpu" == "" ]] ; then
     use_gpu=false

@@ -157,6 +157,7 @@ AF_process(){
         	echo Modeling is not started: $i;
 	        cmd="bash $af_official_repo/run_feature_cpu.sh \
                 -d $db_dir \
+                -P ${pretrained_data_dir} \
                 -o $out_dir \
                 -m $model_preset \
                 -n $num_multimer_predictions_per_model \
@@ -178,6 +179,7 @@ AF_process(){
             echo Runing modeling process : $decoy_name
             cmd="bash $af_official_repo/run_alphafold.sh \
                     -d $db_dir \
+                    -P ${pretrained_data_dir} \
                     -o $out_dir \
                     -m $model_preset \
                     -f $dir/$i \
