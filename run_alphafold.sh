@@ -9,6 +9,7 @@ usage() {
         echo "Usage: $0 <OPTIONS>"
         echo "Required Parameters:"
         echo "-d <data_dir>                                 Path to directory of supporting data"
+        echo "-P <pretrained_data_dir>                      Choose db_preset model configuration - no ensembling (full_dbs) or 8 model ensemblings (casp14) (default: 'full_dbs')"
         echo "-o <output_dir>                               Path to a directory that will store the results."
         echo "-e <num_ensemble>                             Override default num_ensemble."
         # edited by Yinying
@@ -26,7 +27,7 @@ usage() {
         exit 1
 }
 
-while getopts ":d:o:m:e:f:it:a:n:p:bg" x; do
+while getopts ":d:P:o:m:e:f:it:a:n:p:bg" x; do
         case "${x}" in
         d)
                 data_dir=$OPTARG
@@ -61,6 +62,9 @@ while getopts ":d:o:m:e:f:it:a:n:p:bg" x; do
         p)
                 db_preset=$OPTARG
         ;;
+        P)
+                pretrained_data_dir=$OPTARG
+        ;;
         *)
                 echo Unknown argument! exiting ...
                 usage
@@ -69,7 +73,7 @@ while getopts ":d:o:m:e:f:it:a:n:p:bg" x; do
 done
 
 # Parse input and set defaults
-if [[ "$data_dir" == "" || "$output_dir" == "" || "$model_preset" == "" || "$fasta_path" == "" ]] ; then
+if [[ "$data_dir" == "" || "$output_dir" == "" || "$model_preset" == "" || "$fasta_path" == "" || "$pretrained_data_dir" == "" ]] ; then
     usage
 fi
 
@@ -162,7 +166,7 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$m
         --pdb70_database_path=$pdb70_database_path \
         --uniclust30_database_path=$uniclust30_database_path \
         --uniref90_database_path=$uniref90_database_path \
-        --data_dir=$data_dir \
+        --data_dir=$pretrained_data_dir \
         --output_dir=$output_dir \
         --fasta_paths=$fasta_path \
         --model_preset=$model_preset \
@@ -193,7 +197,7 @@ if [[  "$model_preset" == "multimer" ]] ; then
         --pdb_seqres_database_path=$pdb_seqres_database_path \
         --uniprot_database_path=$uniprot_database_path \
         --uniref90_database_path=$uniref90_database_path \
-        --data_dir=$data_dir \
+        --data_dir=$pretrained_data_dir \
         --output_dir=$output_dir \
         --fasta_paths=$fasta_path \
         --model_preset=$model_preset \

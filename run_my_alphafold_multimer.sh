@@ -18,11 +18,12 @@ usage() {
         echo "-m <model_preset>  Choose preset model configuration - the monomer model, the monomer model with extra ensembling, monomer model with pTM head, or multimer model"
         echo "-n <num_multimer_predictions_per_model>       How many predictions (each with a different random seed) will be generated per model"
         echo "-t <template_date> Maximum template release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
+        echo "-p <pretrained_data_date> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
         echo ""
         exit 1
 }
 
-while getopts ":m:t:n:e:" i; do
+while getopts ":m:t:n:e:p:" i; do
         case "${i}" in
 
         m)
@@ -38,6 +39,9 @@ while getopts ":m:t:n:e:" i; do
         e)
                 num_ensemble=$OPTARG
         ;;
+        p)
+                pretrained_data_date=$OPTARG
+        ;;
         *)
                 echo Unknown argument!
                 usage
@@ -47,12 +51,27 @@ while getopts ":m:t:n:e:" i; do
 done
 
 if [[ "$max_template_date" == "" ]] ; then
-    template_date=2021-10-30
+    max_template_date=2021-10-30
 fi
 
 if [[ "$max_template_date" == "no" ]] ; then
-    template_date=1900-01-01
+    max_template_date=1900-01-01
 fi
+
+if [[ "$pretrained_data_date" == ""  ]] ; then
+    pretrained_data_date=2022-03-02
+elif [[ "$pretrained_data_date" != "2021-07-14" && \
+        "$pretrained_data_date" != "2021-10-27" && \
+        "$pretrained_data_date" != "2022-01-19" && \
+        "$pretrained_data_date" != "2022-03-02" && \
+        "$pretrained_data_date" != "colab_2021-10-27" && \
+        "$pretrained_data_date" != "colab_2022-03-02" \
+        ]];then
+            echo "ERROR: Unknown pretrained_data_date! ${pretrained_data_date}"
+            usage
+    fi
+fi
+
 
 
 # edited by Yinying
@@ -95,13 +114,14 @@ echo "++++++++++++++++++++++++++++++++++++++++"
 
 # go to alphafold run_feature process
 dir=`pwd`;
-#run_docker_pth=/mnt/data/alphafold/docker;
+
 
 af_official_repo=$(readlink -f $(dirname $0)) ;
-#af_official_repo=/software/alphafold_multimer/alphafold ;
+
 out_dir=$dir/output;
 res_dir=$dir/res;
 db_dir=/mnt/db;
+pretrained_data_dir="/mnt/db/alphafold/${pretrained_data_date}/"
 
 
 mkdir $res_dir;
@@ -129,7 +149,7 @@ AF_process(){
                 -m $model_preset \
                 -n $num_multimer_predictions_per_model \
                 -f $dir/$i \
-                -t $template_date";
+                -t $max_template_date";
 	        echo "$cmd";eval "$cmd"
         else
             echo Find feature files in $out_dir/$decoy_name/features.pkl;
@@ -150,7 +170,7 @@ AF_process(){
                     -m $model_preset \
                     -f $dir/$i \
                     -n $num_multimer_predictions_per_model \
-                    -t $template_date \
+                    -t $max_template_date \
                     -e $num_ensemble";
 
 		    echo "$cmd";eval "$cmd"
@@ -190,7 +210,7 @@ for i in `ls  |grep .fasta`;
 do
     echo $dir/$i;
     cd $dir;
-     # run processing ...
+    # run processing ...
     AF_process $dir $i ;
     # mv $dir/$i $dir/processed;
     let fin++;
