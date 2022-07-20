@@ -106,7 +106,7 @@ fi
 
 if [[ "$model_preset" == "multimer" ]] ; then
     if [[ "$num_multimer_predictions_per_model" == "" ]];then
-        num_multimer_predictions_per_model=5
+        num_multimer_predictions_per_model=2
     fi
 else
     num_multimer_predictions_per_model=1
@@ -128,9 +128,6 @@ fi
 echo "process will start at : "
 date
 echo "++++++++++++++++++++++++++++++++++++++++"
-
-
-
 
 
 
