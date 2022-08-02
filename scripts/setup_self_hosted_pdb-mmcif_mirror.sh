@@ -50,7 +50,7 @@ hosts allow=* "
 sudo systemctl start rsyncd.service
 sudo systemctl enable rsyncd.service
 echo ${rsync_configuration} >/etc/rsyncd.conf
-rsync -daemon -config=/etc/rsyncd.conf
+rsync --daemon --config=/etc/rsyncd.conf
 sudo systemctl restart rsyncd.service
 
 echo "----------------------------------------------------------------------------"
