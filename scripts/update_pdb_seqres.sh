@@ -34,5 +34,15 @@ ROOT_DIR="${DOWNLOAD_DIR}/pdb_seqres"
 SOURCE_URL="ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt"
 BASENAME=$(basename "${SOURCE_URL}")
 
-mkdir --parents "${ROOT_DIR}"
-aria2c -x10 "${SOURCE_URL}" --dir="${ROOT_DIR}"
+mkdir --parents "${ROOT_DIR}" || echo Never mind.
+mkdir --parents "${ROOT_DIR}/old" || echo Never mind.
+mkdir --parents "${ROOT_DIR}/downloading" || echo Never mind.
+
+aria2c -x10 "${SOURCE_URL}" --dir="${ROOT_DIR}/downloading/"
+
+# move old files
+mv ${ROOT_DIR}/${BASENAME} ${ROOT_DIR}/old/${BASENAME%.txt}_$(date +'%Y-%m-%d').txt
+
+# move new file
+mv ${ROOT_DIR}/downloading/${BASENAME} ${ROOT_DIR}/${BASENAME}
+

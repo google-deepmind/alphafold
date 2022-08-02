@@ -82,8 +82,30 @@ apt-get -y install cuda
 
 
 mkdir -p $DB_PATH/alphafold
+pushd $DB_PATH/alphafold
+# set the historical pretrained af parameters
+awk '{
+  split($0, arr, ",");
+  if(arr[1]!="tag"){
+    tag=arr[1];
+    url=arr[2];
+    short_name=arr[3];
 
-chmod -R 755 /mnt/db
+    split(url,arr2,"/");
+    filename=arr2[length(arr2)];
+    print filename;
+
+    # create directories
+    system("mkdir "short_name);
+
+    # downloading params
+    system("pushd "short_name";if [[ -f "filename" && ! -f "filename".aria2c ]];then echo Find complete file "filename".; else aria2c -x 10 "url";fi; tar -xf "filename" ; rm -f "filename";parallel -k sha256sum {} ::: $(ls)  > "short_name".sha256; popd");
+
+    }
+  }'  $SOFTWARE_PATH/alphafold/pretrained_data_url.csv
+
+
+chmod -R 755 $DB_PATH/
 
 # runtime settings
 # edit nproc to 16
