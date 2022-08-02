@@ -64,7 +64,7 @@ fi
 echo "----------------------------------------------------------------------------"
 echo "Now we start to synchronize from original mirrors ..."
 
-mkdir --parents ${db_path}
+mkdir --parents "${db_path}/pdb_mmcif"
 
 echo "Trying to sync with PDBj ..." && \
 MIRROR="PDBj" && \
