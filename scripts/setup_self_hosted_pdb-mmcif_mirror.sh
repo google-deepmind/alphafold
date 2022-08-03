@@ -112,7 +112,7 @@ echo "Your crontab task configuration is listed here:"
 echo "----------------------------------------------------------------------------"
 echo -e "${CRONTAB_CMD}"
 echo "----------------------------------------------------------------------------"
-echo "${CRONTAB_CMD}" > "${db_path}/pdb_mmcif_rsync.sh"
+echo -e "${CRONTAB_CMD}" > "${db_path}/pdb_mmcif_rsync.sh"
 touch /var/spool/cron/$(whoami)
 echo "30 16 * * 5 ${db_path}/pdb_mmcif_rsync.sh >> ${db_path}/pdb_mmcif_rsync.log 2>&1" >> /var/spool/cron/$(whoami)
 
