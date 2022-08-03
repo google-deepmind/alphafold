@@ -28,43 +28,43 @@ fi
 
 mkdir -p $db_path
 
-rsync_configuration="# /etc/rsyncd: configuration file for rsync daemon mode
+rsync_configuration="# /etc/rsyncd: configuration file for rsync daemon mode \n
 
-# See rsyncd.conf man page for more options.
+# See rsyncd.conf man page for more options.\n
 
-uid = nobody
-gid = nobody
-use chroot = no
-max connections = 0
-lock file=/var/run/rsyncd.lock
-log file = /var/log/rsyncd.log
-exclude = lost+found/
-transfer logging = yes
-timeout = 900
-ignore nonreadable = yes
-dont compress   = *.gz *.tgz *.zip *.z *.Z *.rpm *.deb *.bz2
-
-[db]
-path = ${db_path}
-comment=dbs
-ignore errors
-read only=yes
-write only=no
-list=no
-#auth users=user
-#secrets file=/etc/rsyncd.passwd
-
-hosts allow=* "
+uid = nobody\n
+gid = nobody\n
+use chroot = no\n
+max connections = 0\n
+lock file=/var/run/rsyncd.lock\n
+log file = /var/log/rsyncd.log\n
+exclude = lost+found/\n
+transfer logging = yes\n
+timeout = 900\n
+ignore nonreadable = yes\n
+dont compress   = *.gz *.tgz *.zip *.z *.Z *.rpm *.deb *.bz2\n
+\n
+[db]\n
+path = ${db_path}\n
+comment=dbs\n
+ignore errors\n
+read only=yes\n
+write only=no\n
+list=no\n
+#auth users=user\n
+#secrets file=/etc/rsyncd.passwd\n
+\n
+hosts allow=* \n"
 
 echo "----------------------------------------------------------------------------"
 echo "Now configure rsyncd ..."
 echo "Your configurations are listed below:"
 echo "----------------------------------------------------------------------------"
-echo ${rsync_configuration}
+echo -e ${rsync_configuration}
 echo "----------------------------------------------------------------------------"
 sudo systemctl start rsyncd.service
 sudo systemctl enable rsyncd.service
-echo ${rsync_configuration} >/etc/rsyncd.conf
+echo -e ${rsync_configuration} >/etc/rsyncd.conf
 rsync --daemon --config=/etc/rsyncd.conf
 sudo systemctl restart rsyncd.service
 
@@ -99,18 +99,18 @@ echo "The following command will be executed every Friday:"
 echo "${MIRROR_CMD}"
 echo "----------------------------------------------------------------------------"
 echo "Now we create a crontab task."
-CRONTAB_CMD="#!/bin/bash
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
-export PATH
-${MIRROR_CMD}
-echo \"----------------------------------------------------------------------------\"
-endDate=\`date +\"%Y-%m-%d %H:%M:%S\"\`
-echo \"★[\${endDate}] Successful\"
-echo \"----------------------------------------------------------------------------\"
+CRONTAB_CMD="#!/bin/bash\n
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin\n
+export PATH\n
+${MIRROR_CMD}\n
+echo \"----------------------------------------------------------------------------\"\n
+endDate=\`date +\"%Y-%m-%d %H:%M:%S\"\`\n
+echo \"★[\${endDate}] Successful\"\n
+echo \"----------------------------------------------------------------------------\"\n
 "
 echo "Your crontab task configuration is listed here:"
 echo "----------------------------------------------------------------------------"
-echo "${CRONTAB_CMD}"
+echo -e "${CRONTAB_CMD}"
 echo "----------------------------------------------------------------------------"
 echo "${CRONTAB_CMD}" > "${db_path}/pdb_mmcif_rsync.sh"
 touch /var/spool/cron/$(whoami)
