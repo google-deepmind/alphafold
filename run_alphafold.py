@@ -112,6 +112,10 @@ flags.DEFINE_integer('num_multimer_predictions_per_model', 5, 'How many '
                      'generated per model. E.g. if this is 2 and there are 5 '
                      'models then there will be 10 predictions per input. '
                      'Note: this FLAG only applies if model_preset=multimer')
+flags.DEFINE_boolean('return_full_pickle_file', False, 'Whether or not to return '
+                     'a full or reduced prediction results pickle file for each model.'
+                     'The entries "experimentally_resolved", "masked_msa", "predicted_lddt" '
+                     'and "structure_module" are removed in the reduced pickle file')
 flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'have been written to disk instead of running the MSA '
                      'tools. The MSA files are looked up in the output '
@@ -149,10 +153,17 @@ def _check_flag(flag_name: str,
                      f'"--{other_flag_name}={FLAGS[other_flag_name].value}".')
 
 
+def reduce_preduction_result(prediction_result):
+    prediction_result['experimentally_resolved'] = None
+    prediction_result['masked_msa'] = None
+    prediction_result['predicted_lddt'] = None
+    prediction_result['structure_module'] = None
+
 def predict_structure(
     fasta_path: str,
     fasta_name: str,
     output_dir_base: str,
+    return_full_pickle_file: bool,
     data_pipeline: Union[pipeline.DataPipeline, pipeline_multimer.DataPipeline],
     model_runners: Dict[str, model.RunModel],
     amber_relaxer: relax.AmberRelaxation,
@@ -203,6 +214,9 @@ def predict_structure(
     t_0 = time.time()
     prediction_result = model_runner.predict(processed_feature_dict,
                                              random_seed=model_random_seed)
+    if not return_full_pickle_file:
+      reduce_preduction_result(prediction_result)
+
     t_diff = time.time() - t_0
     timings[f'predict_and_compile_{model_name}'] = t_diff
     logging.info(
@@ -405,6 +419,7 @@ def main(argv):
         fasta_path=fasta_path,
         fasta_name=fasta_name,
         output_dir_base=FLAGS.output_dir,
+        return_full_pickle_file=FLAGS.return_full_pickle_file,
         data_pipeline=data_pipeline,
         model_runners=model_runners,
         amber_relaxer=amber_relaxer,
