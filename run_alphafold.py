@@ -214,8 +214,6 @@ def predict_structure(
     t_0 = time.time()
     prediction_result = model_runner.predict(processed_feature_dict,
                                              random_seed=model_random_seed)
-    if not return_full_pickle_file:
-      reduce_preduction_result(prediction_result)
 
     t_diff = time.time() - t_0
     timings[f'predict_and_compile_{model_name}'] = t_diff
@@ -235,11 +233,6 @@ def predict_structure(
 
     plddt = prediction_result['plddt']
     ranking_confidences[model_name] = prediction_result['ranking_confidence']
-
-    # Save the model outputs.
-    result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
-    with open(result_output_path, 'wb') as f:
-      pickle.dump(prediction_result, f, protocol=4)
 
     # Add the predicted LDDT in the b-factor column.
     # Note that higher predicted LDDT value means higher model confidence.
@@ -269,6 +262,15 @@ def predict_structure(
           output_dir, f'relaxed_{model_name}.pdb')
       with open(relaxed_output_path, 'w') as f:
         f.write(relaxed_pdb_str)
+
+
+    if not return_full_pickle_file:
+      reduce_preduction_result(prediction_result)
+
+    # Save the model outputs.
+    result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
+    with open(result_output_path, 'wb') as f:
+      pickle.dump(prediction_result, f, protocol=4)
 
   # Rank by model confidence and write out relaxed PDBs in rank order.
   ranked_order = []
