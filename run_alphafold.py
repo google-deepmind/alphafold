@@ -158,6 +158,8 @@ def reduce_preduction_result(prediction_result):
     prediction_result['masked_msa'] = None
     prediction_result['predicted_lddt'] = None
     prediction_result['structure_module'] = None
+    if 'aligned_confidence_probs' in prediction_result:
+        prediction_result['aligned_confidence_probs'] = None
 
 def predict_structure(
     fasta_path: str,
