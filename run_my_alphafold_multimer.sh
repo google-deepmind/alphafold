@@ -171,17 +171,22 @@ AF_process(){
 	    else
 	        #
             echo Find feature files in $out_dir/$decoy_name/features.pkl;
-            echo Runing modeling process : $decoy_name
-            cmd="bash $af_official_repo/run_alphafold.sh \
-                    -d $db_dir \
-                    -P ${pretrained_data_dir}/${pretrained_data_date}/ \
-                    -o $out_dir \
-                    -m $model_preset \
-                    -f $dir/$i \
-                    -n $num_multimer_predictions_per_model \
-                    -t $max_template_date \
-                    -e $num_ensemble \
-                    -r $run_relax" ;
+            if [[ ! -f $out_dir/$decoy_name/ranking_debug.json ]];then
+              echo Runing modeling process : $decoy_name
+              cmd="bash $af_official_repo/run_alphafold.sh \
+                      -d $db_dir \
+                      -P ${pretrained_data_dir}/${pretrained_data_date}/ \
+                      -o $out_dir \
+                      -m $model_preset \
+                      -f $dir/$i \
+                      -n $num_multimer_predictions_per_model \
+                      -t $max_template_date \
+                      -e $num_ensemble \
+                      -r $run_relax" ;
+            else
+              echo Find Previous ranking: $out_dir/$decoy_name/ranking_debug.json
+              echo Skip Modeling ...
+            fi
 
 		    echo "$cmd";eval "$cmd"
 
