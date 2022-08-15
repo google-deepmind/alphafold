@@ -44,9 +44,9 @@ RUN git clone --branch v3.3.0 https://github.com/soedinglab/hh-suite.git /tmp/hh
 
 # Install Miniconda package manager.
 RUN wget -q -P /tmp \
-  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
-    && rm /tmp/Miniconda3-latest-Linux-x86_64.sh
+  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-$(uname -m).sh \
+    && bash /tmp/Miniconda3-latest-Linux-$(uname -m).sh -b -p /opt/conda \
+    && rm /tmp/Miniconda3-latest-Linux-$(uname -m).sh
 
 # Install conda packages.
 ENV PATH="/opt/conda/bin:$PATH"
