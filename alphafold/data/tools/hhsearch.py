@@ -89,6 +89,10 @@ class HHSearch:
         stdout, stderr = process.communicate()
         retcode = process.wait()
 
+      print('HHSearch Stdout: ', stdout)
+      print('HHSearch Stderr: ', stderr)
+      print('HHSearch retcode: ', retcode)
+
       if retcode:
         # Stderr is truncated to prevent proto size errors in Beam.
         raise RuntimeError(
