@@ -173,12 +173,16 @@ def predict_structure(
     random_seed: int,
     only_generate_msas: bool = False):
   """Predicts structure using AlphaFold for the given sequence."""
+
   logging.info('Predicting %s', fasta_name)
   timings = {}
   output_dir = os.path.join(output_dir_base, fasta_name)
   if not os.path.exists(output_dir):
     os.makedirs(output_dir)
   msa_output_dir = os.path.join(output_dir, 'msas')
+  if only_generate_msas and not msa_output_dir:
+      print(f"Tried to find precomputed msas folder at {msa_output_dir} but no such folder exists, exiting...")
+      sys.exit(1)
   if not os.path.exists(msa_output_dir):
     os.makedirs(msa_output_dir)
 
@@ -334,6 +338,11 @@ def main(argv):
   fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
   if len(fasta_names) != len(set(fasta_names)):
     raise ValueError('All FASTA paths must have a unique basename.')
+
+  msa_output_dir = os.path.join(FLAGS.output_dir, 'msas')
+  if FLAGS.use_precomputed_msas and not os.path.exists(msa_output_dir):
+    print(f"Tried to find precomputed msas folder at {msa_output_dir} but no such folder exists, exiting...")
+    sys.exit(1)
 
   if run_multimer_system:
     template_searcher = hmmsearch.Hmmsearch(
