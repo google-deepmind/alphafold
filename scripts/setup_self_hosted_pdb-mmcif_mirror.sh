@@ -70,7 +70,7 @@ sudo systemctl restart rsyncd.service
 
 echo "----------------------------------------------------------------------------"
 echo "Modifying firewall configuration in expected linux distribution ${LINUX_DIST} ... "
-if [[ "$LINUX_DIST" == "CENTOS" ]]; then
+if [[ "$LINUX_DIST" == "REDHAT" ]]; then
   cmd="sudo firewall-cmd --zone=public --add-port=873/tcp --permanent"
   echo "$cmd" && eval "$cmd" || exit 1
 elif [[ "$LINUX_DIST" == "DEBIAN" ]]; then
