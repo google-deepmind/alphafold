@@ -789,7 +789,7 @@ def backbone_loss(gt_rigid: geometry.Rigid3Array,
   loss_fn = functools.partial(
       all_atom_multimer.frame_aligned_point_error,
       l1_clamp_distance=config.atom_clamp_distance,
-      loss_unit_distance=config.loss_unit_distance)
+      length_scale=config.loss_unit_distance)
 
   loss_fn = jax.vmap(loss_fn, (0, None, None, 0, None, None, None))
   fape = loss_fn(target_rigid, gt_rigid, gt_frames_mask,
