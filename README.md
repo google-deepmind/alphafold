@@ -604,7 +604,7 @@ In addition, if you use the AlphaFold-Multimer mode, please cite:
 ```bibtex
 @article {AlphaFold-Multimer2021,
   author       = {Evans, Richard and O{\textquoteright}Neill, Michael and Pritzel, Alexander and Antropova, Natasha and Senior, Andrew and Green, Tim and {\v{Z}}{\'\i}dek, Augustin and Bates, Russ and Blackwell, Sam and Yim, Jason and Ronneberger, Olaf and Bodenstein, Sebastian and Zielinski, Michal and Bridgland, Alex and Potapenko, Anna and Cowie, Andrew and Tunyasuvunakool, Kathryn and Jain, Rishub and Clancy, Ellen and Kohli, Pushmeet and Jumper, John and Hassabis, Demis},
-  journal      = {bioRxiv}
+  journal      = {bioRxiv},
   title        = {Protein complex prediction with AlphaFold-Multimer},
   year         = {2021},
   elocation-id = {2021.10.04.463034},
