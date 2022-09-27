@@ -1,0 +1,35 @@
+name: Build Docker Image
+
+on:
+  # run it during pull request
+  pull_request:
+    paths: 
+    - 'docker/Dockerfile '
+      
+  workflow_dispatch:
+
+jobs:
+  # define job to build and publish docker image
+  build-docker-image:
+    name: Build Docker image only
+    # run only when code is compiling and tests are passing
+    runs-on: ubuntu-latest
+
+    # steps to perform in job
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # setup Docker build action
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+      
+      - name: Build image only
+        uses: docker/build-push-action@v2
+        with:
+          context: docker/
+          push: false
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
