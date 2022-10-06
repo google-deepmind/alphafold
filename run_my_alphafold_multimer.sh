@@ -33,11 +33,12 @@ usage() {
         echo "-t <template_date> Maximum template release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
         echo "-p <pretrained_data_date> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
         echo "-r <run_relax> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
+        echo "-c <clean_run>                                Make a clean run, full results (massive pkls) will be deleted"
         echo ""
         exit 1
 }
 
-while getopts ":m:t:n:e:p:r:" i; do
+while getopts ":m:t:n:e:p:r:c:" i; do
         case "${i}" in
 
         m)
@@ -58,6 +59,9 @@ while getopts ":m:t:n:e:p:r:" i; do
         ;;
         r)
                 run_relax=$OPTARG
+        ;;
+        c)
+                clean_run=true
         ;;
         *)
                 echo Unknown argument!
@@ -118,6 +122,13 @@ else
     run_relax=false
 fi
 
+
+if [[ "$clean_run" == "" || "$clean_run" == "false" ]] ; then
+    clean_run=false
+else
+    clean_run=true
+fi
+
 if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" != "multimer" ]] ; then
     echo "Unknown model_preset! "
     usage
@@ -143,6 +154,10 @@ AF_process(){
 	local dir=$1;
 	local i=$2;
 	local decoy_name=${i%.fasta};
+	if [[ "$decoy_name" == "" ]];then
+	  echo "decoy_name ${decoy_name} is not valid!"
+	  exit 1
+	fi
 
 	cd $af_official_repo; # fix error caused by some path configs.
     if [ ! -f $res_dir/lite/$decoy_name\_AF2_lite.tar.bz2 ]; then
@@ -173,7 +188,7 @@ AF_process(){
             echo Find feature files in $out_dir/$decoy_name/features.pkl;
             if [[ ! -f $out_dir/$decoy_name/ranking_debug.json ]];then
               echo Runing modeling process : $decoy_name
-              cmd="bash $af_official_repo/run_alphafold.sh \
+              local cmd="bash $af_official_repo/run_alphafold.sh \
                       -d $db_dir \
                       -P ${pretrained_data_dir}/${pretrained_data_date}/ \
                       -o $out_dir \
@@ -203,9 +218,13 @@ AF_process(){
 		    #cp $decoy_name/ranked_0.pdb $res_dir/best_model/${decoy_name}_ranked_0.pdb &&
 		    echo Collecting results files .... && \
 		    tar jcf $decoy_name\_AF2_lite.tar.bz2  --exclude *.pkl --exclude $decoy_name/msas $decoy_name && \
-		    mv $decoy_name\_AF2_lite.tar.bz2 $res_dir/lite && \
-		    tar jcf $decoy_name\_AF2_full.tar.bz2 --remove-files $decoy_name &&  \
-		    mv $decoy_name\_AF2_full.tar.bz2 $res_dir/full && \
+		    mv $decoy_name\_AF2_lite.tar.bz2 $res_dir/lite;
+		    if [[ "$clean_run" == "false" ]];then
+                tar jcf $decoy_name\_AF2_full.tar.bz2 --remove-files $decoy_name &&  \
+                mv $decoy_name\_AF2_full.tar.bz2 $res_dir/full;
+            else
+                rm -rf $decoy_name
+            fi
 		    mv $dir/$i $dir/processed &
         fi
     else
