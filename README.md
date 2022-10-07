@@ -36,7 +36,7 @@ _Yinying Yao added this for updates with ver 1.0_
 
 ### Clone the repo.
 ```bash
-git clone https://github.com/deepmind/alphafold.git
+git clone https://github.com/YaoYinYing/alphafold.git
 ```
 ### Use almost the same conda environment of previous_release
 ```bash
@@ -64,23 +64,35 @@ wget -q -P alphafold/common/ https://git.scicore.unibas.ch/schwede/openstructure
 ```bash
 cd <working-directory>
 # for monomer with default template date
-bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh
+bash /repo/alphafold/run_my_alphafold_multimer.sh
 
 # for monomer with no template
-bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -t no
+bash /repo/alphafold/run_my_alphafold_multimer.sh -t no
 
 # for monomer with custom template date
-bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -t 1994-01-16
+bash /repo/alphafold/run_my_alphafold_multimer.sh -t 1994-01-16
 
 # for multimer
-bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -m multimer
+bash /repo/alphafold/run_my_alphafold_multimer.sh -m multimer
 
 # run w/ customized ensemble numbers
-bash /software/alphafold_multimer/alphafold/run_my_alphafold_multimer.sh -e 6
+bash /repo/alphafold/run_my_alphafold_multimer.sh -e 6
 
+# run a clean mode (no pkls will be reserved!)
+bash /repo/alphafold/run_my_alphafold_multimer.sh -c yes
 
+# run w/ a customized pretrain dataset (2022-03-02) for historical reproducibility and don't run further relax after modeling
+bash /repo/alphafold/run_my_alphafold_multimer.sh -p 2022-03-02 -r false
+
+# run to a specific fasta file
+bash /repo/alphafold/run_my_alphafold_snakemake.sh -f ./S4_nosig.fasta 
 ```
- TODO: mmcif files weekly synchronization.
+
+### Maintenance
+**Setup Weekly Updatable mmcif server**
+
+check [this script](scripts/setup_self_hosted_pdb-mmcif_mirror.sh).
+
 
 ## First time setup
 
@@ -330,7 +342,7 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
     T1050 CASP14 target:
 
     ```bash
-    python3 docker/run_docker.py \
+    python3 docker/run_pprcode.py \
       --fasta_paths=T1050.fasta \
       --max_template_date=2020-05-14 \
       --data_dir=$DOWNLOAD_DIR
@@ -375,7 +387,7 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
     `reduced_dbs` data preset would look like this:
 
     ```bash
-    python3 docker/run_docker.py \
+    python3 docker/run_pprcode.py \
       --fasta_paths=T1050.fasta \
       --max_template_date=2020-05-14 \
       --model_preset=monomer \
@@ -393,7 +405,7 @@ All steps are the same as when running the monomer system, but you will have to
 An example that folds a protein complex `multimer.fasta`:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=multimer.fasta \
   --max_template_date=2020-05-14 \
   --model_preset=multimer \
@@ -421,7 +433,7 @@ Say we have a monomer with the sequence `<SEQUENCE>`. The input fasta should be:
 Then run the following command:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=monomer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=monomer \
@@ -445,7 +457,7 @@ Say we have a homomer with 3 copies of the same sequence
 Then run the following command:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=homomer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
@@ -473,7 +485,7 @@ Say we have an A2B3 heteromer, i.e. with 2 copies of
 Then run the following command:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=heteromer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
@@ -487,7 +499,7 @@ Say we have a two monomers, `monomer1.fasta` and `monomer2.fasta`.
 We can fold both sequentially by using the following command:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=monomer1.fasta,monomer2.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=monomer \
@@ -501,7 +513,7 @@ Say we have a two multimers, `multimer1.fasta` and `multimer2.fasta`.
 We can fold both sequentially by using the following command:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=multimer1.fasta,multimer2.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
