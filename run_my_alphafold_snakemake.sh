@@ -158,7 +158,7 @@ mkdir $out_dir;
 mkdir $res_dir/models
 mkdir $res_dir/lite;
 mkdir $res_dir/full;
-mkdir $dir/processed;
+#mkdir $dir/processed;
 
 
 AF_process(){
@@ -236,14 +236,13 @@ AF_process(){
             else
                 rm -rf $decoy_name
             fi
-		    mv $dir/$i $dir/processed &
+		    #mv $dir/$i $dir/processed
         fi
     else
             echo Find modeling files in $res_dir/lite/$decoy_name\_AF2_lite.tar.bz2;
             echo Skip the run_alphafold process: $decoy_name
     fi
 }
-
 
 dir=$(dirname $(readlink -f $fasta));
 fasta_fn=$(basename $fasta)
