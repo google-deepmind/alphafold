@@ -86,6 +86,10 @@ bash /repo/alphafold/run_my_alphafold_multimer.sh -p 2022-03-02 -r false
 
 # run to a specific fasta file
 bash /repo/alphafold/run_my_alphafold_snakemake.sh -f ./S4_nosig.fasta 
+
+# run MSA building w/ customized number of processor
+bash /repo/alphafold/run_my_alphafold_multimer.sh -r no -c yes -j 16
+
 ```
 
 ### Maintenance
