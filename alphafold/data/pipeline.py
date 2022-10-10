@@ -136,22 +136,22 @@ class DataPipeline:
         self.jackhmmer_uniref90_runner = jackhmmer.Jackhmmer(
             binary_path=jackhmmer_binary_path,
             database_path=uniref90_database_path,
-            n_cpu=num_threads
+            n_cpu=num_threads // 2 if num_threads>2 else 1
         )
         if use_small_bfd:
             self.jackhmmer_small_bfd_runner = jackhmmer.Jackhmmer(
                 binary_path=jackhmmer_binary_path,
                 database_path=small_bfd_database_path,
-                n_cpu=num_threads)
+                n_cpu=(num_threads-(num_threads // 2)) if num_threads>2 else num_threads-1 )
         else:
             self.hhblits_bfd_uniclust_runner = hhblits.HHBlits(
                 binary_path=hhblits_binary_path,
                 databases=[bfd_database_path, uniclust30_database_path],
-                n_cpu=num_threads)
+                n_cpu=(num_threads-(num_threads // 2)) if num_threads>2 else num_threads-1 )
         self.jackhmmer_mgnify_runner = jackhmmer.Jackhmmer(
             binary_path=jackhmmer_binary_path,
             database_path=mgnify_database_path,
-            n_cpu=num_threads)
+            n_cpu=(num_threads // 2) if num_threads>2 else 1)
         self.template_searcher = template_searcher
         self.template_featurizer = template_featurizer
         self.mgnify_max_hits = mgnify_max_hits
