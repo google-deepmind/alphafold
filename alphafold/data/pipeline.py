@@ -89,29 +89,42 @@ def make_msa_features(msas: Sequence[parsers.Msa]) -> FeatureDict:
 
 # Yinying edited here to change various position args as one tuple for multiprocess tests
 def run_msa_tool(args) -> Mapping[str, Any]:
-    (msa_runner, input_fasta_path, msa_out_path,
-     msa_format, use_precomputed_msas,
-     max_sto_sequences) = args
-    #print(args)
-    """Runs an MSA tool, checking if output already exists first."""
-    if not use_precomputed_msas or not os.path.exists(msa_out_path):
-        if msa_format == 'sto' and max_sto_sequences > 0:
-            result = msa_runner.query(input_fasta_path, max_sto_sequences)[0]  # pytype: disable=wrong-arg-count
-        else:
-            result = msa_runner.query(input_fasta_path)[0]
-        with open(msa_out_path, 'w') as f:
-            f.write(result[msa_format])
+    if args == None:
+        return None
     else:
-        logging.warning('Reading MSA from file %s', msa_out_path)
-        if msa_format == 'sto' and max_sto_sequences > 0:
-            precomputed_msa = parsers.truncate_stockholm_msa(
-                msa_out_path, max_sto_sequences)
-            result = {'sto': precomputed_msa}
+        (msa_runner, input_fasta_path, msa_out_path,
+         msa_format, use_precomputed_msas,
+         max_sto_sequences) = args
+        #print(args)
+        """Runs an MSA tool, checking if output already exists first."""
+        if not use_precomputed_msas or not os.path.exists(msa_out_path):
+            if msa_format == 'sto' and max_sto_sequences > 0:
+                result = msa_runner.query(input_fasta_path, max_sto_sequences)[0]  # pytype: disable=wrong-arg-count
+            else:
+                result = msa_runner.query(input_fasta_path)[0]
+            with open(msa_out_path, 'w') as f:
+                f.write(result[msa_format])
         else:
-            with open(msa_out_path, 'r') as f:
-                result = {msa_format: f.read()}
-    return result
+            logging.warning('Reading MSA from file %s', msa_out_path)
+            if msa_format == 'sto' and max_sto_sequences > 0:
+                precomputed_msa = parsers.truncate_stockholm_msa(
+                    msa_out_path, max_sto_sequences)
+                result = {'sto': precomputed_msa}
+            else:
+                with open(msa_out_path, 'r') as f:
+                    result = {msa_format: f.read()}
+        return result
 
+def read_msa_result(msa_out_path,msa_format,max_sto_sequences):
+    logging.warning('Reading MSA from file %s', msa_out_path)
+    if msa_format == 'sto' and max_sto_sequences > 0:
+        precomputed_msa = parsers.truncate_stockholm_msa(
+            msa_out_path, max_sto_sequences)
+        result = {'sto': precomputed_msa}
+    else:
+        with open(msa_out_path, 'r') as f:
+            result = {msa_format: f.read()}
+    return result
 
 class DataPipeline:
     """Runs the alignment tools and assembles the input features."""
@@ -130,7 +143,8 @@ class DataPipeline:
                  mgnify_max_hits: int = 501,
                  uniref_max_hits: int = 10000,
                  use_precomputed_msas: bool = False,
-                 num_threads: int = 10):
+                 num_threads: int = 10,
+                 ):
         """Initializes the data pipeline."""
         self._use_small_bfd = use_small_bfd
         self.num_threads=num_threads
@@ -163,7 +177,10 @@ class DataPipeline:
         p = multiprocessing.Pool(len(input_args) if num_threads > 4 else num_threads)
         return p.map(func,input_args)
 
-    def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
+    def process(self,
+                input_fasta_path: str,
+                msa_output_dir: str,
+                other_args: Optional[tuple] = None) -> FeatureDict:
         """Runs alignment tools on the input sequence and creates features."""
         with open(input_fasta_path) as f:
             input_fasta_str = f.read()
@@ -211,19 +228,25 @@ class DataPipeline:
                                     'a3m',
                                     self.use_precomputed_msas,
                                     0
-                                )
+            )
+
+        self.other_args=other_args
+
         # jackhmmer to reduced bfd
         if self._use_small_bfd:
             [
                 jackhmmer_uniref90_result,
                 jackhmmer_mgnify_result,
-                jackhmmer_small_bfd_result
+                jackhmmer_small_bfd_result,
+                other_msa_task
             ] = self.parallel_msa(func=run_msa_tool,
                                   input_args=[
                                       self.jackhmmer_uniref90_args,
                                       self.jackhmmer_mgnify_args,
-                                      self.jackhmmer_small_bfd_args],
+                                      self.jackhmmer_small_bfd_args,
+                                      self.other_args],
                                   num_threads=self.num_threads)
+
             bfd_msa = parsers.parse_stockholm(jackhmmer_small_bfd_result['sto'])
 
         # hhblits to full bfd
@@ -231,12 +254,14 @@ class DataPipeline:
             [
                 jackhmmer_uniref90_result,
                 jackhmmer_mgnify_result,
-                hhblits_bfd_uniclust_result
+                hhblits_bfd_uniclust_result,
+                other_msa_task
             ] = self.parallel_msa(func=run_msa_tool,
                                   input_args=[
                                       self.jackhmmer_uniref90_args,
                                       self.jackhmmer_mgnify_args,
-                                      self.hhblits_bfd_uniclust_args],
+                                      self.hhblits_bfd_uniclust_args,
+                                      self.other_args],
                                   num_threads=self.num_threads)
 
             bfd_msa = parsers.parse_a3m(hhblits_bfd_uniclust_result['a3m'])
