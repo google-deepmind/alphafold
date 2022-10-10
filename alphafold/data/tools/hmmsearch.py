@@ -33,6 +33,7 @@ class Hmmsearch(object):
                binary_path: str,
                hmmbuild_binary_path: str,
                database_path: str,
+               n_cpu: int = 8,
                flags: Optional[Sequence[str]] = None):
     """Initializes the Python hmmsearch wrapper.
 
@@ -49,6 +50,7 @@ class Hmmsearch(object):
     self.binary_path = binary_path
     self.hmmbuild_runner = hmmbuild.Hmmbuild(binary_path=hmmbuild_binary_path)
     self.database_path = database_path
+    self.n_cpu=n_cpu
     if flags is None:
       # Default hmmsearch run settings.
       flags = ['--F1', '0.1',
@@ -89,7 +91,7 @@ class Hmmsearch(object):
       cmd = [
           self.binary_path,
           '--noali',  # Don't include the alignment in stdout.
-          '--cpu', '8'
+          '--cpu', str(self.n_cpu)
       ]
       # If adding flags, we have to do so before the output and input:
       if self.flags:

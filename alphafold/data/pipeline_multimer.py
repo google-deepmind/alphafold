@@ -175,7 +175,8 @@ class DataPipeline:
                jackhmmer_binary_path: str,
                uniprot_database_path: str,
                max_uniprot_hits: int = 50000,
-               use_precomputed_msas: bool = False):
+               use_precomputed_msas: bool = False,
+               num_threads: int= 10):
     """Initializes the data pipeline.
 
     Args:
@@ -190,7 +191,8 @@ class DataPipeline:
     self._monomer_data_pipeline = monomer_data_pipeline
     self._uniprot_msa_runner = jackhmmer.Jackhmmer(
         binary_path=jackhmmer_binary_path,
-        database_path=uniprot_database_path)
+        database_path=uniprot_database_path,
+        n_cpu=num_threads)
     self._max_uniprot_hits = max_uniprot_hits
     self.use_precomputed_msas = use_precomputed_msas
 
@@ -224,9 +226,17 @@ class DataPipeline:
   def _all_seq_msa_features(self, input_fasta_path, msa_output_dir):
     """Get MSA features for unclustered uniprot, for pairing."""
     out_path = os.path.join(msa_output_dir, 'uniprot_hits.sto')
+    # edited by yinying to adapt to the multiprocess version of run_msa_tool function
     result = pipeline.run_msa_tool(
-        self._uniprot_msa_runner, input_fasta_path, out_path, 'sto',
-        self.use_precomputed_msas)
+      (
+        self._uniprot_msa_runner,
+        input_fasta_path,
+        out_path,
+        'sto',
+        self.use_precomputed_msas,
+        0
+      )
+    )
     msa = parsers.parse_stockholm(result['sto'])
     msa = msa.truncate(max_seqs=self._max_uniprot_hits)
     all_seq_features = pipeline.make_msa_features([msa])

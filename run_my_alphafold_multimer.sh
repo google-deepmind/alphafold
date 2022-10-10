@@ -30,6 +30,7 @@ usage() {
         # edited by Yinying
         echo "-m <model_preset>  Choose preset model configuration - the monomer model, the monomer model with extra ensembling, monomer model with pTM head, or multimer model"
         echo "-n <num_multimer_predictions_per_model>       How many predictions (each with a different random seed) will be generated per model"
+        echo "-j <nproc>       How many processors (each with a different random seed) will be used in the feature construction"
         echo "-t <template_date> Maximum template release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
         echo "-p <pretrained_data_date> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
         echo "-r <run_relax> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
@@ -38,7 +39,7 @@ usage() {
         exit 1
 }
 
-while getopts ":m:t:n:e:p:r:c:" i; do
+while getopts ":m:t:n:e:j:p:r:c:" i; do
         case "${i}" in
 
         m)
@@ -50,6 +51,9 @@ while getopts ":m:t:n:e:p:r:c:" i; do
         ;;
         n)
                 num_multimer_predictions_per_model=$OPTARG
+        ;;
+        j)
+                nproc=$OPTARG
         ;;
         e)
                 num_ensemble=$OPTARG
@@ -93,6 +97,10 @@ fi
 # edited by Yinying
 if [[ "$model_preset" == "" ]] ; then
     model_preset="monomer"
+fi
+
+if [[ "$nproc" == "" ]] ; then
+    nproc=8
 fi
 
 # set default num_ensemble
@@ -171,6 +179,7 @@ AF_process(){
                 -o $out_dir \
                 -m $model_preset \
                 -n $num_multimer_predictions_per_model \
+                -j $nproc \
                 -f $dir/$i \
                 -t $max_template_date";
 	        echo "$cmd";eval "$cmd"

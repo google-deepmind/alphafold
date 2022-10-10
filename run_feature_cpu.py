@@ -136,6 +136,9 @@ flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
 # added by Yinying
 flags.DEFINE_integer('num_ensemble', None, 'Set customized ensemble number')
 
+# added by Yinying
+flags.DEFINE_integer('num_threads', 16, 'Set customized thread number')
+
 FLAGS = flags.FLAGS
 
 MAX_TEMPLATE_HITS = 20
@@ -361,14 +364,18 @@ def main(argv):
 		template_searcher=template_searcher,
 		template_featurizer=template_featurizer,
 		use_small_bfd=use_small_bfd,
-		use_precomputed_msas=FLAGS.use_precomputed_msas)
+		use_precomputed_msas=FLAGS.use_precomputed_msas,
+		# yinying added it
+		num_threads=FLAGS.num_threads)
 
 	if run_multimer_system:
 		data_pipeline = pipeline_multimer.DataPipeline(
 			monomer_data_pipeline=monomer_data_pipeline,
 			jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
 			uniprot_database_path=FLAGS.uniprot_database_path,
-			use_precomputed_msas=FLAGS.use_precomputed_msas)
+			use_precomputed_msas=FLAGS.use_precomputed_msas,
+			# yinying added it
+			num_threads=FLAGS.num_threads)
 	else:
 		data_pipeline = monomer_data_pipeline
 	# edited by Yinying

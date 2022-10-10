@@ -15,6 +15,7 @@ usage() {
         # edited by Yinying
         echo "-m <model_preset>                             Choose preset model configuration - the monomer model, the monomer model with extra ensembling, monomer model with pTM head, or multimer model"
         echo "-n <num_multimer_predictions_per_model>       How many predictions (each with a different random seed) will be generated per model"
+        echo "-j <nproc>                                    How many processors (each with a different random seed) will be used in the feature construction"
         echo "-f <fasta_path>                               Path to a FASTA file containing one sequence"
         echo "-t <max_template_date>                        Maximum template release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
         echo "Optional Parameters:"
@@ -27,7 +28,7 @@ usage() {
         exit 1
 }
 
-while getopts ":d:P:o:m:e:f:it:a:n:p:bg" x; do
+while getopts ":d:P:o:m:e:f:it:a:n:j:p:bg" x; do
         case "${x}" in
         d)
                 data_dir=$OPTARG
@@ -46,6 +47,9 @@ while getopts ":d:P:o:m:e:f:it:a:n:p:bg" x; do
         ;;
         n)
                 num_multimer_predictions_per_model=$OPTARG
+        ;;
+        j)
+                nproc=$OPTARG
         ;;
         t)
                 max_template_date=$OPTARG
@@ -85,9 +89,12 @@ if [[ "$benchmark" == "" ]] ; then
     benchmark=false
 fi
 
-
 if [[ "$use_gpu" == "" ]] ; then
     use_gpu=false
+fi
+
+if [[ "$nproc" == "" ]] ; then
+    nproc=8
 fi
 
 if [[ "$gpu_devices" == "" ]] ; then
@@ -106,7 +113,6 @@ if [[ "$db_preset" != "full_dbs" && "$db_preset" != "casp14" ]] ; then
     echo "Unknown db_preset! Using default ('full_dbs')"
     db_preset="full_dbs"
 fi
-
 
 # This bash script looks for the run_feature_cpu.py script in its current working directory, if it does not exist then exits
 alphafold_script="$(readlink -f $(dirname $0))/run_feature_cpu.py"  
@@ -172,6 +178,7 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$m
         --max_template_date=$max_template_date \
         --db_preset=$db_preset \
         --benchmark=$benchmark \
+        --num_threads=$nproc \
         --logtostderr"
     echo "$cmd"
     eval "$cmd"
@@ -203,6 +210,7 @@ if [[  "$model_preset" == "multimer" ]] ; then
         --max_template_date=$max_template_date \
         --db_preset=$db_preset \
         --benchmark=$benchmark \
+        --num_threads=$nproc \
         --logtostderr"
 
     echo "$cmd"
