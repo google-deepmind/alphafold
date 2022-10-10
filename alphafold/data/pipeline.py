@@ -133,30 +133,35 @@ class DataPipeline:
                  num_threads: int = 10):
         """Initializes the data pipeline."""
         self._use_small_bfd = use_small_bfd
+        self.num_threads=num_threads
         self.jackhmmer_uniref90_runner = jackhmmer.Jackhmmer(
             binary_path=jackhmmer_binary_path,
             database_path=uniref90_database_path,
-            n_cpu=num_threads // 2 if num_threads>2 else 1
+            n_cpu=self.num_threads // 2 if num_threads>2 else 1
         )
         if use_small_bfd:
             self.jackhmmer_small_bfd_runner = jackhmmer.Jackhmmer(
                 binary_path=jackhmmer_binary_path,
                 database_path=small_bfd_database_path,
-                n_cpu=(num_threads-(num_threads // 2)) if num_threads>2 else num_threads-1 )
+                n_cpu=(self.num_threads-(self.num_threads // 2)) if self.num_threads>2 else self.num_threads-1 )
         else:
             self.hhblits_bfd_uniclust_runner = hhblits.HHBlits(
                 binary_path=hhblits_binary_path,
                 databases=[bfd_database_path, uniclust30_database_path],
-                n_cpu=(num_threads-(num_threads // 2)) if num_threads>2 else num_threads-1 )
+                n_cpu=(self.num_threads-(self.num_threads // 2)) if self.num_threads>2 else self.num_threads-1 )
         self.jackhmmer_mgnify_runner = jackhmmer.Jackhmmer(
             binary_path=jackhmmer_binary_path,
             database_path=mgnify_database_path,
-            n_cpu=(num_threads // 2) if num_threads>2 else 1)
+            n_cpu=(self.num_threads // 2) if self.num_threads>2 else 1)
         self.template_searcher = template_searcher
         self.template_featurizer = template_featurizer
         self.mgnify_max_hits = mgnify_max_hits
         self.uniref_max_hits = uniref_max_hits
         self.use_precomputed_msas = use_precomputed_msas
+
+    def parallel_msa(self,func,input_args: list,num_threads: int):
+        p = multiprocessing.Pool(len(input_args) if num_threads > 4 else num_threads)
+        return p.map(func,input_args)
 
     def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
         """Runs alignment tools on the input sequence and creates features."""
@@ -170,16 +175,8 @@ class DataPipeline:
         input_description = input_descs[0]
         num_res = len(input_sequence)
 
-        p = multiprocessing.Pool(3)
-        # jackhmmer to reduced bfd
-        if self._use_small_bfd:
-            [
-                jackhmmer_uniref90_result,
-                jackhmmer_mgnify_result,
-                jackhmmer_small_bfd_result
-            ] = p.map(run_msa_tool,
-                      [
-                          (
+
+        self.jackhmmer_uniref90_args=(
                               self.jackhmmer_uniref90_runner,
                               input_fasta_path,
                               os.path.join(
@@ -188,27 +185,45 @@ class DataPipeline:
                               'sto',
                               self.use_precomputed_msas,
                               self.uniref_max_hits
-                          ),
-                          (
-                              self.jackhmmer_mgnify_runner,
-                              input_fasta_path,
-                              os.path.join(
-                                  msa_output_dir,
-                                  'mgnify_hits.sto'),
-                              'sto',
-                              self.use_precomputed_msas,
-                              self.mgnify_max_hits
-                          ),
-                          (
-                              self.jackhmmer_small_bfd_runner,
+                          )
+        self.jackhmmer_mgnify_args=(self.jackhmmer_mgnify_runner,
+                                  input_fasta_path,
+                                  os.path.join(
+                                      msa_output_dir,
+                                      'mgnify_hits.sto'),
+                                  'sto',
+                                  self.use_precomputed_msas,
+                                  self.mgnify_max_hits
+                            )
+        if self._use_small_bfd:
+            self.jackhmmer_small_bfd_args=(self.jackhmmer_small_bfd_runner,
                               input_fasta_path,
                               os.path.join(msa_output_dir, 'small_bfd_hits.sto'),
                               'sto',
                               self.use_precomputed_msas,
                               0
                           )
-                      ])
-
+        else:
+            self.hhblits_bfd_uniclust_args=(
+                                    self.hhblits_bfd_uniclust_runner,
+                                    input_fasta_path,
+                                    os.path.join(msa_output_dir, 'bfd_uniclust_hits.a3m'),
+                                    'a3m',
+                                    self.use_precomputed_msas,
+                                    0
+                                )
+        # jackhmmer to reduced bfd
+        if self._use_small_bfd:
+            [
+                jackhmmer_uniref90_result,
+                jackhmmer_mgnify_result,
+                jackhmmer_small_bfd_result
+            ] = self.parallel_msa(func=run_msa_tool,
+                                  input_args=[
+                                      self.jackhmmer_uniref90_args,
+                                      self.jackhmmer_mgnify_args,
+                                      self.jackhmmer_small_bfd_args],
+                                  num_threads=self.num_threads)
             bfd_msa = parsers.parse_stockholm(jackhmmer_small_bfd_result['sto'])
 
         # hhblits to full bfd
@@ -217,33 +232,12 @@ class DataPipeline:
                 jackhmmer_uniref90_result,
                 jackhmmer_mgnify_result,
                 hhblits_bfd_uniclust_result
-            ] = p.map(run_msa_tool,
-                            [
-                                (
-                                    self.jackhmmer_uniref90_runner,
-                                    input_fasta_path,
-                                    os.path.join(msa_output_dir,'uniref90_hits.sto'),
-                                    'sto',
-                                    self.use_precomputed_msas,
-                                    self.uniref_max_hits
-                                ),
-                                (
-                                    self.jackhmmer_mgnify_runner,
-                                    input_fasta_path,
-                                    os.path.join(msa_output_dir,'mgnify_hits.sto'),
-                                    'sto',
-                                    self.use_precomputed_msas,
-                                    self.mgnify_max_hits),
-
-                                (
-                                    self.hhblits_bfd_uniclust_runner,
-                                    input_fasta_path,
-                                    os.path.join(msa_output_dir, 'bfd_uniclust_hits.a3m'),
-                                    'a3m',
-                                    self.use_precomputed_msas,
-                                    0
-                                )
-                            ])
+            ] = self.parallel_msa(func=run_msa_tool,
+                                  input_args=[
+                                      self.jackhmmer_uniref90_args,
+                                      self.jackhmmer_mgnify_args,
+                                      self.hhblits_bfd_uniclust_args],
+                                  num_threads=self.num_threads)
 
             bfd_msa = parsers.parse_a3m(hhblits_bfd_uniclust_result['a3m'])
 
