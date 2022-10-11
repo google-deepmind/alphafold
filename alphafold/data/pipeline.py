@@ -174,7 +174,7 @@ class DataPipeline:
         self.use_precomputed_msas = use_precomputed_msas
 
     def parallel_msa(self,func,input_args: list,num_threads: int):
-        p = multiprocessing.Pool(len(input_args) if num_threads > 4 else num_threads)
+        p = multiprocessing.Pool(len(input_args) if num_threads >= 4 else num_threads)
         return p.map(func,input_args)
 
     def process(self,
