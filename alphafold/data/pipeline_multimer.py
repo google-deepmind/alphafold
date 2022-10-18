@@ -192,7 +192,7 @@ class DataPipeline:
         self._uniprot_msa_runner = jackhmmer.Jackhmmer(
             binary_path=jackhmmer_binary_path,
             database_path=uniprot_database_path,
-            n_cpu=num_threads)
+            n_cpu=num_threads // 2 )
         self._max_uniprot_hits = max_uniprot_hits
         self.use_precomputed_msas = use_precomputed_msas
 
