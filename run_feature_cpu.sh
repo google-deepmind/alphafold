@@ -140,7 +140,7 @@ mgnify_database_path="$data_dir/mgnify/mgy_clusters.fa"
 template_mmcif_dir="$data_dir/pdb_mmcif/mmcif_files"
 obsolete_pdbs_path="$data_dir/pdb_mmcif/obsolete.dat"
 
-uniclust30_database_path="$data_dir/uniclust30/uniclust30_2018_08/uniclust30_2018_08"
+uniclust30_database_path="$data_dir/uniref30_uc30/UniRef30_2020_06/UniRef30_2020_06"
 uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 
 

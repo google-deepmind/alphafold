@@ -97,7 +97,15 @@ bash /repo/alphafold/run_my_alphafold_multimer.sh -r no -c yes -j 16
 
 check [this script](scripts/setup_self_hosted_pdb-mmcif_mirror.sh).
 
+**basically** the crontab will run the following command weekly to update your mirror.
+```shell
+rsync --recursive --links --perms --times --compress --info=progress2 --delete data.pdbj.org::ftp_data/structures/divided/mmCIF/ /mnt/timemachine/db/pdb_mmcif/raw/
+```
 
+in working machine, just execute the following to update pdb_mmcif database
+```shell
+bash /repo/alphafold/scripts/update_pdb_mmcif.sh /mnt/db/
+```
 ## First time setup
 
 You will need a machine running Linux, AlphaFold does not support other
