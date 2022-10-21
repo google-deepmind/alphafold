@@ -129,6 +129,11 @@ flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
                      'recommended to enable if possible. GPUs must be available'
                      ' if this setting is enabled.')
 
+# added by Yinying
+flags.DEFINE_integer('num_ensemble', None, 'Set customized ensemble number')
+
+# added by Yinying
+flags.DEFINE_integer('num_threads', 16, 'Set customized thread number')
 
 FLAGS = flags.FLAGS
 
