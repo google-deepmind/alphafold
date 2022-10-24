@@ -19,9 +19,10 @@ FROM nvidia/cuda:${CUDA}-cudnn8-runtime-ubuntu18.04
 ARG CUDA
 
 # Use bash to support string substitution.
-SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+RUN apt-get update \ 
+    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
         build-essential \
         cmake \
         cuda-command-line-tools-$(cut -f1,2 -d- <<< ${CUDA//./-}) \
@@ -30,7 +31,9 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
         kalign \
         tzdata \
         wget \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get autoremove -y \
+    && apt-get clean
 
 # Compile HHsuite from source.
 RUN git clone --branch v3.3.0 https://github.com/soedinglab/hh-suite.git /tmp/hh-suite \
@@ -50,24 +53,25 @@ RUN wget -q -P /tmp \
 
 # Install conda packages.
 ENV PATH="/opt/conda/bin:$PATH"
-RUN conda update -qy conda \
+RUN conda install -qy conda==4.13.0 \
     && conda install -y -c conda-forge \
       openmm=7.5.1 \
       cudatoolkit==${CUDA_VERSION} \
       pdbfixer \
       pip \
-      python=3.7
+      python=3.7 \
+      && conda clean --all --force-pkgs-dirs --yes
 
 COPY . /app/alphafold
 RUN wget -q -P /app/alphafold/alphafold/common/ \
   https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 
 # Install pip packages.
-RUN pip3 install --upgrade pip \
-    && pip3 install -r /app/alphafold/requirements.txt \
-    && pip3 install --upgrade \
-      jax==0.2.14 \
-      jaxlib==0.1.69+cuda$(cut -f1,2 -d. <<< ${CUDA} | sed 's/\.//g') \
+RUN pip3 install --upgrade pip --no-cache-dir \
+    && pip3 install -r /app/alphafold/requirements.txt --no-cache-dir \
+    && pip3 install --upgrade --no-cache-dir \
+      jax==0.3.17 \
+      jaxlib==0.3.15+cuda11.cudnn805 \
       -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
 # Apply OpenMM patch.

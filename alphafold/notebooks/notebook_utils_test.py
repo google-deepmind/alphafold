@@ -194,9 +194,8 @@ class NotebookUtilsTest(parameterized.TestCase):
     pae = np.array([[0.01, 13.12345], [20.0987, 0.0]])
     pae_json = notebook_utils.get_pae_json(pae=pae, max_pae=31.75)
     self.assertEqual(
-        pae_json,
-        '[{"residue1":[1,1,2,2],"residue2":[1,2,1,2],"distance":'
-        '[0.0,13.1,20.1,0.0],"max_predicted_aligned_error":31.75}]')
+        pae_json, '[{"predicted_aligned_error":[[0.0,13.1],[20.1,0.0]],'
+        '"max_predicted_aligned_error":31.75}]')
 
 
 if __name__ == '__main__':
