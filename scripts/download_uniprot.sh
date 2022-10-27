@@ -41,7 +41,7 @@ SPROT_SOURCE_URL="ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/know
 SPROT_BASENAME=$(basename "${SPROT_SOURCE_URL}")
 SPROT_UNZIPPED_BASENAME="${SPROT_BASENAME%.gz}"
 
-mkdir --parents "${ROOT_DIR}"
+mkdir -p "${ROOT_DIR}"
 aria2c "${TREMBL_SOURCE_URL}" --dir="${ROOT_DIR}"
 aria2c "${SPROT_SOURCE_URL}" --dir="${ROOT_DIR}"
 pushd "${ROOT_DIR}"
