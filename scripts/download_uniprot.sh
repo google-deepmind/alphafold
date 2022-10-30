@@ -42,8 +42,8 @@ SPROT_BASENAME=$(basename "${SPROT_SOURCE_URL}")
 SPROT_UNZIPPED_BASENAME="${SPROT_BASENAME%.gz}"
 
 mkdir -p "${ROOT_DIR}"
-aria2c "${TREMBL_SOURCE_URL}" --dir="${ROOT_DIR}"
-aria2c "${SPROT_SOURCE_URL}" --dir="${ROOT_DIR}"
+aria2c -c "${TREMBL_SOURCE_URL}" --dir="${ROOT_DIR}"
+aria2c -c "${SPROT_SOURCE_URL}" --dir="${ROOT_DIR}"
 pushd "${ROOT_DIR}"
 gunzip "${ROOT_DIR}/${TREMBL_BASENAME}"
 gunzip "${ROOT_DIR}/${SPROT_BASENAME}"
