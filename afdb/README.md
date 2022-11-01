@@ -11,6 +11,11 @@ Google Cloud account is required for the download, but the data can be freely
 used under the terms of the
 [CC-BY 4.0 Licence](http://creativecommons.org/licenses/by/4.0/legalcode).
 
+This document provides an overview of how to access and download the dataset for
+different use cases. Please refer to the [AlphaFold database FAQ](https://www.alphafold.com/faq)
+for further information on what proteins are in the database and a changelog of
+releases.
+
 :ledger: **Note: The full dataset is difficult to manipulate without significant
 computational resources (the size of the dataset is 23 TiB, 3 * 214M files).**
 
@@ -62,25 +67,26 @@ accession]-F[a fragment number]`.
 
 Three files are provided for each entry:
 
-*   **model_v3.cif** – contains the atomic coordinates for the predicted protein
+*   **model_v4.cif** – contains the atomic coordinates for the predicted protein
     structure, along with some metadata. Useful references for this file format
     are the [ModelCIF](https://github.com/ihmwg/ModelCIF) and
     [PDBx/mmCIF](https://mmcif.wwpdb.org) project sites.
-*   **confidence_v3.json** – contains a confidence metric output by AlphaFold
+*   **confidence_v4.json** – contains a confidence metric output by AlphaFold
     called pLDDT. This provides a number for each residue, indicating how
     confident AlphaFold is in the *local* surrounding structure. pLDDT ranges
     from 0 to 100, where 100 is most confident. This is also contained in the
     CIF file.
-*   **predicted_aligned_error_v3.json** – contains a confidence metric output by
+*   **predicted_aligned_error_v4.json** – contains a confidence metric output by
     AlphaFold called PAE. This provides a number for every pair of residues,
     which is lower when AlphaFold is more confident in the relative position of
-    the two residues. PAE is more suitable than pLDDT for judging confidence in
+    the two residues. PAE is more suitable than pLDDT for judging confidence in 
     relative domain placements.
     [See here](https://alphafold.ebi.ac.uk/faq#faq-7) for a description of the
     format.
 
 Predictions grouped by NCBI taxonomy ID are available as
-`proteomes/proteome-tax_id-[TAX ID]-[SHARD ID].tar` within the same bucket.
+`proteomes/proteome-tax_id-[TAX ID]-[SHARD ID]_v4.tar` within the same
+bucket.
 
 There are also two extra files stored in the bucket:
 
@@ -91,7 +97,7 @@ There are also two extra files stored in the bucket:
     *   First residue index (UniProt numbering), e.g. 1
     *   Last residue index (UniProt numbering), e.g. 199
     *   AlphaFold DB identifier, e.g. AF-A8H2R3-F1
-    *   Latest version, e.g. 3
+    *   Latest version, e.g. 4
 *   `sequences.fasta` – This file contains sequences for all proteins in the
     current database version in FASTA format. The identifier rows start with
     ">AFDB", followed by the AlphaFold DB identifier and the name of the
@@ -141,7 +147,7 @@ for the services that you use to avoid any surprises.**
 The data is available from:
 
 *   GCS data bucket:
-    [gs://public-datasets-deepmind-alphafold](https://console.cloud.google.com/storage/browser/public-datasets-deepmind-alphafold)
+    [gs://public-datasets-deepmind-alphafold-v4](https://console.cloud.google.com/storage/browser/public-datasets-deepmind-alphafold-v4)
 
 ## Bulk download
 
@@ -158,12 +164,12 @@ are some suggested approaches for downloading the dataset. Please reach out to
 questions.
 
 The recommended way of downloading the whole database is by downloading
-1,015,808 sharded proteome tar files using the command below. This is
+1,015,797 sharded proteome tar files using the command below. This is
 significantly faster than downloading all of the individual files because of
 large constant per-file latency.
 
 ```bash
-gsutil -m cp -r gs://public-datasets-deepmind-alphafold/proteomes/ .
+gsutil -m cp -r gs://public-datasets-deepmind-alphafold-v4/proteomes/ .
 ```
 
 You will then have to un-tar all of the proteomes and un-gzip all of the
@@ -208,8 +214,8 @@ Swiss-Prot are available on the
 want other species, or *all* proteins for a particular species, please continue
 reading.
 
-We provide 1,015,808 sharded tar files for all species in
-[gs://public-datasets-deepmind-alphafold/proteomes/](https://console.cloud.google.com/storage/browser/public-datasets-deepmind-alphafold/proteomes/).
+We provide 1,015,797 sharded tar files for all species in
+[gs://public-datasets-deepmind-alphafold-v4/proteomes/](https://console.cloud.google.com/storage/browser/public-datasets-deepmind-alphafold-v4/proteomes/).
 We shard each proteome so that each shard contains at most 10,000 proteins
 (which corresponds to 30,000 files per shard, since there are 3 files per
 protein). To download a proteome of your choice, you have to do the following
@@ -218,14 +224,14 @@ steps:
 1.  Find the [NCBI taxonomy ID](https://www.ncbi.nlm.nih.gov/taxonomy)
     (`[TAX_ID]`) of the species in question.
 2.  Run `gsutil -m cp
-    gs://public-datasets-deepmind-alphafold/proteomes/proteome-tax_id-[TAX
-    ID]-*.tar .` to download all shards for this proteome.
+    gs://public-datasets-deepmind-alphafold-v4/proteomes/proteome-tax_id-[TAX
+    ID]-*_v4.tar .` to download all shards for this proteome.
 3.  Un-tar all of the downloaded files and un-gzip all of the individual files.
 
 ### File manifests
 
 Pre-made lists of files (manifests) are available at
-[gs://public-datasets-deepmind-alphafold/manifests](https://console.cloud.google.com/storage/browser/public-datasets-deepmind-alphafold/manifests/).
+[gs://public-datasets-deepmind-alphafold-v4/manifests](https://console.cloud.google.com/storage/browser/public-datasets-deepmind-alphafold-v4/manifests/).
 Note that these filenames do not include the bucket prefix, but this can be
 added once the files have been downloaded to your filesystem.
 
@@ -298,6 +304,8 @@ fractionPlddtVeryHigh  | `FLOAT64`       | Fraction of the residues in the predi
 fractionPlddtVeryLow   | `FLOAT64`       | Fraction of the residues in the prediction with pLDDT less than 50
 gene                   | `STRING`        | The name of the gene if known, e.g. "COII"
 geneSynonyms           | `ARRAY<STRING>` | Additional synonyms for the gene
+isReferenceProteome    | `BOOL`          | Is this protein part of the reference proteome?
+isReviewed             | `BOOL`          | Has this protein been reviewed, i.e. is it part of SwissProt?
 globalMetricValue      | `FLOAT64`       | The mean pLDDT of this prediction
 latestVersion          | `INT64`         | The latest AFDB version for this prediction
 modelCreatedDate       | `DATE`          | The date of creation for this entry, e.g. "2022-06-01"
@@ -345,15 +353,15 @@ given below:
 with file_rows AS (
   with file_cols AS (
     SELECT
-      CONCAT(entryID, '-model_v', latestVersion, '.cif') as m,
-      CONCAT(entryID, '-predicted_aligned_error_v', latestVersion, '.json') as p
+      CONCAT(entryID, '-model_v4.cif') as m,
+      CONCAT(entryID, '-predicted_aligned_error_v4.json') as p
     FROM bigquery-public-data.deepmind_alphafold.metadata
     WHERE organismScientificName = "Homo sapiens"
       AND (fractionPlddtVeryHigh + fractionPlddtConfident) > 0.5
   )
   SELECT * FROM file_cols UNPIVOT (files for filetype in (m, p))
 )
-SELECT CONCAT('gs://public-datasets-deepmind-alphafold/', files) as files
+SELECT CONCAT('gs://public-datasets-deepmind-alphafold-v4/', files) as files
 from file_rows
 ```
 
@@ -362,7 +370,7 @@ sapiens* for which over half the residues are confident or better (>70 pLDDT).
 
 This creates a table with one column "files", where each row is the cloud
 location of one of the two file types that has been provided for each protein.
-There is an additional `confidence_v[version].json` file which contains the
+There is an additional `confidence_v4.json` file which contains the
 per-residue pLDDT. This information is already in the CIF file but may be
 preferred if only this information is required.
 
@@ -375,3 +383,8 @@ documentation should be followed to download these file subsets locally, as the
 most appropriate approach will depend on the filesize. Note that it may be
 easier to download large files using [Colab](https://colab.research.google.com/)
 (e.g. pandas to_csv).
+
+#### Previous versions
+Previous versions of AFDB will remain available at
+[gs://public-datasets-deepmind-alphafold](https://console.cloud.google.com/storage/browser/public-datasets-deepmind-alphafold)
+to enable reproducible research. We recommend using the latest version (v4).
