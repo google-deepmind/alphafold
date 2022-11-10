@@ -31,6 +31,13 @@ If you have any questions, please contact the AlphaFold team at
 
 ![CASP14 predictions](imgs/casp14_predictions.gif)
 
+[![License](https://img.shields.io/static/v1?label=License&message=Apache&color=<Yellow>)](https://github.com/deepmind/alphafold/blob/main/LICENSE) &nbsp;
+[![GitHub forks](https://img.shields.io/github/forks/deepmind/alphafold.svg?style=social&label=Fork&maxAge=2592000)](https://github.com/deepmind/alphafold) &nbsp;
+<a target="_blank" href="https://colab.research.google.com/github/deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab For Slightly Simplified Version"/>
+</a> &nbsp;
+[![GitHub watchers](https://img.shields.io/github/watchers/deepmind/alphafold.svg?style=social&label=Watch&maxAge=2592000)](https://github.com/deepmind/alphafold/) &nbsp;
+
 ## First time setup
 
 You will need a machine running Linux, AlphaFold does not support other
