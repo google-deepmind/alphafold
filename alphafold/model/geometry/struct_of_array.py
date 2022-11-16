@@ -133,7 +133,7 @@ def flatten(instance):
   inner_treedefs = []
   num_arrays = []
   for array_like in array_likes:
-    flat_array_like, inner_treedef = jax.tree_flatten(array_like)
+    flat_array_like, inner_treedef = jax.tree_util.tree_flatten(array_like)
     inner_treedefs.append(inner_treedef)
     flat_array_likes += flat_array_like
     num_arrays.append(len(flat_array_like))
@@ -206,7 +206,7 @@ class StructOfArray:
       for num_array, inner_treedef, array_field in zip(num_arrays,
                                                        inner_treedefs,
                                                        array_fields):
-        value_dict[array_field] = jax.tree_unflatten(
+        value_dict[array_field] = jax.tree_util.tree_unflatten(
             inner_treedef, data[array_start:array_start + num_array])
         array_start += num_array
       metadata_fields = get_metadata_fields(new_cls)
