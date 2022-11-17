@@ -7,12 +7,12 @@ conda activate alphafold
 
 
 #setting environment for cuda-11.0 gpu2-5
-export PATH=/usr/local/cuda-11.4/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64:$LD_LIBRARY_PATH
+#export PATH=/usr/local/cuda-11.4/bin:$PATH
+#export LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64:$LD_LIBRARY_PATH
 
 # User configuration
 db_dir=/mnt/db;
-pretrained_data_dir=/mnt/db/alphafold/
+pretrained_data_dir=/mnt/db/weights/alphafold/
 
 # automatically determined directory
 af_official_repo=$(readlink -f $(dirname $0)) ;

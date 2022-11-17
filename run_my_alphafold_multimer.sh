@@ -6,12 +6,12 @@ conda activate alphafold
 
 
 #setting environment for cuda-11.0 gpu2-5
-export PATH=/usr/local/cuda-11.4/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64:$LD_LIBRARY_PATH
+#export PATH=/usr/local/cuda-11.4/bin:$PATH
+#export LD_LIBRARY_PATH=/usr/local/cuda-11.4/lib64:$LD_LIBRARY_PATH
 
 # User configuration
 db_dir=/mnt/db;
-pretrained_data_dir=/mnt/db/alphafold/
+pretrained_data_dir=/mnt/db/weights/alphafold/
 
 # automatically determined directory
 af_official_repo=$(readlink -f $(dirname $0)) ;
@@ -65,7 +65,7 @@ while getopts ":m:t:n:e:j:p:r:c:" i; do
                 run_relax=$OPTARG
         ;;
         c)
-                clean_run=true
+                clean_run=$OPTARG
         ;;
         *)
                 echo Unknown argument!
@@ -124,7 +124,7 @@ else
     num_multimer_predictions_per_model=1
 fi
 
-if [[ "$run_relax" == "" || "$run_relax" == "true" ]] ; then
+if [[ "$run_relax" == "" || "$run_relax" == "true" || "$run_relax" == "yes" ]] ; then
     run_relax=true
 else
     run_relax=false
@@ -254,10 +254,8 @@ do
     echo $dir/$i;
     cd $dir;
     # run processing ...
-    AF_process $dir $i ;
+    AF_process $dir $i && let fin++ && let rest--;
     # mv $dir/$i $dir/processed;
-    let fin++;
-    let rest--;
 
 done
 
