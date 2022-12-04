@@ -34,8 +34,32 @@ ROOT_DIR="${DOWNLOAD_DIR}/pdb70"
 SOURCE_URL="http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200401.tar.gz"
 BASENAME=$(basename "${SOURCE_URL}")
 
+if [ -d "${ROOT_DIR}" ]; then
+    echo "WARNING: Destination directory '${ROOT_DIR}' does already exist."
+    read -p "Proceed by deleting existing download directory? [Y/n]" -n1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        echo "INFO: Deleting previous download directory: '${ROOT_DIR}'"
+        rm -rf "${ROOT_DIR}"
+    else
+        echo "Aborting download."
+        exit 0
+    fi
+fi
+
 mkdir --parents "${ROOT_DIR}"
 aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}"
-tar --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
-  --directory="${ROOT_DIR}"
+
+if ! command -v pigz &> /dev/null
+then
+    tar --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
+        --directory="${ROOT_DIR}"
+else
+    tar -I pigz --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
+        --directory="${ROOT_DIR}"
+fi
+
+# the files are only user-readable. For multi-user systems we need to correct:
+chmod 444 "${ROOT_DIR}"/*
+
 rm "${ROOT_DIR}/${BASENAME}"

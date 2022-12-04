@@ -26,13 +26,12 @@ if [[ $# -eq 0 ]]; then
 fi
 
 if ! command -v aria2c &> /dev/null ; then
-    echo "Error: aria2c could not be found. Please install aria2c (sudo apt install aria2)."
+    echo "Error: aria2c could not be found. Please install aria2c (e.g. sudo apt install aria2)."
     exit 1
 fi
 
 DOWNLOAD_DIR="$1"
 ROOT_DIR="${DOWNLOAD_DIR}/uniprot"
-
 TREMBL_SOURCE_URL="ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.fasta.gz"
 TREMBL_BASENAME=$(basename "${TREMBL_SOURCE_URL}")
 TREMBL_UNZIPPED_BASENAME="${TREMBL_BASENAME%.gz}"
@@ -41,15 +40,37 @@ SPROT_SOURCE_URL="ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/know
 SPROT_BASENAME=$(basename "${SPROT_SOURCE_URL}")
 SPROT_UNZIPPED_BASENAME="${SPROT_BASENAME%.gz}"
 
+if [ -d "${ROOT_DIR}" ]; then
+    echo "WARNING: Destination directory '${ROOT_DIR}' does already exist."
+    read -p "Proceed by deleting existing download directory? [Y/n]" -n1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+        echo "INFO: Deleting previous download directory: '${ROOT_DIR}'"
+        rm -rf "${ROOT_DIR}"
+    else
+        echo "Aborting download."
+        exit 0
+    fi
+fi
+
 mkdir --parents "${ROOT_DIR}"
 aria2c "${TREMBL_SOURCE_URL}" --dir="${ROOT_DIR}"
 aria2c "${SPROT_SOURCE_URL}" --dir="${ROOT_DIR}"
-pushd "${ROOT_DIR}"
-gunzip "${ROOT_DIR}/${TREMBL_BASENAME}"
-gunzip "${ROOT_DIR}/${SPROT_BASENAME}"
 
+# if we have pigz in PATH, we can attempt to decompress in parallel
+if ! command -v unpigz &> /dev/null
+then
+    uncompress_cmd=gunzip
+else
+    uncompress_cmd=unpigz
+fi
+
+pushd "${ROOT_DIR}"
+
+$uncompress_cmd "${TREMBL_BASENAME}"
+$uncompress_cmd "${SPROT_BASENAME}"
 # Concatenate TrEMBL and SwissProt, rename to uniprot and clean up.
-cat "${ROOT_DIR}/${SPROT_UNZIPPED_BASENAME}" >> "${ROOT_DIR}/${TREMBL_UNZIPPED_BASENAME}"
-mv "${ROOT_DIR}/${TREMBL_UNZIPPED_BASENAME}" "${ROOT_DIR}/uniprot.fasta"
-rm "${ROOT_DIR}/${SPROT_UNZIPPED_BASENAME}"
+cat "${SPROT_UNZIPPED_BASENAME}" >> "${TREMBL_UNZIPPED_BASENAME}"
+mv "${TREMBL_UNZIPPED_BASENAME}" uniprot.fasta
+rm "${SPROT_UNZIPPED_BASENAME}"
 popd
