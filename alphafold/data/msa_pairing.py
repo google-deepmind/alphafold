@@ -14,6 +14,7 @@
 
 """Pairing logic for multimer data pipeline."""
 
+import pickle
 import collections
 import functools
 import string
@@ -217,7 +218,9 @@ def pair_sequences(examples: List[pipeline.FeatureDict]
                   this_species_msa_dfs if
                   isinstance(species_df, pd.DataFrame)]) > 600):
       continue
-
+    
+    with open("this_species_msa_dfs.pkl", "wb") as f:
+      pickle.dump(this_species_msa_dfs, f)
     paired_msa_rows = _match_rows_by_sequence_similarity(this_species_msa_dfs)
     all_paired_msa_rows.extend(paired_msa_rows)
     all_paired_msa_rows_dict[species_dfs_present].extend(paired_msa_rows)
