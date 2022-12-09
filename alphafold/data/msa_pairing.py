@@ -197,6 +197,7 @@ def pair_sequences(examples: List[pipeline.FeatureDict]
   all_paired_msa_rows_dict = {k: [] for k in range(num_examples)}
   all_paired_msa_rows_dict[num_examples] = [np.zeros(len(examples), int)]
 
+  species_msa_dfs = []
   for species in common_species:
     if not species:
       continue
@@ -219,8 +220,7 @@ def pair_sequences(examples: List[pipeline.FeatureDict]
                   isinstance(species_df, pd.DataFrame)]) > 600):
       continue
     
-    with open("this_species_msa_dfs.pkl", "wb") as f:
-      pickle.dump(this_species_msa_dfs, f)
+    species_msa_dfs.append(this_species_msa_dfs)
     paired_msa_rows = _match_rows_by_sequence_similarity(this_species_msa_dfs)
     all_paired_msa_rows.extend(paired_msa_rows)
     all_paired_msa_rows_dict[species_dfs_present].extend(paired_msa_rows)
@@ -228,6 +228,13 @@ def pair_sequences(examples: List[pipeline.FeatureDict]
       num_examples: np.array(paired_msa_rows) for
       num_examples, paired_msa_rows in all_paired_msa_rows_dict.items()
   }
+  with open("species_msa_dfs.pkl", "wb") as f:
+    pickle.dump(species_msa_dfs, f)
+  with open("all_paired_msa_rows.pkl", "wb") as f:
+    pickle.dump(all_paired_msa_rows, f)
+  with open("all_paired_msa_rows_dict.pkl", "wb") as f:
+    pickle.dump(all_paired_msa_rows_dict, f)
+
   return all_paired_msa_rows_dict
 
 
