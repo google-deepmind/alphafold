@@ -3,8 +3,7 @@
 # AlphaFold
 
 This package provides an implementation of the inference pipeline of AlphaFold
-v2.0. This is a completely new model that was entered in CASP14 and published in
-Nature. For simplicity, we refer to this model as AlphaFold throughout the rest
+v2.0. For simplicity, we refer to this model as AlphaFold throughout the rest
 of this document.
 
 We also provide:
