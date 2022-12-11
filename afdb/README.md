@@ -304,9 +304,9 @@ fractionPlddtVeryHigh  | `FLOAT64`       | Fraction of the residues in the predi
 fractionPlddtVeryLow   | `FLOAT64`       | Fraction of the residues in the prediction with pLDDT less than 50
 gene                   | `STRING`        | The name of the gene if known, e.g. "COII"
 geneSynonyms           | `ARRAY<STRING>` | Additional synonyms for the gene
+globalMetricValue      | `FLOAT64`       | The mean pLDDT of this prediction
 isReferenceProteome    | `BOOL`          | Is this protein part of the reference proteome?
 isReviewed             | `BOOL`          | Has this protein been reviewed, i.e. is it part of SwissProt?
-globalMetricValue      | `FLOAT64`       | The mean pLDDT of this prediction
 latestVersion          | `INT64`         | The latest AFDB version for this prediction
 modelCreatedDate       | `DATE`          | The date of creation for this entry, e.g. "2022-06-01"
 organismCommonNames    | `ARRAY<STRING>` | List of common organism names

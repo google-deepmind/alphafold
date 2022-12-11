@@ -47,11 +47,11 @@ def _maybe_get_size(array, axis):
 
 
 def _expand_axes(axes, values, name='sharded_apply'):
-  values_tree_def = jax.tree_flatten(values)[1]
+  values_tree_def = jax.tree_util.tree_flatten(values)[1]
   flat_axes = jax.api_util.flatten_axes(name, values_tree_def, axes)
   # Replace None's with PROXY
   flat_axes = [PROXY if x is None else x for x in flat_axes]
-  return jax.tree_unflatten(values_tree_def, flat_axes)
+  return jax.tree_util.tree_unflatten(values_tree_def, flat_axes)
 
 
 def sharded_map(
@@ -126,7 +126,7 @@ def sharded_apply(
     in_axes_ = _expand_axes(in_axes, args)
 
     in_sizes = jax.tree_map(_maybe_get_size, args, in_axes_)
-    flat_sizes = jax.tree_flatten(in_sizes)[0]
+    flat_sizes = jax.tree_util.tree_flatten(in_sizes)[0]
     in_size = max(flat_sizes)
     assert all(i in {in_size, -1} for i in flat_sizes)
 

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Helper methods for the AlphaFold Colab notebook."""
-import enum
 import json
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
@@ -23,13 +22,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-@enum.unique
-class ModelType(enum.Enum):
-  MONOMER = 0
-  MULTIMER = 1
-
-
-def clean_and_validate_sequence(
+def clean_and_validate_single_sequence(
     input_sequence: str, min_length: int, max_length: int) -> str:
   """Checks that the input sequence is ok and returns a clean version of it."""
   # Remove all whitespaces, tabs and end lines; upper-case.
@@ -54,41 +47,23 @@ def clean_and_validate_sequence(
   return clean_sequence
 
 
-def validate_input(
+def clean_and_validate_input_sequences(
     input_sequences: Sequence[str],
-    min_length: int,
-    max_length: int,
-    max_multimer_length: int) -> Tuple[Sequence[str], ModelType]:
-  """Validates and cleans input sequences and determines which model to use."""
+    min_sequence_length: int,
+    max_sequence_length: int) -> Sequence[str]:
+  """Validates and cleans input sequences."""
   sequences = []
 
   for input_sequence in input_sequences:
     if input_sequence.strip():
-      input_sequence = clean_and_validate_sequence(
+      input_sequence = clean_and_validate_single_sequence(
           input_sequence=input_sequence,
-          min_length=min_length,
-          max_length=max_length)
+          min_length=min_sequence_length,
+          max_length=max_sequence_length)
       sequences.append(input_sequence)
 
-  if len(sequences) == 1:
-    print('Using the single-chain model.')
-    return sequences, ModelType.MONOMER
-
-  elif len(sequences) > 1:
-    total_multimer_length = sum([len(seq) for seq in sequences])
-    if total_multimer_length > max_multimer_length:
-      raise ValueError(f'The total length of multimer sequences is too long: '
-                       f'{total_multimer_length}, while the maximum is '
-                       f'{max_multimer_length}. Please use the full AlphaFold '
-                       f'system for long multimers.')
-    elif total_multimer_length > 1536:
-      print('WARNING: The accuracy of the system has not been fully validated '
-            'above 1536 residues, and you may experience long running times or '
-            f'run out of memory for your complex with {total_multimer_length} '
-            'residues.')
-    print(f'Using the multimer model with {len(sequences)} sequences.')
-    return sequences, ModelType.MULTIMER
-
+  if sequences:
+    return sequences
   else:
     raise ValueError('No input amino acid sequence provided, please provide at '
                      'least one sequence.')
