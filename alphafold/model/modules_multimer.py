@@ -475,20 +475,51 @@ class AlphaFold(hk.Module):
         # Eval mode or tests: use the maximum number of iterations.
         num_iter = c.num_recycle
 
-      def recycle_body(i, x):
-        del i
-        prev, safe_key = x
+      def distances(points):
+        """Compute all pairwise distances for a set of points."""
+        return jnp.sqrt(jnp.sum((points[:, None] - points[None, :])**2,
+                                axis=-1))
+
+      def recycle_body(x):
+        i, _, prev, safe_key = x
         safe_key1, safe_key2 = safe_key.split() if c.resample_msa_in_recycling else safe_key.duplicate()  # pylint: disable=line-too-long
         ret = apply_network(prev=prev, safe_key=safe_key2)
-        return get_prev(ret), safe_key1
+        return i+1, prev, get_prev(ret), safe_key1
 
-      prev, safe_key = hk.fori_loop(0, num_iter, recycle_body, (prev, safe_key))
+      def recycle_cond(x):
+        i, prev, next_in, _ = x
+        ca_idx = residue_constants.atom_order['CA']
+        sq_diff = jnp.square(distances(prev['prev_pos'][:, ca_idx, :]) -
+                             distances(next_in['prev_pos'][:, ca_idx, :]))
+        mask = batch['seq_mask'][:, None] * batch['seq_mask'][None, :]
+        sq_diff = utils.mask_mean(mask, sq_diff)
+        # Early stopping criteria based on criteria used in
+        # AF2Complex: https://www.nature.com/articles/s41467-022-29394-2
+        diff = jnp.sqrt(sq_diff + 1e-8)  # avoid bad numerics giving negatives
+        less_than_max_recycles = (i < num_iter)
+        has_exceeded_tolerance = (
+            (i == 0) | (diff > c.recycle_early_stop_tolerance))
+        return less_than_max_recycles & has_exceeded_tolerance
+
+      if hk.running_init():
+        num_recycles, _, prev, safe_key = recycle_body(
+            (0, prev, prev, safe_key))
+      else:
+        num_recycles, _, prev, safe_key = hk.while_loop(
+            recycle_cond,
+            recycle_body,
+            (0, prev, prev, safe_key))
+    else:
+      # No recycling.
+      num_recycles = 0
 
     # Run extra iteration.
     ret = apply_network(prev=prev, safe_key=safe_key)
 
     if not return_representations:
       del ret['representations']
+    ret['num_recycles'] = num_recycles
+
     return ret
 
 
@@ -524,11 +555,13 @@ class EmbeddingsAndEvoformer(hk.Module):
       Feature embedding using the features as described before.
     """
     c = self.config
+    gc = self.global_config
     rel_feats = []
     pos = batch['residue_index']
     asym_id = batch['asym_id']
     asym_id_same = jnp.equal(asym_id[:, None], asym_id[None, :])
     offset = pos[:, None] - pos[None, :]
+    dtype = jnp.bfloat16 if gc.bfloat16 else jnp.float32
 
     clipped_offset = jnp.clip(
         offset + c.max_relative_idx, a_min=0, a_max=2 * c.max_relative_idx)
@@ -568,6 +601,7 @@ class EmbeddingsAndEvoformer(hk.Module):
 
     rel_feat = jnp.concatenate(rel_feats, axis=-1)
 
+    rel_feat = rel_feat.astype(dtype)
     return common_modules.Linear(
         c.pair_channel,
         name='position_activations')(
@@ -579,6 +613,7 @@ class EmbeddingsAndEvoformer(hk.Module):
     gc = self.global_config
 
     batch = dict(batch)
+    dtype = jnp.bfloat16 if gc.bfloat16 else jnp.float32
 
     if safe_key is None:
       safe_key = prng.SafeKey(hk.next_rng_key())
@@ -587,177 +622,178 @@ class EmbeddingsAndEvoformer(hk.Module):
 
     batch['msa_profile'] = make_msa_profile(batch)
 
-    target_feat = jax.nn.one_hot(batch['aatype'], 21)
+    with utils.bfloat16_context():
+      target_feat = jax.nn.one_hot(batch['aatype'], 21).astype(dtype)
 
-    preprocess_1d = common_modules.Linear(
-        c.msa_channel, name='preprocess_1d')(
-            target_feat)
+      preprocess_1d = common_modules.Linear(
+          c.msa_channel, name='preprocess_1d')(
+              target_feat)
 
-    safe_key, sample_key, mask_key = safe_key.split(3)
-    batch = sample_msa(sample_key, batch, c.num_msa)
-    batch = make_masked_msa(batch, mask_key, c.masked_msa)
+      safe_key, sample_key, mask_key = safe_key.split(3)
+      batch = sample_msa(sample_key, batch, c.num_msa)
+      batch = make_masked_msa(batch, mask_key, c.masked_msa)
 
-    (batch['cluster_profile'],
-     batch['cluster_deletion_mean']) = nearest_neighbor_clusters(batch)
+      (batch['cluster_profile'],
+       batch['cluster_deletion_mean']) = nearest_neighbor_clusters(batch)
 
-    msa_feat = create_msa_feat(batch)
+      msa_feat = create_msa_feat(batch).astype(dtype)
 
-    preprocess_msa = common_modules.Linear(
-        c.msa_channel, name='preprocess_msa')(
-            msa_feat)
+      preprocess_msa = common_modules.Linear(
+          c.msa_channel, name='preprocess_msa')(
+              msa_feat)
+      msa_activations = jnp.expand_dims(preprocess_1d, axis=0) + preprocess_msa
 
-    msa_activations = jnp.expand_dims(preprocess_1d, axis=0) + preprocess_msa
+      left_single = common_modules.Linear(
+          c.pair_channel, name='left_single')(
+              target_feat)
+      right_single = common_modules.Linear(
+          c.pair_channel, name='right_single')(
+              target_feat)
+      pair_activations = left_single[:, None] + right_single[None]
+      mask_2d = batch['seq_mask'][:, None] * batch['seq_mask'][None, :]
+      mask_2d = mask_2d.astype(dtype)
 
-    left_single = common_modules.Linear(
-        c.pair_channel, name='left_single')(
-            target_feat)
-    right_single = common_modules.Linear(
-        c.pair_channel, name='right_single')(
-            target_feat)
-    pair_activations = left_single[:, None] + right_single[None]
-    mask_2d = batch['seq_mask'][:, None] * batch['seq_mask'][None, :]
-    mask_2d = mask_2d.astype(jnp.float32)
+      if c.recycle_pos:
+        prev_pseudo_beta = modules.pseudo_beta_fn(
+            batch['aatype'], batch['prev_pos'], None)
 
-    if c.recycle_pos:
-      prev_pseudo_beta = modules.pseudo_beta_fn(
-          batch['aatype'], batch['prev_pos'], None)
+        dgram = modules.dgram_from_positions(
+            prev_pseudo_beta, **self.config.prev_pos)
+        dgram = dgram.astype(dtype)
+        pair_activations += common_modules.Linear(
+            c.pair_channel, name='prev_pos_linear')(
+                dgram)
+      if c.recycle_features:
+        prev_msa_first_row = common_modules.LayerNorm(
+            axis=[-1],
+            create_scale=True,
+            create_offset=True,
+            name='prev_msa_first_row_norm')(
+                batch['prev_msa_first_row']).astype(dtype)
+        msa_activations = msa_activations.at[0].add(prev_msa_first_row)
 
-      dgram = modules.dgram_from_positions(
-          prev_pseudo_beta, **self.config.prev_pos)
-      pair_activations += common_modules.Linear(
-          c.pair_channel, name='prev_pos_linear')(
-              dgram)
+        pair_activations += common_modules.LayerNorm(
+            axis=[-1],
+            create_scale=True,
+            create_offset=True,
+            name='prev_pair_norm')(
+                batch['prev_pair']).astype(dtype)
 
-    if c.recycle_features:
-      prev_msa_first_row = hk.LayerNorm(
-          axis=[-1],
-          create_scale=True,
-          create_offset=True,
-          name='prev_msa_first_row_norm')(
-              batch['prev_msa_first_row'])
-      msa_activations = msa_activations.at[0].add(prev_msa_first_row)
+      if c.max_relative_idx:
+        pair_activations += self._relative_encoding(batch)
 
-      pair_activations += hk.LayerNorm(
-          axis=[-1],
-          create_scale=True,
-          create_offset=True,
-          name='prev_pair_norm')(
-              batch['prev_pair'])
+      if c.template.enabled:
+        template_module = TemplateEmbedding(c.template, gc)
+        template_batch = {
+            'template_aatype': batch['template_aatype'],
+            'template_all_atom_positions': batch['template_all_atom_positions'],
+            'template_all_atom_mask': batch['template_all_atom_mask']
+        }
+        # Construct a mask such that only intra-chain template features are
+        # computed, since all templates are for each chain individually.
+        multichain_mask = batch['asym_id'][:, None] == batch['asym_id'][None, :]
+        safe_key, safe_subkey = safe_key.split()
+        template_act = template_module(
+            query_embedding=pair_activations,
+            template_batch=template_batch,
+            padding_mask_2d=mask_2d,
+            multichain_mask_2d=multichain_mask,
+            is_training=is_training,
+            safe_key=safe_subkey)
+        pair_activations += template_act
 
-    if c.max_relative_idx:
-      pair_activations += self._relative_encoding(batch)
+      # Extra MSA stack.
+      (extra_msa_feat,
+       extra_msa_mask) = create_extra_msa_feature(batch, c.num_extra_msa)
+      extra_msa_activations = common_modules.Linear(
+          c.extra_msa_channel,
+          name='extra_msa_activations')(
+              extra_msa_feat).astype(dtype)
+      extra_msa_mask = extra_msa_mask.astype(dtype)
 
-    if c.template.enabled:
-      template_module = TemplateEmbedding(c.template, gc)
-      template_batch = {
-          'template_aatype': batch['template_aatype'],
-          'template_all_atom_positions': batch['template_all_atom_positions'],
-          'template_all_atom_mask': batch['template_all_atom_mask']
+      extra_evoformer_input = {
+          'msa': extra_msa_activations,
+          'pair': pair_activations,
       }
-      # Construct a mask such that only intra-chain template features are
-      # computed, since all templates are for each chain individually.
-      multichain_mask = batch['asym_id'][:, None] == batch['asym_id'][None, :]
+      extra_masks = {'msa': extra_msa_mask, 'pair': mask_2d}
+
+      extra_evoformer_iteration = modules.EvoformerIteration(
+          c.evoformer, gc, is_extra_msa=True, name='extra_msa_stack')
+
+      def extra_evoformer_fn(x):
+        act, safe_key = x
+        safe_key, safe_subkey = safe_key.split()
+        extra_evoformer_output = extra_evoformer_iteration(
+            activations=act,
+            masks=extra_masks,
+            is_training=is_training,
+            safe_key=safe_subkey)
+        return (extra_evoformer_output, safe_key)
+
+      if gc.use_remat:
+        extra_evoformer_fn = hk.remat(extra_evoformer_fn)
+
       safe_key, safe_subkey = safe_key.split()
-      template_act = template_module(
-          query_embedding=pair_activations,
-          template_batch=template_batch,
-          padding_mask_2d=mask_2d,
-          multichain_mask_2d=multichain_mask,
-          is_training=is_training,
-          safe_key=safe_subkey)
-      pair_activations += template_act
+      extra_evoformer_stack = layer_stack.layer_stack(
+          c.extra_msa_stack_num_block)(
+              extra_evoformer_fn)
+      extra_evoformer_output, safe_key = extra_evoformer_stack(
+          (extra_evoformer_input, safe_subkey))
 
-    # Extra MSA stack.
-    (extra_msa_feat,
-     extra_msa_mask) = create_extra_msa_feature(batch, c.num_extra_msa)
-    extra_msa_activations = common_modules.Linear(
-        c.extra_msa_channel,
-        name='extra_msa_activations')(
-            extra_msa_feat)
-    extra_msa_mask = extra_msa_mask.astype(jnp.float32)
+      pair_activations = extra_evoformer_output['pair']
 
-    extra_evoformer_input = {
-        'msa': extra_msa_activations,
-        'pair': pair_activations,
-    }
-    extra_masks = {'msa': extra_msa_mask, 'pair': mask_2d}
+      # Get the size of the MSA before potentially adding templates, so we
+      # can crop out the templates later.
+      num_msa_sequences = msa_activations.shape[0]
+      evoformer_input = {
+          'msa': msa_activations,
+          'pair': pair_activations,
+      }
+      evoformer_masks = {
+          'msa': batch['msa_mask'].astype(dtype),
+          'pair': mask_2d
+      }
+      if c.template.enabled:
+        template_features, template_masks = (
+            template_embedding_1d(
+                batch=batch, num_channel=c.msa_channel, global_config=gc))
 
-    extra_evoformer_iteration = modules.EvoformerIteration(
-        c.evoformer, gc, is_extra_msa=True, name='extra_msa_stack')
+        evoformer_input['msa'] = jnp.concatenate(
+            [evoformer_input['msa'], template_features], axis=0)
+        evoformer_masks['msa'] = jnp.concatenate(
+            [evoformer_masks['msa'], template_masks], axis=0)
+      evoformer_iteration = modules.EvoformerIteration(
+          c.evoformer, gc, is_extra_msa=False, name='evoformer_iteration')
 
-    def extra_evoformer_fn(x):
-      act, safe_key = x
+      def evoformer_fn(x):
+        act, safe_key = x
+        safe_key, safe_subkey = safe_key.split()
+        evoformer_output = evoformer_iteration(
+            activations=act,
+            masks=evoformer_masks,
+            is_training=is_training,
+            safe_key=safe_subkey)
+        return (evoformer_output, safe_key)
+
+      if gc.use_remat:
+        evoformer_fn = hk.remat(evoformer_fn)
+
       safe_key, safe_subkey = safe_key.split()
-      extra_evoformer_output = extra_evoformer_iteration(
-          activations=act,
-          masks=extra_masks,
-          is_training=is_training,
-          safe_key=safe_subkey)
-      return (extra_evoformer_output, safe_key)
+      evoformer_stack = layer_stack.layer_stack(c.evoformer_num_block)(
+          evoformer_fn)
 
-    if gc.use_remat:
-      extra_evoformer_fn = hk.remat(extra_evoformer_fn)
+      def run_evoformer(evoformer_input):
+        evoformer_output, _ = evoformer_stack((evoformer_input, safe_subkey))
+        return evoformer_output
 
-    safe_key, safe_subkey = safe_key.split()
-    extra_evoformer_stack = layer_stack.layer_stack(
-        c.extra_msa_stack_num_block)(
-            extra_evoformer_fn)
-    extra_evoformer_output, safe_key = extra_evoformer_stack(
-        (extra_evoformer_input, safe_subkey))
+      evoformer_output = run_evoformer(evoformer_input)
 
-    pair_activations = extra_evoformer_output['pair']
+      msa_activations = evoformer_output['msa']
+      pair_activations = evoformer_output['pair']
 
-    # Get the size of the MSA before potentially adding templates, so we
-    # can crop out the templates later.
-    num_msa_sequences = msa_activations.shape[0]
-    evoformer_input = {
-        'msa': msa_activations,
-        'pair': pair_activations,
-    }
-    evoformer_masks = {'msa': batch['msa_mask'].astype(jnp.float32),
-                       'pair': mask_2d}
-
-    if c.template.enabled:
-      template_features, template_masks = (
-          template_embedding_1d(batch=batch, num_channel=c.msa_channel))
-
-      evoformer_input['msa'] = jnp.concatenate(
-          [evoformer_input['msa'], template_features], axis=0)
-      evoformer_masks['msa'] = jnp.concatenate(
-          [evoformer_masks['msa'], template_masks], axis=0)
-
-    evoformer_iteration = modules.EvoformerIteration(
-        c.evoformer, gc, is_extra_msa=False, name='evoformer_iteration')
-
-    def evoformer_fn(x):
-      act, safe_key = x
-      safe_key, safe_subkey = safe_key.split()
-      evoformer_output = evoformer_iteration(
-          activations=act,
-          masks=evoformer_masks,
-          is_training=is_training,
-          safe_key=safe_subkey)
-      return (evoformer_output, safe_key)
-
-    if gc.use_remat:
-      evoformer_fn = hk.remat(evoformer_fn)
-
-    safe_key, safe_subkey = safe_key.split()
-    evoformer_stack = layer_stack.layer_stack(c.evoformer_num_block)(
-        evoformer_fn)
-
-    def run_evoformer(evoformer_input):
-      evoformer_output, _ = evoformer_stack((evoformer_input, safe_subkey))
-      return evoformer_output
-
-    evoformer_output = run_evoformer(evoformer_input)
-
-    msa_activations = evoformer_output['msa']
-    pair_activations = evoformer_output['pair']
-
-    single_activations = common_modules.Linear(
-        c.seq_channel, name='single_activations')(
-            msa_activations[0])
+      single_activations = common_modules.Linear(
+          c.seq_channel, name='single_activations')(
+              msa_activations[0])
 
     output.update({
         'single':
@@ -770,6 +806,12 @@ class EmbeddingsAndEvoformer(hk.Module):
         'msa_first_row':
             msa_activations[0],
     })
+
+    # Convert back to float32 if we're not saving memory.
+    if not gc.bfloat16_output:
+      for k, v in output.items():
+        if v.dtype == jnp.bfloat16:
+          output[k] = v.astype(jnp.float32)
 
     return output
 
@@ -917,6 +959,9 @@ class SingleTemplateEmbedding(hk.Module):
       # backbone affine - i.e. in each residues local frame, what direction are
       # each of the other residues.
       raw_atom_pos = template_all_atom_positions
+      if gc.bfloat16:
+        # Vec3Arrays are required to be float32
+        raw_atom_pos = raw_atom_pos.astype(jnp.float32)
 
       atom_pos = geometry.Vec3Array.from_array(raw_atom_pos)
       rigid, backbone_mask = folding_multimer.make_backbone_affine(
@@ -928,6 +973,10 @@ class SingleTemplateEmbedding(hk.Module):
       unit_vector = rigid_vec.normalized()
       unit_vector = [unit_vector.x, unit_vector.y, unit_vector.z]
 
+      if gc.bfloat16:
+        unit_vector = [x.astype(jnp.bfloat16) for x in unit_vector]
+        backbone_mask = backbone_mask.astype(jnp.bfloat16)
+
       backbone_mask_2d = backbone_mask[:, None] * backbone_mask[None, :]
       backbone_mask_2d *= multichain_mask_2d
       unit_vector = [x*backbone_mask_2d for x in unit_vector]
@@ -937,7 +986,7 @@ class SingleTemplateEmbedding(hk.Module):
       to_concat.extend([(x, 0) for x in unit_vector])
       to_concat.append((backbone_mask_2d, 0))
 
-      query_embedding = hk.LayerNorm(
+      query_embedding = common_modules.LayerNorm(
           axis=[-1],
           create_scale=True,
           create_offset=True,
@@ -986,12 +1035,13 @@ class SingleTemplateEmbedding(hk.Module):
             template_iteration_fn)
     act, safe_key = template_stack((act, safe_subkey))
 
-    act = hk.LayerNorm(
+    act = common_modules.LayerNorm(
         axis=[-1],
         create_scale=True,
         create_offset=True,
         name='output_layer_norm')(
             act)
+
     return act
 
 
@@ -1044,21 +1094,18 @@ class TemplateEmbeddingIteration(hk.Module):
         act,
         pair_mask,
         safe_key=next(sub_keys))
-
     act = dropout_wrapper_fn(
         modules.TriangleAttention(c.triangle_attention_starting_node, gc,
                                   name='triangle_attention_starting_node'),
         act,
         pair_mask,
         safe_key=next(sub_keys))
-
     act = dropout_wrapper_fn(
         modules.TriangleAttention(c.triangle_attention_ending_node, gc,
                                   name='triangle_attention_ending_node'),
         act,
         pair_mask,
         safe_key=next(sub_keys))
-
     act = dropout_wrapper_fn(
         modules.Transition(c.pair_transition, gc,
                            name='pair_transition'),
@@ -1069,7 +1116,7 @@ class TemplateEmbeddingIteration(hk.Module):
     return act
 
 
-def template_embedding_1d(batch, num_channel):
+def template_embedding_1d(batch, num_channel, global_config):
   """Embed templates into an (num_res, num_templates, num_channels) embedding.
 
   Args:
@@ -1080,6 +1127,7 @@ def template_embedding_1d(batch, num_channel):
       template_all_atom_mask, (num_templates, num_residues, 37) atom mask for
         each template.
     num_channel: The number of channels in the output.
+    global_config: The global_config.
 
   Returns:
     An embedding of shape (num_templates, num_res, num_channels) and a mask of
@@ -1111,6 +1159,10 @@ def template_embedding_1d(batch, num_channel):
       chi_mask], axis=-1)
 
   template_mask = chi_mask[:, :, 0]
+
+  if global_config.bfloat16:
+    template_features = template_features.astype(jnp.bfloat16)
+    template_mask = template_mask.astype(jnp.bfloat16)
 
   template_activations = common_modules.Linear(
       num_channel,

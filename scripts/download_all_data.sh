@@ -59,8 +59,8 @@ bash "${SCRIPT_DIR}/download_pdb70.sh" "${DOWNLOAD_DIR}"
 echo "Downloading PDB mmCIF files..."
 bash "${SCRIPT_DIR}/download_pdb_mmcif.sh" "${DOWNLOAD_DIR}"
 
-echo "Downloading Uniclust30..."
-bash "${SCRIPT_DIR}/download_uniclust30.sh" "${DOWNLOAD_DIR}"
+echo "Downloading Uniref30..."
+bash "${SCRIPT_DIR}/download_uniref30.sh" "${DOWNLOAD_DIR}"
 
 echo "Downloading Uniref90..."
 bash "${SCRIPT_DIR}/download_uniref90.sh" "${DOWNLOAD_DIR}"

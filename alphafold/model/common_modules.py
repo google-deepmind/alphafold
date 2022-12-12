@@ -128,3 +128,64 @@ class Linear(hk.Module):
 
     return output
 
+
+class LayerNorm(hk.LayerNorm):
+  """LayerNorm module.
+
+  Equivalent to hk.LayerNorm but with different parameter shapes: they are
+  always vectors rather than possibly higher-rank tensors. This makes it easier
+  to change the layout whilst keep the model weight-compatible.
+  """
+
+  def __init__(self,
+               axis,
+               create_scale: bool,
+               create_offset: bool,
+               eps: float = 1e-5,
+               scale_init=None,
+               offset_init=None,
+               use_fast_variance: bool = False,
+               name=None,
+               param_axis=None):
+    super().__init__(
+        axis=axis,
+        create_scale=False,
+        create_offset=False,
+        eps=eps,
+        scale_init=None,
+        offset_init=None,
+        use_fast_variance=use_fast_variance,
+        name=name,
+        param_axis=param_axis)
+    self._temp_create_scale = create_scale
+    self._temp_create_offset = create_offset
+
+  def __call__(self, x: jnp.ndarray) -> jnp.ndarray:
+    is_bf16 = (x.dtype == jnp.bfloat16)
+    if is_bf16:
+      x = x.astype(jnp.float32)
+
+    param_axis = self.param_axis[0] if self.param_axis else -1
+    param_shape = (x.shape[param_axis],)
+
+    param_broadcast_shape = [1] * x.ndim
+    param_broadcast_shape[param_axis] = x.shape[param_axis]
+    scale = None
+    offset = None
+    if self._temp_create_scale:
+      scale = hk.get_parameter(
+          'scale', param_shape, x.dtype, init=self.scale_init)
+      scale = scale.reshape(param_broadcast_shape)
+
+    if self._temp_create_offset:
+      offset = hk.get_parameter(
+          'offset', param_shape, x.dtype, init=self.offset_init)
+      offset = offset.reshape(param_broadcast_shape)
+
+    out = super().__call__(x, scale=scale, offset=offset)
+
+    if is_bf16:
+      out = out.astype(jnp.bfloat16)
+
+    return out
+  

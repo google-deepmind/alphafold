@@ -133,7 +133,7 @@ def main(argv):
 
   # Path to the MGnify database for use by JackHMMER.
   mgnify_database_path = os.path.join(
-      FLAGS.data_dir, 'mgnify', 'mgy_clusters_2018_12.fa')
+      FLAGS.data_dir, 'mgnify', 'mgy_clusters_2022_05.fa')
 
   # Path to the BFD database for use by HHblits.
   bfd_database_path = os.path.join(
@@ -144,9 +144,9 @@ def main(argv):
   small_bfd_database_path = os.path.join(
       FLAGS.data_dir, 'small_bfd', 'bfd-first_non_consensus_sequences.fasta')
 
-  # Path to the Uniclust30 database for use by HHblits.
-  uniclust30_database_path = os.path.join(
-      FLAGS.data_dir, 'uniclust30', 'uniclust30_2018_08', 'uniclust30_2018_08')
+  # Path to the Uniref30 database for use by HHblits.
+  uniref30_database_path = os.path.join(
+      FLAGS.data_dir, 'uniref30', 'UniRef30_2021_03')
 
   # Path to the PDB70 database for use by HHsearch.
   pdb70_database_path = os.path.join(FLAGS.data_dir, 'pdb70', 'pdb70')
@@ -199,7 +199,7 @@ def main(argv):
     database_paths.append(('small_bfd_database_path', small_bfd_database_path))
   else:
     database_paths.extend([
-        ('uniclust30_database_path', uniclust30_database_path),
+        ('uniref30_database_path', uniref30_database_path),
         ('bfd_database_path', bfd_database_path),
     ])
   for name, path in database_paths:

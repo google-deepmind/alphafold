@@ -85,7 +85,7 @@ class NotebookUtilsTest(parameterized.TestCase):
       ('DeepMind', 'DEEPMIND'), ('A ', 'A'), ('\tA', 'A'), (' A\t\n', 'A'),
       ('ACDEFGHIKLMNPQRSTVWY', 'ACDEFGHIKLMNPQRSTVWY'))
   def test_clean_and_validate_sequence_ok(self, sequence, exp_clean):
-    clean = notebook_utils.clean_and_validate_sequence(
+    clean = notebook_utils.clean_and_validate_single_sequence(
         sequence, min_length=1, max_length=100)
     self.assertEqual(clean, exp_clean)
 
@@ -100,35 +100,29 @@ class NotebookUtilsTest(parameterized.TestCase):
       ('bad_amino_acids_Z', 'ZZZZ', 'non-amino acid'))
   def test_clean_and_validate_sequence_bad(self, sequence, exp_error):
     with self.assertRaisesRegex(ValueError, f'.*{exp_error}.*'):
-      notebook_utils.clean_and_validate_sequence(
+      notebook_utils.clean_and_validate_single_sequence(
           sequence, min_length=4, max_length=8)
 
   @parameterized.parameters(
-      (['A', '', '', ' ', '\t', ' \t\n', '', ''], ['A'],
-       notebook_utils.ModelType.MONOMER),
-      (['', 'A'], ['A'],
-       notebook_utils.ModelType.MONOMER),
-      (['A', 'C ', ''], ['A', 'C'],
-       notebook_utils.ModelType.MULTIMER),
-      (['', 'A', '', 'C '], ['A', 'C'],
-       notebook_utils.ModelType.MULTIMER))
-  def test_validate_input_ok(
-      self, input_sequences, exp_sequences, exp_model_type):
-    sequences, model_type = notebook_utils.validate_input(
+      (['A', '', '', ' ', '\t', ' \t\n', '', ''], ['A']),
+      (['', 'A'], ['A']),
+      (['A', 'C ', ''], ['A', 'C']),
+      (['', 'A', '', 'C '], ['A', 'C']))
+  def test_validate_input_ok(self, input_sequences, exp_sequences):
+    sequences = notebook_utils.clean_and_validate_input_sequences(
         input_sequences=input_sequences,
-        min_length=1, max_length=100, max_multimer_length=100)
+        min_sequence_length=1, max_sequence_length=100)
     self.assertSequenceEqual(sequences, exp_sequences)
-    self.assertEqual(model_type, exp_model_type)
 
   @parameterized.named_parameters(
       ('no_input_sequence', ['', '\t', '\n'], 'No input amino acid sequence'),
       ('too_long_single', ['AAAAAAAAA', 'AAAA'], 'Input sequence is too long'),
-      ('too_long_multimer', ['AAAA', 'AAAAA'], 'The total length of multimer'))
+      ('too_short_single', ['AAA', 'AAAA'], 'Input sequence is too short'))
   def test_validate_input_bad(self, input_sequences, exp_error):
     with self.assertRaisesRegex(ValueError, f'.*{exp_error}.*'):
-      notebook_utils.validate_input(
-          input_sequences=input_sequences,
-          min_length=4, max_length=8, max_multimer_length=6)
+      notebook_utils.clean_and_validate_input_sequences(
+          input_sequences=input_sequences, min_sequence_length=4,
+          max_sequence_length=8)
 
   def test_merge_chunked_msa_no_hits(self):
     results = [ONLY_QUERY_HIT, ONLY_QUERY_HIT]

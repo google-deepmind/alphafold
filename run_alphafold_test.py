@@ -14,6 +14,7 @@
 
 """Tests for run_alphafold."""
 
+import json
 import os
 
 from absl.testing import absltest
@@ -57,7 +58,7 @@ class RunAlphafoldTest(parameterized.TestCase):
         'max_predicted_aligned_error': np.array(0.),
     }
     model_runner_mock.multimer_mode = False
-    amber_relaxer_mock.process.return_value = ('RELAXED', None, None)
+    amber_relaxer_mock.process.return_value = ('RELAXED', None, [1., 0., 0.])
 
     out_dir = self.create_tempdir().full_path
     fasta_path = os.path.join(out_dir, 'target.fasta')
@@ -85,7 +86,12 @@ class RunAlphafoldTest(parameterized.TestCase):
         'result_model1.pkl', 'timings.json', 'unrelaxed_model1.pdb',
     ]
     if do_relax:
-      expected_files.append('relaxed_model1.pdb')
+      expected_files.extend(['relaxed_model1.pdb', 'relax_metrics.json'])
+      with open(os.path.join(out_dir, 'test', 'relax_metrics.json')) as f:
+        relax_metrics = json.loads(f.read())
+      self.assertDictEqual({'model1': {'remaining_violations': [1.0, 0.0, 0.0],
+                                       'remaining_violations_count': 1.0}},
+                           relax_metrics)
     self.assertCountEqual(expected_files, target_output_files)
 
     # Check that pLDDT is set in the B-factor column.

@@ -124,7 +124,6 @@ def sharded_apply(
   def mapped_fn(*args):
     # Expand in axes and Determine Loop range
     in_axes_ = _expand_axes(in_axes, args)
-
     in_sizes = jax.tree_util.tree_map(_maybe_get_size, args, in_axes_)
     flat_sizes = jax.tree_util.tree_flatten(in_sizes)[0]
     in_size = max(flat_sizes)
