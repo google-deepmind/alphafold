@@ -137,8 +137,8 @@ def empty_placeholder_template_features(
       'template_all_atom_positions': np.zeros(
           (num_templates, num_res, residue_constants.atom_type_num, 3),
           dtype=np.float32),
-      'template_domain_names': np.zeros([num_templates], dtype=np.object),
-      'template_sequence': np.zeros([num_templates], dtype=np.object),
+      'template_domain_names': np.zeros([num_templates], dtype=object),
+      'template_sequence': np.zeros([num_templates], dtype=object),
       'template_sum_probs': np.zeros([num_templates], dtype=np.float32),
   }
 
