@@ -14,6 +14,8 @@
 
 """Feature processing logic for multimer data pipeline."""
 
+import pickle
+import os
 from typing import Iterable, MutableMapping, List
 
 from alphafold.common import residue_constants
@@ -46,7 +48,8 @@ def _is_homomer_or_monomer(chains: Iterable[pipeline.FeatureDict]) -> bool:
 
 
 def pair_and_merge(
-    all_chain_features: MutableMapping[str, pipeline.FeatureDict]
+    all_chain_features: MutableMapping[str, pipeline.FeatureDict],
+    msa_output_dir=None
     ) -> pipeline.FeatureDict:
   """Runs processing on features to augment, pair and merge.
 
@@ -56,6 +59,9 @@ def pair_and_merge(
   Returns:
     A dictionary of features.
   """
+  if msa_output_dir is not None:
+    with open(os.path.join(msa_output_dir, "all_chain_features.pkl"), "wb") as f:
+      pickle.dump(all_chain_features, f)
 
   process_unmerged_features(all_chain_features)
 
@@ -65,7 +71,7 @@ def pair_and_merge(
 
   if pair_msa_sequences:
     np_chains_list = msa_pairing.create_paired_features(
-        chains=np_chains_list)
+        chains=np_chains_list, msa_output_dir=msa_output_dir)
     np_chains_list = msa_pairing.deduplicate_unpaired_sequences(np_chains_list)
   np_chains_list = crop_chains(
       np_chains_list,

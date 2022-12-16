@@ -16,8 +16,7 @@
 
 import pickle
 import collections
-import functools
-import string
+import os
 from typing import Any, Dict, Iterable, List, Sequence
 
 from alphafold.common import residue_constants
@@ -53,7 +52,8 @@ CHAIN_FEATURES = ('num_alignments', 'seq_length')
 
 
 def create_paired_features(
-    chains: Iterable[pipeline.FeatureDict]) ->  List[pipeline.FeatureDict]:
+    chains: Iterable[pipeline.FeatureDict],
+    msa_output_dir=None) ->  List[pipeline.FeatureDict]:
   """Returns the original chains with paired NUM_SEQ features.
 
   Args:
@@ -70,7 +70,7 @@ def create_paired_features(
     return chains
   else:
     updated_chains = []
-    paired_chains_to_paired_row_indices = pair_sequences(chains)
+    paired_chains_to_paired_row_indices = pair_sequences(chains, msa_output_dir=msa_output_dir)
     paired_rows = reorder_paired_rows(
         paired_chains_to_paired_row_indices)
 
@@ -176,7 +176,8 @@ def _match_rows_by_sequence_similarity(this_species_msa_dfs: List[pd.DataFrame]
   return all_paired_msa_rows
 
 
-def pair_sequences(examples: List[pipeline.FeatureDict]
+def pair_sequences(examples: List[pipeline.FeatureDict],
+                   msa_output_dir=None
                    ) -> Dict[int, np.ndarray]:
   """Returns indices for paired MSA sequences across chains."""
 
@@ -228,12 +229,13 @@ def pair_sequences(examples: List[pipeline.FeatureDict]
       num_examples: np.array(paired_msa_rows) for
       num_examples, paired_msa_rows in all_paired_msa_rows_dict.items()
   }
-  with open("species_msa_dfs.pkl", "wb") as f:
-    pickle.dump(species_msa_dfs, f)
-  with open("all_paired_msa_rows.pkl", "wb") as f:
-    pickle.dump(all_paired_msa_rows, f)
-  with open("all_paired_msa_rows_dict.pkl", "wb") as f:
-    pickle.dump(all_paired_msa_rows_dict, f)
+  if msa_output_dir is not None:
+    with open(os.path.join(msa_output_dir, "species_msa_dfs.pkl"), "wb") as f:
+      pickle.dump(species_msa_dfs, f)
+    with open(os.path.join(msa_output_dir, "all_paired_msa_rows.pkl"), "wb") as f:
+      pickle.dump(all_paired_msa_rows, f)
+    with open(os.path.join(msa_output_dir, "all_paired_msa_rows_dict.pkl"), "wb") as f:
+      pickle.dump(all_paired_msa_rows_dict, f)
 
   return all_paired_msa_rows_dict
 

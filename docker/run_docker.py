@@ -46,7 +46,7 @@ flags.DEFINE_list(
     'separated by commas. All FASTA paths must have a unique basename as the '
     'basename is used to name the output directories for each prediction.')
 flags.DEFINE_string(
-    'output_dir', '/tmp/alphafold',
+    'output_dir', '/data1/common/Pairings/Alphafold-multimer/Results',
     'Path to a directory that will store the results.')
 flags.DEFINE_string(
     'data_dir', None,
@@ -137,7 +137,7 @@ def main(argv):
 
   # Path to the BFD database for use by HHblits.
   bfd_database_path = os.path.join(
-      FLAGS.data_dir, 'bfd',
+      '/data2/common/af_data', 'bfd',
       'bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt')
 
   # Path to the Small BFD database for use by JackHMMER.
