@@ -3,16 +3,15 @@
 # AlphaFold
 
 This package provides an implementation of the inference pipeline of AlphaFold
-v2.0. For simplicity, we refer to this model as AlphaFold throughout the rest
-of this document.
+v2.0. For simplicity, we refer to this model as AlphaFold throughout the rest of
+this document.
 
 We also provide:
 
 1.  An implementation of AlphaFold-Multimer. This represents a work in progress
     and AlphaFold-Multimer isn't expected to be as stable as our monomer
-    AlphaFold system.
-    [Read the guide](#updating-existing-installation)
-    for how to upgrade and update code.
+    AlphaFold system. [Read the guide](#updating-existing-installation) for how
+    to upgrade and update code.
 2.  The [technical note](docs/technical_note_v2.3.0.md) containing the models
     and inference procedure for an updated AlphaFold v2.3.0.
 3.  A [CASP15 baseline](docs/casp15_predictions.zip) set of predictions along
@@ -109,8 +108,8 @@ subdirectory in the AlphaFold repository directory.** If it is, the Docker build
 will be slow as the large databases will be copied during the image creation.
 
 We don't provide exactly the database versions used in CASP14 – see the
-[note on reproducibility](#note-on-casp14-reproducibility). Some of the databases are
-mirrored for speed, see [mirrored databases](#mirrored-databases).
+[note on reproducibility](#note-on-casp14-reproducibility). Some of the
+databases are mirrored for speed, see [mirrored databases](#mirrored-databases).
 
 :ledger: **Note: The total download size for the full databases is around 415 GB
 and the total size when unzipped is 2.62 TB. Please make sure you have a large
@@ -350,6 +349,38 @@ By default the multimer system will run 5 seeds per model (25 total predictions)
 for a small drop in accuracy you may wish to run a single seed per model. This
 can be done via the `--num_multimer_predictions_per_model` flag, e.g. set it to
 `--num_multimer_predictions_per_model=1` to run a single seed per model.
+
+### AlphaFold prediction speed
+
+The table below reports prediction runtimes for proteins of various lengths. We
+only measure unrelaxed structure prediction while excluding runtimes from MSA
+and template search. When running `docker/run_docker.py` with
+`--benchmark=true`, this runtime is stored in `timings.json`. All runtimes are
+from a single A100 NVIDIA GPU. Prediction speed on A100 for smaller structures
+can be improved by increasing `global_config.subbatch_size` in
+`alphafold/model/config.py`.
+
+No. residues | Prediction time (s)
+-----------: | ------------------:
+100          | 4.9
+200          | 7.7
+300          | 13
+400          | 18
+500          | 29
+600          | 36
+700          | 53
+800          | 60
+900          | 91
+1,000        | 96
+1,100        | 140
+1,500        | 280
+2,000        | 450
+2,500        | 969
+3,000        | 1,240
+3,500        | 2,465
+4,000        | 5,660
+4,500        | 12,475
+5,000        | 18,824
 
 ### Examples
 
@@ -601,7 +632,6 @@ If you use the code or data in this package, please cite:
 ```
 
 In addition, if you use the AlphaFold-Multimer mode, please cite:
-
 
 ```bibtex
 @article {AlphaFold-Multimer2021,
