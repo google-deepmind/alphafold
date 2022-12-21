@@ -76,6 +76,9 @@ def dropout_wrapper(module,
   residual = module(input_act, mask, is_training=is_training, **kwargs)
   dropout_rate = 0.0 if gc.deterministic else module.config.dropout_rate
 
+  # Will override `is_training` to True if want to use dropout.
+  should_apply_dropout = True if gc.eval_dropout else is_training
+
   if module.config.shared_dropout:
     if module.config.orientation == 'per_row':
       broadcast_dim = 0
@@ -87,7 +90,7 @@ def dropout_wrapper(module,
   residual = apply_dropout(tensor=residual,
                            safe_key=safe_key,
                            rate=dropout_rate,
-                           is_training=is_training,
+                           is_training=should_apply_dropout,
                            broadcast_dim=broadcast_dim)
 
   new_act = output_act + residual
