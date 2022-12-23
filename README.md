@@ -353,12 +353,12 @@ can be done via the `--num_multimer_predictions_per_model` flag, e.g. set it to
 ### AlphaFold prediction speed
 
 The table below reports prediction runtimes for proteins of various lengths. We
-only measure unrelaxed structure prediction while excluding runtimes from MSA
-and template search. When running `docker/run_docker.py` with
-`--benchmark=true`, this runtime is stored in `timings.json`. All runtimes are
-from a single A100 NVIDIA GPU. Prediction speed on A100 for smaller structures
-can be improved by increasing `global_config.subbatch_size` in
-`alphafold/model/config.py`.
+only measure unrelaxed structure prediction with three recycles while
+excluding runtimes from MSA and template search. When running
+`docker/run_docker.py` with `--benchmark=true`, this runtime is stored in
+`timings.json`. All runtimes are from a single A100 NVIDIA GPU. Prediction
+speed on A100 for smaller structures can be improved by increasing
+`global_config.subbatch_size` in `alphafold/model/config.py`.
 
 No. residues | Prediction time (s)
 -----------: | ------------------:
