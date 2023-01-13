@@ -28,12 +28,15 @@ from docker import types
 
 flags.DEFINE_bool(
     'use_gpu', True, 'Enable NVIDIA runtime to run with GPUs.')
-flags.DEFINE_boolean(
-    'run_relax', True,
-    'Whether to run the final relaxation step on the predicted models. Turning '
-    'relax off might result in predictions with distracting stereochemical '
-    'violations but might help in case you are having issues with the '
-    'relaxation stage.')
+flags.DEFINE_enum('models_to_relax', 'best', ['best', 'all', 'none'],
+                  'The models to run the final relaxation step on. '
+                  'If `all`, all models are relaxed, which may be time '
+                  'consuming. If `best`, only the most confident model is '
+                  'relaxed. If `none`, relaxation is not run. Turning off '
+                  'relaxation might result in predictions with '
+                  'distracting stereochemical violations but might help '
+                  'in case you are having issues with the relaxation '
+                  'stage.')
 flags.DEFINE_bool(
     'enable_gpu_relax', True, 'Run relax on GPU if GPU is enabled.')
 flags.DEFINE_string(
@@ -221,7 +224,7 @@ def main(argv):
       f'--benchmark={FLAGS.benchmark}',
       f'--use_precomputed_msas={FLAGS.use_precomputed_msas}',
       f'--num_multimer_predictions_per_model={FLAGS.num_multimer_predictions_per_model}',
-      f'--run_relax={FLAGS.run_relax}',
+      f'--models_to_relax={FLAGS.models_to_relax}',
       f'--use_gpu_relax={use_gpu_relax}',
       '--logtostderr',
   ])
