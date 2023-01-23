@@ -161,7 +161,7 @@ def _check_flag(flag_name: str,
                      f'"--{other_flag_name}={FLAGS[other_flag_name].value}".')
 
 
-def _jnp_to_np(output: dict[str, Any]) -> dict[str, Any]:
+def _jnp_to_np(output: Dict[str, Any]) -> Dict[str, Any]:
   """Recursively changes jax arrays to numpy arrays."""
   for k, v in output.items():
     if isinstance(v, dict):
