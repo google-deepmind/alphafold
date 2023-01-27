@@ -61,8 +61,9 @@ Please follow these steps:
 
 1.  Download genetic databases and model parameters:
 
-    *   Install `aria2c` (on most Linux distributions it is available via the
-    package manager).
+    *   Install `aria2c`. On most Linux distributions it is available via the
+    package manager as the `aria2` package (on Debian-based distributions this
+    can be installed by running `sudo apt install aria2`).
 
     *   Please use the script `scripts/download_all_data.sh` to download
     and set up full databases. This may take substantial time (download size is
