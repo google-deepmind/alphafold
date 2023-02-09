@@ -14,7 +14,7 @@
 
 """Helper methods for the AlphaFold Colab notebook."""
 import json
-from typing import Any, Mapping, Optional, Sequence, Tuple
+from typing import AbstractSet, Any, Mapping, Optional, Sequence
 
 from alphafold.common import residue_constants
 from alphafold.data import parsers
@@ -166,3 +166,24 @@ def get_pae_json(pae: np.ndarray, max_pae: float) -> str:
       'max_predicted_aligned_error': max_pae
   }]
   return json.dumps(formatted_output, indent=None, separators=(',', ':'))
+
+
+def check_cell_execution_order(
+    cells_ran: AbstractSet[int], cell_number: int) -> None:
+  """Check that the cell execution order is correct.
+
+  Args:
+    cells_ran: Set of cell numbers that have been executed.
+    cell_number: The number of the cell that this check is called in.
+
+  Raises:
+    If <1:cell_number> cells haven't been executed, raise error.
+  """
+  previous_cells = set(range(1, cell_number))
+  cells_not_ran = previous_cells - cells_ran
+  if cells_not_ran != set():
+    cells_not_ran_str = ', '.join([str(x) for x in sorted(cells_not_ran)])
+    raise ValueError(
+        f'You did not execute the cells: {cells_not_ran_str}. Your Colab '
+        'runtime may have died during execution. Please restart the runtime '
+        'and run from the first cell!')
