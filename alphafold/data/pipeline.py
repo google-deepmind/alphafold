@@ -154,8 +154,12 @@ class DataPipeline:
   def jackhmmer_uniref90_and_pdb_templates_caller(self, input_fasta_path, msa_output_dir, input_sequence):
     uniref90_out_path = os.path.join(msa_output_dir, 'uniref90_hits.sto')
     jackhmmer_uniref90_result = run_msa_tool(
-        self.jackhmmer_uniref90_runner, input_fasta_path, uniref90_out_path,
-        'sto', self.use_precomputed_msas)
+        msa_runner=self.jackhmmer_uniref90_runner,
+        input_fasta_path=input_fasta_path,
+        msa_out_path=uniref90_out_path,
+        msa_format='sto',
+        use_precomputed_msas=self.use_precomputed_msas,
+        max_sto_sequences=self.uniref_max_hits)
 
     msa_for_templates = jackhmmer_uniref90_result['sto']
     msa_for_templates = parsers.deduplicate_stockholm_msa(msa_for_templates)
@@ -186,11 +190,14 @@ class DataPipeline:
   def jackhmmer_mgnify_caller(self, input_fasta_path, msa_output_dir):
     mgnify_out_path = os.path.join(msa_output_dir, 'mgnify_hits.sto')
     jackhmmer_mgnify_result = run_msa_tool(
-        self.jackhmmer_mgnify_runner, input_fasta_path, mgnify_out_path, 'sto',
-        self.use_precomputed_msas)
+        msa_runner=self.jackhmmer_mgnify_runner,
+        input_fasta_path=input_fasta_path,
+        msa_out_path=mgnify_out_path,
+        msa_format='sto',
+        use_precomputed_msas=self.use_precomputed_msas,
+        max_sto_sequences=self.mgnify_max_hits)
 
     mgnify_msa = parsers.parse_stockholm(jackhmmer_mgnify_result['sto'])
-    mgnify_msa = mgnify_msa.truncate(max_seqs=self.mgnify_max_hits)
     return mgnify_msa
 
   def hhblits_bfd_uniclust_caller(self, input_fasta_path, msa_output_dir):
@@ -236,7 +243,7 @@ class DataPipeline:
         futures.append(executor.submit(self.jackhmmer_mgnify_caller, input_fasta_path, msa_output_dir))
         futures.append(executor.submit(self.jackhmmer_small_bfd_caller, input_fasta_path, msa_output_dir))
     else:
-       with concurrent.futures.ThreadPoolExecutor(max_workers=self.n_parallel_msa) as executor:
+      with concurrent.futures.ThreadPoolExecutor(max_workers=self.n_parallel_msa) as executor:
         futures.append(executor.submit(self.jackhmmer_uniref90_and_pdb_templates_caller, input_fasta_path, msa_output_dir, input_sequence))
         futures.append(executor.submit(self.jackhmmer_mgnify_caller, input_fasta_path, msa_output_dir))
         futures.append(executor.submit(self.hhblits_bfd_uniclust_caller, input_fasta_path, msa_output_dir))
