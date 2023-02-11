@@ -200,7 +200,7 @@ class DataPipeline:
     mgnify_msa = parsers.parse_stockholm(jackhmmer_mgnify_result['sto'])
     return mgnify_msa
 
-  def hhblits_bfd_uniclust_caller(self, input_fasta_path, msa_output_dir):
+  def hhblits_bfd_uniref_caller(self, input_fasta_path, msa_output_dir):
     bfd_out_path = os.path.join(msa_output_dir, 'bfd_uniref_hits.a3m')
     hhblits_bfd_uniref_result = run_msa_tool(
         msa_runner=self.hhblits_bfd_uniref_runner,
@@ -246,7 +246,7 @@ class DataPipeline:
       with concurrent.futures.ThreadPoolExecutor(max_workers=self.n_parallel_msa) as executor:
         futures.append(executor.submit(self.jackhmmer_uniref90_and_pdb_templates_caller, input_fasta_path, msa_output_dir, input_sequence))
         futures.append(executor.submit(self.jackhmmer_mgnify_caller, input_fasta_path, msa_output_dir))
-        futures.append(executor.submit(self.hhblits_bfd_uniclust_caller, input_fasta_path, msa_output_dir))
+        futures.append(executor.submit(self.hhblits_bfd_uniref_caller, input_fasta_path, msa_output_dir))
 
     uniref90_msa, pdb_template_hits = futures[0].result()
     mgnify_msa = futures[1].result()
