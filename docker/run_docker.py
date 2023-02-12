@@ -93,6 +93,7 @@ flags.DEFINE_string(
     'will be owned by this user:group. By default, this is the current user. '
     'Valid options are: uid or uid:gid, non-numeric values are not recognised '
     'by Docker unless that user has been created within the container.')
+flags.DEFINE_integer('n_parallel_msa', 1, 'Number of parallel runs of MSA tools.')
 
 FLAGS = flags.FLAGS
 
@@ -227,6 +228,7 @@ def main(argv):
       f'--models_to_relax={FLAGS.models_to_relax}',
       f'--use_gpu_relax={use_gpu_relax}',
       '--logtostderr',
+      f'--n_parallel_msa={FLAGS.n_parallel_msa}'
   ])
 
   client = docker.from_env()
