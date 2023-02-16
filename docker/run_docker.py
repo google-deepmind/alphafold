@@ -90,6 +90,9 @@ flags.DEFINE_string(
     'will be owned by this user:group. By default, this is the current user. '
     'Valid options are: uid or uid:gid, non-numeric values are not recognised '
     'by Docker unless that user has been created within the container.')
+flags.DEFINE_string(
+    'uniprot_to_ncbi_path', None,
+    'Path to dictionary containing mapping from Uniprot ACs to NCBI TaxIDs.')
 
 FLAGS = flags.FLAGS
 
@@ -161,6 +164,10 @@ def main(argv):
   # Path to a file mapping obsolete PDB IDs to their replacements.
   obsolete_pdbs_path = os.path.join(FLAGS.data_dir, 'pdb_mmcif', 'obsolete.dat')
 
+  # Path to dictionary containing Uniprot-NCBI mappings
+  uniprot_to_ncbi_path = os.path.join(
+      pathlib.Path(FLAGS.uniprot_to_ncbi_path).parent, 'uniprot_to_ncbi.pkl')
+
   alphafold_path = pathlib.Path(__file__).parent.parent
   data_dir_path = pathlib.Path(FLAGS.data_dir)
   if alphafold_path == data_dir_path or alphafold_path in data_dir_path.parents:
@@ -179,6 +186,11 @@ def main(argv):
     mounts.append(mount)
     target_fasta_paths.append(target_path)
   command_args.append(f'--fasta_paths={",".join(target_fasta_paths)}')
+
+  # Mount Uniprot-NCBI mappings
+  mount, target_path = _create_mount('uniprot_to_ncbi', uniprot_to_ncbi_path)
+  mounts.append(mount)
+  command_args.append(f'--uniprot_to_ncbi_path={target_path}')
 
   database_paths = [
       ('uniref90_database_path', uniref90_database_path),

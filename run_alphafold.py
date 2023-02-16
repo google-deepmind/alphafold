@@ -128,6 +128,9 @@ flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
                      'Relax on GPU can be much faster than CPU, so it is '
                      'recommended to enable if possible. GPUs must be available'
                      ' if this setting is enabled.')
+flags.DEFINE_string('uniprot_to_ncbi_path', None,
+                    'Path to dictionary containing mapping from Uniprot ACs to '
+                    'NCBI TaxIDs.')
 
 FLAGS = flags.FLAGS
 
@@ -295,6 +298,9 @@ def main(argv):
       raise ValueError(f'Could not find path to the "{tool_name}" binary. Make '
                        'sure it is installed on your system.')
 
+  with open(FLAGS.uniprot_to_ncbi_path, "rb") as f:
+    uniprot_to_ncbi = pickle.load(f)
+
   use_small_bfd = FLAGS.db_preset == 'reduced_dbs'
   _check_flag('small_bfd_database_path', 'db_preset',
               should_be_set=use_small_bfd)
@@ -350,6 +356,7 @@ def main(argv):
       hhblits_binary_path=FLAGS.hhblits_binary_path,
       uniref90_database_path=FLAGS.uniref90_database_path,
       mgnify_database_path=FLAGS.mgnify_database_path,
+      uniprot_to_ncbi=uniprot_to_ncbi,
       bfd_database_path=FLAGS.bfd_database_path,
       uniref30_database_path=FLAGS.uniref30_database_path,
       small_bfd_database_path=FLAGS.small_bfd_database_path,
@@ -364,6 +371,7 @@ def main(argv):
         monomer_data_pipeline=monomer_data_pipeline,
         jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
         uniprot_database_path=FLAGS.uniprot_database_path,
+        uniprot_to_ncbi=uniprot_to_ncbi,
         use_precomputed_msas=FLAGS.use_precomputed_msas)
   else:
     num_predictions_per_model = 1

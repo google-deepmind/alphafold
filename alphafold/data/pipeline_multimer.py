@@ -174,6 +174,7 @@ class DataPipeline:
                monomer_data_pipeline: pipeline.DataPipeline,
                jackhmmer_binary_path: str,
                uniprot_database_path: str,
+               uniprot_to_ncbi: dict,
                max_uniprot_hits: int = 50000,
                use_precomputed_msas: bool = False):
     """Initializes the data pipeline.
@@ -193,6 +194,7 @@ class DataPipeline:
         database_path=uniprot_database_path)
     self._max_uniprot_hits = max_uniprot_hits
     self.use_precomputed_msas = use_precomputed_msas
+    self.uniprot_to_ncbi = uniprot_to_ncbi
 
   def _process_single_chain(
       self,
@@ -229,7 +231,7 @@ class DataPipeline:
         self.use_precomputed_msas)
     msa = parsers.parse_stockholm(result['sto'])
     msa = msa.truncate(max_seqs=self._max_uniprot_hits)
-    all_seq_features = pipeline.make_msa_features([msa])
+    all_seq_features = pipeline.make_msa_features([msa], self.uniprot_to_ncbi)
     valid_feats = msa_pairing.MSA_FEATURES + (
         'msa_species_identifiers',
     )

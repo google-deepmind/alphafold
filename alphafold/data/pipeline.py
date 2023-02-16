@@ -50,7 +50,7 @@ def make_sequence_features(
   return features
 
 
-def make_msa_features(msas: Sequence[parsers.Msa]) -> FeatureDict:
+def make_msa_features(msas: Sequence[parsers.Msa], uniprot_to_ncbi: dict) -> FeatureDict:
   """Constructs a feature dict of MSA features."""
   if not msas:
     raise ValueError('At least one MSA must be provided.')
@@ -70,7 +70,7 @@ def make_msa_features(msas: Sequence[parsers.Msa]) -> FeatureDict:
           [residue_constants.HHBLITS_AA_TO_ID[res] for res in sequence])
       deletion_matrix.append(msa.deletion_matrix[sequence_index])
       identifiers = msa_identifiers.get_identifiers(
-          msa.descriptions[sequence_index])
+          msa.descriptions[sequence_index], uniprot_to_ncbi)
       species_ids.append(identifiers.species_id.encode('utf-8'))
 
   num_res = len(msas[0].sequences[0])
@@ -116,6 +116,7 @@ class DataPipeline:
                hhblits_binary_path: str,
                uniref90_database_path: str,
                mgnify_database_path: str,
+               uniprot_to_ncbi: dict,
                bfd_database_path: Optional[str],
                uniref30_database_path: Optional[str],
                small_bfd_database_path: Optional[str],
@@ -146,6 +147,7 @@ class DataPipeline:
     self.mgnify_max_hits = mgnify_max_hits
     self.uniref_max_hits = uniref_max_hits
     self.use_precomputed_msas = use_precomputed_msas
+    self.uniprot_to_ncbi = uniprot_to_ncbi
 
   def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
     """Runs alignment tools on the input sequence and creates features."""
@@ -229,7 +231,7 @@ class DataPipeline:
         description=input_description,
         num_res=num_res)
 
-    msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa))
+    msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa), self.uniprot_to_ncbi)
 
     logging.info('Uniref90 MSA size: %d sequences.', len(uniref90_msa))
     logging.info('BFD MSA size: %d sequences.', len(bfd_msa))

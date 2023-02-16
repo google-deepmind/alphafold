@@ -17,6 +17,7 @@
 import dataclasses
 import re
 from typing import Optional
+from absl import logging
 
 
 # Sequences coming from UniProtKB database come in the
@@ -51,7 +52,7 @@ class Identifiers:
   species_id: str = ''
 
 
-def _parse_sequence_identifier(msa_sequence_identifier: str) -> Identifiers:
+def _parse_sequence_identifier(msa_sequence_identifier: str, uniprot_to_ncbi: dict) -> Identifiers:
   """Gets species from an msa sequence identifier.
 
   The sequence identifier has the format specified by
@@ -67,8 +68,13 @@ def _parse_sequence_identifier(msa_sequence_identifier: str) -> Identifiers:
   """
   matches = re.search(_UNIPROT_PATTERN, msa_sequence_identifier.strip())
   if matches:
-    return Identifiers(
-        species_id=matches.group('SpeciesIdentifier'))
+    ac = matches.group('AccessionIdentifier')
+    try:
+      species_id = uniprot_to_ncbi[ac]
+    except KeyError:
+      species_id = matches.group('SpeciesIdentifier')
+      logging.info(f'{ac} was not found in mapping dict. Setting taxon to UniProt mnemonic {species_id}.')
+    return Identifiers(species_id=species_id)
   return Identifiers()
 
 
@@ -81,10 +87,10 @@ def _extract_sequence_identifier(description: str) -> Optional[str]:
     return None
 
 
-def get_identifiers(description: str) -> Identifiers:
+def get_identifiers(description: str, uniprot_to_ncbi: dict) -> Identifiers:
   """Computes extra MSA features from the description."""
   sequence_identifier = _extract_sequence_identifier(description)
   if sequence_identifier is None:
     return Identifiers()
   else:
-    return _parse_sequence_identifier(sequence_identifier)
+    return _parse_sequence_identifier(sequence_identifier, uniprot_to_ncbi)
