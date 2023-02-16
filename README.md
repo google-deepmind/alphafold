@@ -3,16 +3,15 @@
 # AlphaFold
 
 This package provides an implementation of the inference pipeline of AlphaFold
-v2.0. For simplicity, we refer to this model as AlphaFold throughout the rest
-of this document.
+v2. For simplicity, we refer to this model as AlphaFold throughout the rest of
+this document.
 
 We also provide:
 
 1.  An implementation of AlphaFold-Multimer. This represents a work in progress
     and AlphaFold-Multimer isn't expected to be as stable as our monomer
-    AlphaFold system.
-    [Read the guide](#updating-existing-installation)
-    for how to upgrade and update code.
+    AlphaFold system. [Read the guide](#updating-existing-installation) for how
+    to upgrade and update code.
 2.  The [technical note](docs/technical_note_v2.3.0.md) containing the models
     and inference procedure for an updated AlphaFold v2.3.0.
 3.  A [CASP15 baseline](docs/casp15_predictions.zip) set of predictions along
@@ -37,12 +36,14 @@ If you have any questions, please contact the AlphaFold team at
 
 ![CASP14 predictions](imgs/casp14_predictions.gif)
 
-## First time setup
+## Installation and running your first prediction
 
 You will need a machine running Linux, AlphaFold does not support other
-operating systems.
+operating systems. Full installation requires up to 3 TB of disk space to keep
+genetic databases (SSD storage is recommended) and a modern NVIDIA GPU (GPUs
+with more memory can predict larger protein structures).
 
-The following steps are required in order to run AlphaFold:
+Please follow these steps:
 
 1.  Install [Docker](https://www.docker.com/).
     *   Install
@@ -50,8 +51,37 @@ The following steps are required in order to run AlphaFold:
         for GPU support.
     *   Setup running
         [Docker as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
-1.  Download genetic databases (see below).
-1.  Download model parameters (see below).
+
+1.  Clone this repository and `cd` into it.
+
+    ```bash
+    git clone https://github.com/deepmind/alphafold.git
+    cd ./alphafold
+    ```
+
+1.  Download genetic databases and model parameters:
+
+    *   Install `aria2c`. On most Linux distributions it is available via the
+    package manager as the `aria2` package (on Debian-based distributions this
+    can be installed by running `sudo apt install aria2`).
+
+    *   Please use the script `scripts/download_all_data.sh` to download
+    and set up full databases. This may take substantial time (download size is
+    556 GB), so we recommend running this script in the background:
+
+    ```bash
+    scripts/download_all_data.sh <DOWNLOAD_DIR> > download.log 2> download_all.log &
+    ```
+
+    *   **Note: The download directory `<DOWNLOAD_DIR>` should *not* be a
+    subdirectory in the AlphaFold repository directory.** If it is, the Docker
+    build will be slow as the large databases will be copied into the docker
+    build context.
+
+    *   It is possible to run AlphaFold with reduced databases; please refer to
+    the [complete documentation](#genetic-databases).
+
+
 1.  Check that AlphaFold will be able to use a GPU by running:
 
     ```bash
@@ -64,10 +94,58 @@ The following steps are required in order to run AlphaFold:
     or take a look at the following
     [NVIDIA Docker issue](https://github.com/NVIDIA/nvidia-docker/issues/1447#issuecomment-801479573).
 
-If you wish to run AlphaFold using Singularity (a common containerization
-platform on HPC systems) we recommend using some of the third party Singularity
-setups as linked in https://github.com/deepmind/alphafold/issues/10 or
-https://github.com/deepmind/alphafold/issues/24.
+    If you wish to run AlphaFold using Singularity (a common containerization
+    platform on HPC systems) we recommend using some of the third party Singularity
+    setups as linked in https://github.com/deepmind/alphafold/issues/10 or
+    https://github.com/deepmind/alphafold/issues/24.
+
+1.  Build the Docker image:
+
+    ```bash
+    docker build -f docker/Dockerfile -t alphafold .
+    ```
+
+    If you encounter the following error:
+
+    ```
+    W: GPG error: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A4B469963BF863CC
+    E: The repository 'https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 InRelease' is not signed.
+    ```
+
+    use the workaround described in
+    https://github.com/deepmind/alphafold/issues/463#issuecomment-1124881779.
+
+1.  Install the `run_docker.py` dependencies. Note: You may optionally wish to
+    create a
+    [Python Virtual Environment](https://docs.python.org/3/tutorial/venv.html)
+    to prevent conflicts with your system's Python environment.
+
+    ```bash
+    pip3 install -r docker/requirements.txt
+    ```
+
+1.  Make sure that the output directory exists (the default is `/tmp/alphafold`)
+    and that you have sufficient permissions to write into it.
+
+1.  Run `run_docker.py` pointing to a FASTA file containing the protein
+    sequence(s) for which you wish to predict the structure (`--fasta_paths`
+    parameter). AlphaFold will search for the available templates before the
+    date specified by the `--max_template_date` parameter; this could be used to
+    avoid certain templates during modeling. `--data_dir` is the directory with
+    downloaded genetic databases and `--output_dir` is the absolute path to the
+    output directory.
+
+    ```bash
+    python3 docker/run_docker.py \
+      --fasta_paths=your_protein.fasta \
+      --max_template_date=2022-01-01 \
+      --data_dir=$DOWNLOAD_DIR \
+      --output_dir=/home/user/absolute_path_to_the_output_dir
+    ```
+
+1.  Once the run is over, the output directory shall contain predicted
+    structures of the target protein. Please check the documentation below for
+    additional options and troubleshooting tips.
 
 ### Genetic databases
 
@@ -87,7 +165,7 @@ AlphaFold needs multiple genetic (sequence) databases to run:
 We provide a script `scripts/download_all_data.sh` that can be used to download
 and set up all of these databases:
 
-*   Default:
+*   Recommended default:
 
     ```bash
     scripts/download_all_data.sh <DOWNLOAD_DIR>
@@ -95,24 +173,26 @@ and set up all of these databases:
 
     will download the full databases.
 
-*   With `reduced_dbs`:
+*   With `reduced_dbs` parameter:
 
     ```bash
     scripts/download_all_data.sh <DOWNLOAD_DIR> reduced_dbs
     ```
 
     will download a reduced version of the databases to be used with the
-    `reduced_dbs` database preset.
+    `reduced_dbs` database preset. This shall be used with the corresponding
+    AlphaFold parameter `--db_preset=reduced_dbs` later during the AlphaFold run
+    (please see [AlphaFold parameters](#running-alphafold) section).
 
 :ledger: **Note: The download directory `<DOWNLOAD_DIR>` should *not* be a
 subdirectory in the AlphaFold repository directory.** If it is, the Docker build
 will be slow as the large databases will be copied during the image creation.
 
 We don't provide exactly the database versions used in CASP14 – see the
-[note on reproducibility](#note-on-casp14-reproducibility). Some of the databases are
-mirrored for speed, see [mirrored databases](#mirrored-databases).
+[note on reproducibility](#note-on-casp14-reproducibility). Some of the
+databases are mirrored for speed, see [mirrored databases](#mirrored-databases).
 
-:ledger: **Note: The total download size for the full databases is around 415 GB
+:ledger: **Note: The total download size for the full databases is around 556 GB
 and the total size when unzipped is 2.62 TB. Please make sure you have a large
 enough hard drive space, bandwidth and time to download. We recommend using an
 SSD for better genetic search performance.**
@@ -231,58 +311,11 @@ To use the deprecated v2.1.0 AlphaFold-Multimer model weights:
 **The simplest way to run AlphaFold is using the provided Docker script.** This
 was tested on Google Cloud with a machine using the `nvidia-gpu-cloud-image`
 with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
-3 TB disk, and an A100 GPU.
+3 TB disk, and an A100 GPU. For your first run, please follow the instructions
+from [Installation and running your first prediction](#installation-and-running-your-first-prediction)
+section.
 
-1.  Clone this repository and `cd` into it.
-
-    ```bash
-    git clone https://github.com/deepmind/alphafold.git
-    ```
-
-1.  Build the Docker image:
-
-    ```bash
-    docker build -f docker/Dockerfile -t alphafold .
-    ```
-
-    If you encounter the following error:
-
-    ```
-    W: GPG error: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A4B469963BF863CC
-    E: The repository 'https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 InRelease' is not signed.
-    ```
-
-    use the workaround described in
-    https://github.com/deepmind/alphafold/issues/463#issuecomment-1124881779.
-
-1.  Install the `run_docker.py` dependencies. Note: You may optionally wish to
-    create a
-    [Python Virtual Environment](https://docs.python.org/3/tutorial/venv.html)
-    to prevent conflicts with your system's Python environment.
-
-    ```bash
-    pip3 install -r docker/requirements.txt
-    ```
-
-1.  Make sure that the output directory exists (the default is `/tmp/alphafold`)
-    and that you have sufficient permissions to write into it.
-
-1.  Run `run_docker.py` pointing to a FASTA file containing the protein
-    sequence(s) for which you wish to predict the structure. If you are
-    predicting the structure of a protein that is already in PDB and you wish to
-    avoid using it as a template, then `max_template_date` must be set to be
-    before the release date of the structure. You must also provide the path to
-    the directory containing the downloaded databases. For example, for the
-    T1050 CASP14 target:
-
-    ```bash
-    python3 docker/run_docker.py \
-      --fasta_paths=T1050.fasta \
-      --max_template_date=2020-05-14 \
-      --data_dir=$DOWNLOAD_DIR
-    ```
-
-    By default, Alphafold will attempt to use all visible GPU devices. To use a
+1.  By default, Alphafold will attempt to use all visible GPU devices. To use a
     subset, specify a comma-separated list of GPU UUID(s) or index(es) using the
     `--gpu_devices` flag. See
     [GPU enumeration](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html#gpu-enumeration)
@@ -326,8 +359,25 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
       --max_template_date=2020-05-14 \
       --model_preset=monomer \
       --db_preset=reduced_dbs \
-      --data_dir=$DOWNLOAD_DIR
+      --data_dir=$DOWNLOAD_DIR \
+      --output_dir=/home/user/absolute_path_to_the_output_dir
     ```
+
+1.  After generating the predicted model, AlphaFold runs a relaxation
+    step to improve local geometry. By default, only the best model (by
+    pLDDT) is relaxed (`--models_to_relax=best`), but also all of the models
+    (`--models_to_relax=all`) or none of the models (`--models_to_relax=none`)
+    can be relaxed.
+
+1.  The relaxation step can be run on GPU (faster, but could be less stable) or
+    CPU (slow, but stable). This can be controlled with `--enable_gpu_relax=true`
+    (default) or `--enable_gpu_relax=false`.
+
+1.  AlphaFold can re-use MSAs (multiple sequence alignments) for the same
+    sequence via `--use_precomputed_msas=true` option; this can be useful for
+    trying different AlphaFold parameters. This option assumes that the
+    directory structure generated by the first AlphaFold run in the output
+    directory exists and that the protein sequence is the same.
 
 ### Running AlphaFold-Multimer
 
@@ -343,13 +393,46 @@ python3 docker/run_docker.py \
   --fasta_paths=multimer.fasta \
   --max_template_date=2020-05-14 \
   --model_preset=multimer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 By default the multimer system will run 5 seeds per model (25 total predictions)
 for a small drop in accuracy you may wish to run a single seed per model. This
 can be done via the `--num_multimer_predictions_per_model` flag, e.g. set it to
 `--num_multimer_predictions_per_model=1` to run a single seed per model.
+
+### AlphaFold prediction speed
+
+The table below reports prediction runtimes for proteins of various lengths. We
+only measure unrelaxed structure prediction with three recycles while
+excluding runtimes from MSA and template search. When running
+`docker/run_docker.py` with `--benchmark=true`, this runtime is stored in
+`timings.json`. All runtimes are from a single A100 NVIDIA GPU. Prediction
+speed on A100 for smaller structures can be improved by increasing
+`global_config.subbatch_size` in `alphafold/model/config.py`.
+
+No. residues | Prediction time (s)
+-----------: | ------------------:
+100          | 4.9
+200          | 7.7
+300          | 13
+400          | 18
+500          | 29
+600          | 36
+700          | 53
+800          | 60
+900          | 91
+1,000        | 96
+1,100        | 140
+1,500        | 280
+2,000        | 450
+2,500        | 969
+3,000        | 1,240
+3,500        | 2,465
+4,000        | 5,660
+4,500        | 12,475
+5,000        | 18,824
 
 ### Examples
 
@@ -371,7 +454,8 @@ python3 docker/run_docker.py \
   --fasta_paths=monomer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=monomer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 #### Folding a homomer
@@ -395,7 +479,8 @@ python3 docker/run_docker.py \
   --fasta_paths=homomer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 #### Folding a heteromer
@@ -423,7 +508,8 @@ python3 docker/run_docker.py \
   --fasta_paths=heteromer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 #### Folding multiple monomers one after another
@@ -437,7 +523,8 @@ python3 docker/run_docker.py \
   --fasta_paths=monomer1.fasta,monomer2.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=monomer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 #### Folding multiple multimers one after another
@@ -451,7 +538,8 @@ python3 docker/run_docker.py \
   --fasta_paths=multimer1.fasta,multimer2.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 ### AlphaFold output
@@ -725,3 +813,4 @@ reference to the following:
     restrictions and made fully and freely available for both non-commercial and
     commercial use under
     [CC0 1.0 Universal (CC0 1.0) Public Domain Dedication](https://creativecommons.org/publicdomain/zero/1.0/).
+
