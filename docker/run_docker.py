@@ -96,6 +96,11 @@ flags.DEFINE_string(
 flags.DEFINE_string(
     'uniprot_to_ncbi_path', None,
     'Path to dictionary containing mapping from Uniprot ACs to NCBI TaxIDs.')
+flags.DEFINE_string(
+  'externally_matched_species_dict_basename', None,
+  'Basename of pickled dictionary containing externally matched species. '
+  'Full path will be '
+  'msa_output_path/externally_matched_species_dict_basename.')
 
 FLAGS = flags.FLAGS
 
@@ -167,10 +172,6 @@ def main(argv):
   # Path to a file mapping obsolete PDB IDs to their replacements.
   obsolete_pdbs_path = os.path.join(FLAGS.data_dir, 'pdb_mmcif', 'obsolete.dat')
 
-  # Path to dictionary containing Uniprot-NCBI mappings
-  uniprot_to_ncbi_path = os.path.join(
-      pathlib.Path(FLAGS.uniprot_to_ncbi_path).parent, 'uniprot_to_ncbi.pkl')
-
   alphafold_path = pathlib.Path(__file__).parent.parent
   data_dir_path = pathlib.Path(FLAGS.data_dir)
   if alphafold_path == data_dir_path or alphafold_path in data_dir_path.parents:
@@ -191,7 +192,7 @@ def main(argv):
   command_args.append(f'--fasta_paths={",".join(target_fasta_paths)}')
 
   # Mount Uniprot-NCBI mappings
-  mount, target_path = _create_mount('uniprot_to_ncbi', uniprot_to_ncbi_path)
+  mount, target_path = _create_mount('uniprot_to_ncbi', FLAGS.uniprot_to_ncbi_path)
   mounts.append(mount)
   command_args.append(f'--uniprot_to_ncbi_path={target_path}')
 
@@ -238,6 +239,7 @@ def main(argv):
       f'--num_multimer_predictions_per_model={FLAGS.num_multimer_predictions_per_model}',
       f'--models_to_relax={FLAGS.models_to_relax}',
       f'--use_gpu_relax={use_gpu_relax}',
+      f'--externally_matched_species_dict_basename={FLAGS.externally_matched_species_dict_basename}',
       '--logtostderr',
   ])
 

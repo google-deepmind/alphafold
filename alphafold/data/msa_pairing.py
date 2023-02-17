@@ -17,7 +17,7 @@
 import pickle
 import collections
 import os
-from typing import Any, Dict, Iterable, List, Sequence
+from typing import Any, Dict, Iterable, List, Sequence, Optional
 
 from alphafold.common import residue_constants
 from alphafold.data import pipeline
@@ -53,7 +53,7 @@ CHAIN_FEATURES = ('num_alignments', 'seq_length')
 
 def create_paired_features(
     chains: Iterable[pipeline.FeatureDict],
-    msa_output_dir=None) ->  List[pipeline.FeatureDict]:
+    externally_matched_species_dict_path: Optional[str] = None) -> List[pipeline.FeatureDict]:
   """Returns the original chains with paired NUM_SEQ features.
 
   Args:
@@ -70,7 +70,9 @@ def create_paired_features(
     return chains
   else:
     updated_chains = []
-    paired_chains_to_paired_row_indices = pair_sequences(chains, msa_output_dir=msa_output_dir)
+    paired_chains_to_paired_row_indices = pair_sequences(
+      chains,
+      externally_matched_species_dict_path=externally_matched_species_dict_path)
     paired_rows = reorder_paired_rows(
         paired_chains_to_paired_row_indices)
 
@@ -177,9 +179,15 @@ def _match_rows_by_sequence_similarity(this_species_msa_dfs: List[pd.DataFrame]
 
 
 def pair_sequences(examples: List[pipeline.FeatureDict],
-                   msa_output_dir=None
+                   externally_matched_species_dict_path: Optional[str] = None
                    ) -> Dict[int, np.ndarray]:
   """Returns indices for paired MSA sequences across chains."""
+
+  if externally_matched_species_dict_path is None:
+    externally_matched_species_dict = {}
+  else:
+    with open(externally_matched_species_dict_path, "rb") as f:
+      externally_matched_species_dict = pickle.load(f)
 
   num_examples = len(examples)
 
@@ -222,20 +230,16 @@ def pair_sequences(examples: List[pipeline.FeatureDict],
       continue
     
     species_msa_dfs.append(this_species_msa_dfs)
-    paired_msa_rows = _match_rows_by_sequence_similarity(this_species_msa_dfs)
+    if species in externally_matched_species_dict:
+      paired_msa_rows = externally_matched_species_dict[species]
+    else:
+      paired_msa_rows = _match_rows_by_sequence_similarity(this_species_msa_dfs)
     all_paired_msa_rows.extend(paired_msa_rows)
     all_paired_msa_rows_dict[species_dfs_present].extend(paired_msa_rows)
   all_paired_msa_rows_dict = {
       num_examples: np.array(paired_msa_rows) for
       num_examples, paired_msa_rows in all_paired_msa_rows_dict.items()
   }
-  if msa_output_dir is not None:
-    with open(os.path.join(msa_output_dir, "species_msa_dfs.pkl"), "wb") as f:
-      pickle.dump(species_msa_dfs, f)
-    with open(os.path.join(msa_output_dir, "all_paired_msa_rows.pkl"), "wb") as f:
-      pickle.dump(all_paired_msa_rows, f)
-    with open(os.path.join(msa_output_dir, "all_paired_msa_rows_dict.pkl"), "wb") as f:
-      pickle.dump(all_paired_msa_rows_dict, f)
 
   return all_paired_msa_rows_dict
 

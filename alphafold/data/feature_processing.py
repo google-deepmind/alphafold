@@ -16,7 +16,7 @@
 
 import pickle
 import os
-from typing import Iterable, MutableMapping, List
+from typing import Iterable, MutableMapping, List, Optional
 
 from alphafold.common import residue_constants
 from alphafold.data import msa_pairing
@@ -49,7 +49,8 @@ def _is_homomer_or_monomer(chains: Iterable[pipeline.FeatureDict]) -> bool:
 
 def pair_and_merge(
     all_chain_features: MutableMapping[str, pipeline.FeatureDict],
-    msa_output_dir=None
+    msa_output_dir: Optional[str] = None,
+    externally_matched_species_dict_path: Optional[str] = None
     ) -> pipeline.FeatureDict:
   """Runs processing on features to augment, pair and merge.
 
@@ -71,7 +72,8 @@ def pair_and_merge(
 
   if pair_msa_sequences:
     np_chains_list = msa_pairing.create_paired_features(
-        chains=np_chains_list, msa_output_dir=msa_output_dir)
+        chains=np_chains_list,
+        externally_matched_species_dict_path=externally_matched_species_dict_path)
     np_chains_list = msa_pairing.deduplicate_unpaired_sequences(np_chains_list)
   np_chains_list = crop_chains(
       np_chains_list,

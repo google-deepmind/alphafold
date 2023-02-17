@@ -22,7 +22,7 @@ import random
 import shutil
 import sys
 import time
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Dict, Mapping, Union, Optional
 
 from absl import app
 from absl import flags
@@ -144,6 +144,10 @@ flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
 flags.DEFINE_string('uniprot_to_ncbi_path', None,
                     'Path to dictionary containing mapping from Uniprot ACs to '
                     'NCBI TaxIDs.')
+flags.DEFINE_string('externally_matched_species_dict_basename', None,
+                    'Basename of pickled dictionary containing externally '
+                    'matched species. Full path will be '
+                    'msa_output_path/externally_matched_species_dict_basename.')
 
 FLAGS = flags.FLAGS
 
@@ -183,7 +187,8 @@ def predict_structure(
     amber_relaxer: relax.AmberRelaxation,
     benchmark: bool,
     random_seed: int,
-    models_to_relax: ModelsToRelax):
+    models_to_relax: ModelsToRelax,
+    externally_matched_species_dict_basename: Optional[str] = None):
   """Predicts structure using AlphaFold for the given sequence."""
   logging.info('Predicting %s', fasta_name)
   timings = {}
@@ -194,11 +199,19 @@ def predict_structure(
   if not os.path.exists(msa_output_dir):
     os.makedirs(msa_output_dir)
 
+  if externally_matched_species_dict_basename is not None:
+    externally_matched_species_dict_path = os.path.join(
+      msa_output_dir,
+      externally_matched_species_dict_basename)
+  else:
+    externally_matched_species_dict_path = None
+
   # Get features.
   t_0 = time.time()
   feature_dict = data_pipeline.process(
       input_fasta_path=fasta_path,
-      msa_output_dir=msa_output_dir)
+      msa_output_dir=msa_output_dir,
+      externally_matched_species_dict_path=externally_matched_species_dict_path)
   timings['features'] = time.time() - t_0
 
   # Write out features as a pickled dictionary.
@@ -457,7 +470,8 @@ def main(argv):
         amber_relaxer=amber_relaxer,
         benchmark=FLAGS.benchmark,
         random_seed=random_seed,
-        models_to_relax=FLAGS.models_to_relax)
+        models_to_relax=FLAGS.models_to_relax,
+        externally_matched_species_dict_basename=FLAGS.externally_matched_species_dict_basename)
 
 
 if __name__ == '__main__':
