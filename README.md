@@ -576,12 +576,13 @@ The contents of each output file are as follows:
     structure, after performing an Amber relaxation procedure on the unrelaxed
     structure prediction (see Jumper et al. 2021, Suppl. Methods 1.8.6 for
     details).
-*   `ranked_*.pdb` – A PDB format text file containing the relaxed predicted
-    structures, after reordering by model confidence. Here `ranked_0.pdb` should
-    contain the prediction with the highest confidence, and `ranked_4.pdb` the
-    prediction with the lowest confidence. To rank model confidence, we use
+*   `ranked_*.pdb` – A PDB format text file containing the predicted structures,
+    after reordering by model confidence. Here `ranked_i.pdb` should contain
+    the prediction with the (`i + 1`)-th highest confidence (so that
+    `ranked_0.pdb` has the highest confidence). To rank model confidence, we use
     predicted LDDT (pLDDT) scores (see Jumper et al. 2021, Suppl. Methods 1.9.6
-    for details).
+    for details). Depending on the value of `--models_to_relax`, only one
+    (`ranked_0.pdb`), all, or none of these structures are relaxed.
 *   `ranking_debug.json` – A JSON format text file containing the pLDDT values
     used to perform the model ranking, and a mapping back to the original model
     names.
