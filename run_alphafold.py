@@ -199,7 +199,7 @@ def predict_structure(
   if not os.path.exists(msa_output_dir):
     os.makedirs(msa_output_dir)
 
-  if externally_matched_species_dict_basename is not None:
+  if externally_matched_species_dict_basename:
     externally_matched_species_dict_path = os.path.join(
       msa_output_dir,
       externally_matched_species_dict_basename)

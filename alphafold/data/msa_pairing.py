@@ -183,11 +183,11 @@ def pair_sequences(examples: List[pipeline.FeatureDict],
                    ) -> Dict[int, np.ndarray]:
   """Returns indices for paired MSA sequences across chains."""
 
-  if externally_matched_species_dict_path is None:
-    externally_matched_species_dict = {}
-  else:
+  if externally_matched_species_dict_path:
     with open(externally_matched_species_dict_path, "rb") as f:
       externally_matched_species_dict = pickle.load(f)
+  else:
+    externally_matched_species_dict = {}
 
   num_examples = len(examples)
 
