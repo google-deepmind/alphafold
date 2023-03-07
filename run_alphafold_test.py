@@ -14,6 +14,7 @@
 
 """Tests for run_alphafold."""
 
+import json
 import os
 
 from absl.testing import absltest
@@ -27,10 +28,10 @@ import numpy as np
 class RunAlphafoldTest(parameterized.TestCase):
 
   @parameterized.named_parameters(
-      ('relax', True),
-      ('no_relax', False),
+      ('relax', run_alphafold.ModelsToRelax.ALL),
+      ('no_relax', run_alphafold.ModelsToRelax.NONE),
   )
-  def test_end_to_end(self, do_relax):
+  def test_end_to_end(self, models_to_relax):
 
     data_pipeline_mock = mock.Mock()
     model_runner_mock = mock.Mock()
@@ -57,7 +58,7 @@ class RunAlphafoldTest(parameterized.TestCase):
         'max_predicted_aligned_error': np.array(0.),
     }
     model_runner_mock.multimer_mode = False
-    amber_relaxer_mock.process.return_value = ('RELAXED', None, None)
+    amber_relaxer_mock.process.return_value = ('RELAXED', None, [1., 0., 0.])
 
     out_dir = self.create_tempdir().full_path
     fasta_path = os.path.join(out_dir, 'target.fasta')
@@ -71,9 +72,11 @@ class RunAlphafoldTest(parameterized.TestCase):
         output_dir_base=out_dir,
         data_pipeline=data_pipeline_mock,
         model_runners={'model1': model_runner_mock},
-        amber_relaxer=amber_relaxer_mock if do_relax else None,
+        amber_relaxer=amber_relaxer_mock,
         benchmark=False,
-        random_seed=0)
+        random_seed=0,
+        models_to_relax=models_to_relax,
+        )
 
     base_output_files = os.listdir(out_dir)
     self.assertIn('target.fasta', base_output_files)
@@ -84,8 +87,13 @@ class RunAlphafoldTest(parameterized.TestCase):
         'features.pkl', 'msas', 'ranked_0.pdb', 'ranking_debug.json',
         'result_model1.pkl', 'timings.json', 'unrelaxed_model1.pdb',
     ]
-    if do_relax:
-      expected_files.append('relaxed_model1.pdb')
+    if models_to_relax == run_alphafold.ModelsToRelax.ALL:
+      expected_files.extend(['relaxed_model1.pdb', 'relax_metrics.json'])
+      with open(os.path.join(out_dir, 'test', 'relax_metrics.json')) as f:
+        relax_metrics = json.loads(f.read())
+      self.assertDictEqual({'model1': {'remaining_violations': [1.0, 0.0, 0.0],
+                                       'remaining_violations_count': 1.0}},
+                           relax_metrics)
     self.assertCountEqual(expected_files, target_output_files)
 
     # Check that pLDDT is set in the B-factor column.

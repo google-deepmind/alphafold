@@ -15,6 +15,7 @@
 """A collection of JAX utility functions for use in protein folding."""
 
 import collections
+import contextlib
 import functools
 import numbers
 from typing import Mapping
@@ -23,6 +24,27 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 import numpy as np
+
+
+def bfloat16_creator(next_creator, shape, dtype, init, context):
+  """Creates float32 variables when bfloat16 is requested."""
+  if context.original_dtype == jnp.bfloat16:
+    dtype = jnp.float32
+  return next_creator(shape, dtype, init)
+
+
+def bfloat16_getter(next_getter, value, context):
+  """Casts float32 to bfloat16 when bfloat16 was originally requested."""
+  if context.original_dtype == jnp.bfloat16:
+    assert value.dtype == jnp.float32
+    value = value.astype(jnp.bfloat16)
+  return next_getter(value)
+
+
+@contextlib.contextmanager
+def bfloat16_context():
+  with hk.custom_creator(bfloat16_creator), hk.custom_getter(bfloat16_getter):
+    yield
 
 
 def final_init(config):

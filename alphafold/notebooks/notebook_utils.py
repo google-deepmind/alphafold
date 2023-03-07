@@ -13,9 +13,8 @@
 # limitations under the License.
 
 """Helper methods for the AlphaFold Colab notebook."""
-import enum
 import json
-from typing import Any, Mapping, Optional, Sequence, Tuple
+from typing import AbstractSet, Any, Mapping, Optional, Sequence
 
 from alphafold.common import residue_constants
 from alphafold.data import parsers
@@ -23,13 +22,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-@enum.unique
-class ModelType(enum.Enum):
-  MONOMER = 0
-  MULTIMER = 1
-
-
-def clean_and_validate_sequence(
+def clean_and_validate_single_sequence(
     input_sequence: str, min_length: int, max_length: int) -> str:
   """Checks that the input sequence is ok and returns a clean version of it."""
   # Remove all whitespaces, tabs and end lines; upper-case.
@@ -54,41 +47,23 @@ def clean_and_validate_sequence(
   return clean_sequence
 
 
-def validate_input(
+def clean_and_validate_input_sequences(
     input_sequences: Sequence[str],
-    min_length: int,
-    max_length: int,
-    max_multimer_length: int) -> Tuple[Sequence[str], ModelType]:
-  """Validates and cleans input sequences and determines which model to use."""
+    min_sequence_length: int,
+    max_sequence_length: int) -> Sequence[str]:
+  """Validates and cleans input sequences."""
   sequences = []
 
   for input_sequence in input_sequences:
     if input_sequence.strip():
-      input_sequence = clean_and_validate_sequence(
+      input_sequence = clean_and_validate_single_sequence(
           input_sequence=input_sequence,
-          min_length=min_length,
-          max_length=max_length)
+          min_length=min_sequence_length,
+          max_length=max_sequence_length)
       sequences.append(input_sequence)
 
-  if len(sequences) == 1:
-    print('Using the single-chain model.')
-    return sequences, ModelType.MONOMER
-
-  elif len(sequences) > 1:
-    total_multimer_length = sum([len(seq) for seq in sequences])
-    if total_multimer_length > max_multimer_length:
-      raise ValueError(f'The total length of multimer sequences is too long: '
-                       f'{total_multimer_length}, while the maximum is '
-                       f'{max_multimer_length}. Please use the full AlphaFold '
-                       f'system for long multimers.')
-    elif total_multimer_length > 1536:
-      print('WARNING: The accuracy of the system has not been fully validated '
-            'above 1536 residues, and you may experience long running times or '
-            f'run out of memory for your complex with {total_multimer_length} '
-            'residues.')
-    print(f'Using the multimer model with {len(sequences)} sequences.')
-    return sequences, ModelType.MULTIMER
-
+  if sequences:
+    return sequences
   else:
     raise ValueError('No input amino acid sequence provided, please provide at '
                      'least one sequence.')
@@ -162,8 +137,8 @@ def empty_placeholder_template_features(
       'template_all_atom_positions': np.zeros(
           (num_templates, num_res, residue_constants.atom_type_num, 3),
           dtype=np.float32),
-      'template_domain_names': np.zeros([num_templates], dtype=np.object),
-      'template_sequence': np.zeros([num_templates], dtype=np.object),
+      'template_domain_names': np.zeros([num_templates], dtype=object),
+      'template_sequence': np.zeros([num_templates], dtype=object),
       'template_sum_probs': np.zeros([num_templates], dtype=np.float32),
   }
 
@@ -191,3 +166,24 @@ def get_pae_json(pae: np.ndarray, max_pae: float) -> str:
       'max_predicted_aligned_error': max_pae
   }]
   return json.dumps(formatted_output, indent=None, separators=(',', ':'))
+
+
+def check_cell_execution_order(
+    cells_ran: AbstractSet[int], cell_number: int) -> None:
+  """Check that the cell execution order is correct.
+
+  Args:
+    cells_ran: Set of cell numbers that have been executed.
+    cell_number: The number of the cell that this check is called in.
+
+  Raises:
+    If <1:cell_number> cells haven't been executed, raise error.
+  """
+  previous_cells = set(range(1, cell_number))
+  cells_not_ran = previous_cells - cells_ran
+  if cells_not_ran != set():
+    cells_not_ran_str = ', '.join([str(x) for x in sorted(cells_not_ran)])
+    raise ValueError(
+        f'You did not execute the cells: {cells_not_ran_str}. Your Colab '
+        'runtime may have died during execution. Please restart the runtime '
+        'and run from the first cell!')

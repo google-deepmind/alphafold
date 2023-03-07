@@ -21,7 +21,7 @@ ARG CUDA
 # Use bash to support string substitution.
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN apt-get update \ 
+RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
         build-essential \
         cmake \
@@ -59,7 +59,7 @@ RUN conda install -qy conda==4.13.0 \
       cudatoolkit==${CUDA_VERSION} \
       pdbfixer \
       pip \
-      python=3.7 \
+      python=3.8 \
       && conda clean --all --force-pkgs-dirs --yes
 
 COPY . /app/alphafold
@@ -70,12 +70,12 @@ RUN wget -q -P /app/alphafold/alphafold/common/ \
 RUN pip3 install --upgrade pip --no-cache-dir \
     && pip3 install -r /app/alphafold/requirements.txt --no-cache-dir \
     && pip3 install --upgrade --no-cache-dir \
-      jax==0.3.17 \
-      jaxlib==0.3.15+cuda11.cudnn805 \
+      jax==0.3.25 \
+      jaxlib==0.3.25+cuda11.cudnn805 \
       -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
 # Apply OpenMM patch.
-WORKDIR /opt/conda/lib/python3.7/site-packages
+WORKDIR /opt/conda/lib/python3.8/site-packages
 RUN patch -p0 < /app/alphafold/docker/openmm.patch
 
 # Add SETUID bit to the ldconfig binary so that non-root users can run it.
