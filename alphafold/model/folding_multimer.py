@@ -427,7 +427,7 @@ class FoldIteration(hk.Module):
     safe_key, *sub_keys = safe_key.split(3)
     sub_keys = iter(sub_keys)
     act = safe_dropout_fn(act, next(sub_keys))
-    act = hk.LayerNorm(
+    act = common_modules.LayerNorm(
         axis=-1,
         create_scale=True,
         create_offset=True,
@@ -448,7 +448,7 @@ class FoldIteration(hk.Module):
         act = jax.nn.relu(act)
     act += input_act
     act = safe_dropout_fn(act, next(sub_keys))
-    act = hk.LayerNorm(
+    act = common_modules.LayerNorm(
         axis=-1,
         create_scale=True,
         create_offset=True,
@@ -500,7 +500,7 @@ def generate_monomer_rigids(representations: Mapping[str, jnp.ndarray],
   """
   c = config
   sequence_mask = batch['seq_mask'][:, None]
-  act = hk.LayerNorm(
+  act = common_modules.LayerNorm(
       axis=-1, create_scale=True, create_offset=True, name='single_layer_norm')(
           representations['single'])
 
@@ -523,7 +523,7 @@ def generate_monomer_rigids(representations: Mapping[str, jnp.ndarray],
           rigid
   }
 
-  act_2d = hk.LayerNorm(
+  act_2d = common_modules.LayerNorm(
       axis=-1,
       create_scale=True,
       create_offset=True,

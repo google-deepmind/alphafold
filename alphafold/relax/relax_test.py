@@ -82,7 +82,7 @@ class RunAmberRelaxTest(absltest.TestCase):
          0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0,
          0, 0, 0, 0])
     # Check no violations were added. Can't check exactly due to stochasticity.
-    self.assertTrue(np.all(num_violations <= exp_num_violations))
+    self.assertTrue(np.all(np.array(num_violations) <= exp_num_violations))
 
 
 if __name__ == '__main__':

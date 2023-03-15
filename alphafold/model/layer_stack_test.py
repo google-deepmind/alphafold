@@ -22,7 +22,7 @@ import haiku as hk
 import jax
 import jax.numpy as jnp
 import numpy as np
-import scipy
+import scipy.stats
 
 
 # Suffixes applied by Haiku for repeated module names.

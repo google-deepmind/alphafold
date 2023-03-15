@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Full AlphaFold protein structure prediction script."""
+import enum
 import json
 import os
 import pathlib
@@ -21,7 +22,7 @@ import random
 import shutil
 import sys
 import time
-from typing import Dict, Union
+from typing import Any, Dict, Mapping, Union
 
 from absl import app
 from absl import flags
@@ -37,11 +38,19 @@ from alphafold.model import config
 from alphafold.model import data
 from alphafold.model import model
 from alphafold.relax import relax
+import jax.numpy as jnp
 import numpy as np
 
 # Internal import (7716).
 
 logging.set_verbosity(logging.INFO)
+
+
+@enum.unique
+class ModelsToRelax(enum.Enum):
+  ALL = 0
+  BEST = 1
+  NONE = 2
 
 flags.DEFINE_list(
     'fasta_paths', None, 'Paths to FASTA files, each containing a prediction '
@@ -73,7 +82,7 @@ flags.DEFINE_string('bfd_database_path', None, 'Path to the BFD '
                     'database for use by HHblits.')
 flags.DEFINE_string('small_bfd_database_path', None, 'Path to the small '
                     'version of BFD used with the "reduced_dbs" preset.')
-flags.DEFINE_string('uniclust30_database_path', None, 'Path to the Uniclust30 '
+flags.DEFINE_string('uniref30_database_path', None, 'Path to the UniRef30 '
                     'database for use by HHblits.')
 flags.DEFINE_string('uniprot_database_path', None, 'Path to the Uniprot '
                     'database for use by JackHMMer.')
@@ -119,11 +128,15 @@ flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'runs that are to reuse the MSAs. WARNING: This will not '
                      'check if the sequence, database or configuration have '
                      'changed.')
-flags.DEFINE_boolean('run_relax', True, 'Whether to run the final relaxation '
-                     'step on the predicted models. Turning relax off might '
-                     'result in predictions with distracting stereochemical '
-                     'violations but might help in case you are having issues '
-                     'with the relaxation stage.')
+flags.DEFINE_enum_class('models_to_relax', ModelsToRelax.BEST, ModelsToRelax,
+                        'The models to run the final relaxation step on. '
+                        'If `all`, all models are relaxed, which may be time '
+                        'consuming. If `best`, only the most confident model '
+                        'is relaxed. If `none`, relaxation is not run. Turning '
+                        'off relaxation might result in predictions with '
+                        'distracting stereochemical violations but might help '
+                        'in case you are having issues with the relaxation '
+                        'stage.')
 flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
                      'Relax on GPU can be much faster than CPU, so it is '
                      'recommended to enable if possible. GPUs must be available'
@@ -154,6 +167,16 @@ def _check_flag(flag_name: str,
                      f'"--{other_flag_name}={FLAGS[other_flag_name].value}".')
 
 
+def _jnp_to_np(output: Dict[str, Any]) -> Dict[str, Any]:
+  """Recursively changes jax arrays to numpy arrays."""
+  for k, v in output.items():
+    if isinstance(v, dict):
+      output[k] = _jnp_to_np(v)
+    elif isinstance(v, jnp.ndarray):
+      output[k] = np.array(v)
+  return output
+
+
 def predict_structure(
     fasta_path: str,
     fasta_name: str,
@@ -162,7 +185,8 @@ def predict_structure(
     model_runners: Dict[str, model.RunModel],
     amber_relaxer: relax.AmberRelaxation,
     benchmark: bool,
-    random_seed: int):
+    random_seed: int,
+    models_to_relax: ModelsToRelax):
   """Predicts structure using AlphaFold for the given sequence."""
   logging.info('Predicting %s', fasta_name)
   timings = {}
@@ -186,7 +210,9 @@ def predict_structure(
     pickle.dump(feature_dict, f, protocol=4)
 
   unrelaxed_pdbs = {}
+  unrelaxed_proteins = {}
   relaxed_pdbs = {}
+  relax_metrics = {}
   ranking_confidences = {}
 
   # Run the models.
@@ -222,10 +248,13 @@ def predict_structure(
     plddt = prediction_result['plddt']
     ranking_confidences[model_name] = prediction_result['ranking_confidence']
 
+    # Remove jax dependency from results.
+    np_prediction_result = _jnp_to_np(dict(prediction_result))
+
     # Save the model outputs.
     result_output_path = os.path.join(output_dir, f'result_{model_name}.pkl')
     with open(result_output_path, 'wb') as f:
-      pickle.dump(prediction_result, f, protocol=4)
+      pickle.dump(np_prediction_result, f, protocol=4)
 
     # Add the predicted LDDT in the b-factor column.
     # Note that higher predicted LDDT value means higher model confidence.
@@ -237,33 +266,48 @@ def predict_structure(
         b_factors=plddt_b_factors,
         remove_leading_feature_dimension=not model_runner.multimer_mode)
 
+    unrelaxed_proteins[model_name] = unrelaxed_protein
     unrelaxed_pdbs[model_name] = protein.to_pdb(unrelaxed_protein)
     unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}.pdb')
     with open(unrelaxed_pdb_path, 'w') as f:
       f.write(unrelaxed_pdbs[model_name])
 
-    if amber_relaxer:
-      # Relax the prediction.
-      t_0 = time.time()
-      relaxed_pdb_str, _, _ = amber_relaxer.process(prot=unrelaxed_protein)
-      timings[f'relax_{model_name}'] = time.time() - t_0
+  # Rank by model confidence.
+  ranked_order = [
+      model_name for model_name, confidence in
+      sorted(ranking_confidences.items(), key=lambda x: x[1], reverse=True)]
 
-      relaxed_pdbs[model_name] = relaxed_pdb_str
+  # Relax predictions.
+  if models_to_relax == ModelsToRelax.BEST:
+    to_relax = [ranked_order[0]]
+  elif models_to_relax == ModelsToRelax.ALL:
+    to_relax = ranked_order
+  elif models_to_relax == ModelsToRelax.NONE:
+    to_relax = []
 
-      # Save the relaxed PDB.
-      relaxed_output_path = os.path.join(
-          output_dir, f'relaxed_{model_name}.pdb')
-      with open(relaxed_output_path, 'w') as f:
-        f.write(relaxed_pdb_str)
+  for model_name in to_relax:
+    t_0 = time.time()
+    relaxed_pdb_str, _, violations = amber_relaxer.process(
+        prot=unrelaxed_proteins[model_name])
+    relax_metrics[model_name] = {
+        'remaining_violations': violations,
+        'remaining_violations_count': sum(violations)
+    }
+    timings[f'relax_{model_name}'] = time.time() - t_0
 
-  # Rank by model confidence and write out relaxed PDBs in rank order.
-  ranked_order = []
-  for idx, (model_name, _) in enumerate(
-      sorted(ranking_confidences.items(), key=lambda x: x[1], reverse=True)):
-    ranked_order.append(model_name)
+    relaxed_pdbs[model_name] = relaxed_pdb_str
+
+    # Save the relaxed PDB.
+    relaxed_output_path = os.path.join(
+        output_dir, f'relaxed_{model_name}.pdb')
+    with open(relaxed_output_path, 'w') as f:
+      f.write(relaxed_pdb_str)
+
+  # Write out relaxed PDBs in rank order.
+  for idx, model_name in enumerate(ranked_order):
     ranked_output_path = os.path.join(output_dir, f'ranked_{idx}.pdb')
     with open(ranked_output_path, 'w') as f:
-      if amber_relaxer:
+      if model_name in relaxed_pdbs:
         f.write(relaxed_pdbs[model_name])
       else:
         f.write(unrelaxed_pdbs[model_name])
@@ -279,6 +323,10 @@ def predict_structure(
   timings_output_path = os.path.join(output_dir, 'timings.json')
   with open(timings_output_path, 'w') as f:
     f.write(json.dumps(timings, indent=4))
+  if models_to_relax != ModelsToRelax.NONE:
+    relax_metrics_path = os.path.join(output_dir, 'relax_metrics.json')
+    with open(relax_metrics_path, 'w') as f:
+      f.write(json.dumps(relax_metrics, indent=4))
 
 
 def main(argv):
@@ -296,7 +344,7 @@ def main(argv):
               should_be_set=use_small_bfd)
   _check_flag('bfd_database_path', 'db_preset',
               should_be_set=not use_small_bfd)
-  _check_flag('uniclust30_database_path', 'db_preset',
+  _check_flag('uniref30_database_path', 'db_preset',
               should_be_set=not use_small_bfd)
 
   run_multimer_system = 'multimer' in FLAGS.model_preset
@@ -347,7 +395,7 @@ def main(argv):
       uniref90_database_path=FLAGS.uniref90_database_path,
       mgnify_database_path=FLAGS.mgnify_database_path,
       bfd_database_path=FLAGS.bfd_database_path,
-      uniclust30_database_path=FLAGS.uniclust30_database_path,
+      uniref30_database_path=FLAGS.uniref30_database_path,
       small_bfd_database_path=FLAGS.small_bfd_database_path,
       template_searcher=template_searcher,
       template_featurizer=template_featurizer,
@@ -386,16 +434,13 @@ def main(argv):
   logging.info('Have %d models: %s', len(model_runners),
                list(model_runners.keys()))
 
-  if FLAGS.run_relax:
-    amber_relaxer = relax.AmberRelaxation(
-        max_iterations=RELAX_MAX_ITERATIONS,
-        tolerance=RELAX_ENERGY_TOLERANCE,
-        stiffness=RELAX_STIFFNESS,
-        exclude_residues=RELAX_EXCLUDE_RESIDUES,
-        max_outer_iterations=RELAX_MAX_OUTER_ITERATIONS,
-        use_gpu=FLAGS.use_gpu_relax)
-  else:
-    amber_relaxer = None
+  amber_relaxer = relax.AmberRelaxation(
+      max_iterations=RELAX_MAX_ITERATIONS,
+      tolerance=RELAX_ENERGY_TOLERANCE,
+      stiffness=RELAX_STIFFNESS,
+      exclude_residues=RELAX_EXCLUDE_RESIDUES,
+      max_outer_iterations=RELAX_MAX_OUTER_ITERATIONS,
+      use_gpu=FLAGS.use_gpu_relax)
 
   random_seed = FLAGS.random_seed
   if random_seed is None:
@@ -413,7 +458,8 @@ def main(argv):
         model_runners=model_runners,
         amber_relaxer=amber_relaxer,
         benchmark=FLAGS.benchmark,
-        random_seed=random_seed)
+        random_seed=random_seed,
+        models_to_relax=FLAGS.models_to_relax)
 
 
 if __name__ == '__main__':

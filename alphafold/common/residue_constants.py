@@ -120,7 +120,7 @@ chi_pi_periodic = [
 # 4,5,6,7: 'chi1,2,3,4-group'
 # The atom positions are relative to the axis-end-atom of the corresponding
 # rotation axis. The x-axis is in direction of the rotation axis, and the y-axis
-# is defined such that the dihedral-angle-definiting atom (the last entry in
+# is defined such that the dihedral-angle-defining atom (the last entry in
 # chi_angles_atoms above) is in the xy-plane (with a positive y-coordinate).
 # format: [atomname, group_idx, rel_position]
 rigid_group_atom_positions = {
@@ -772,10 +772,10 @@ def _make_rigid_transformation_4x4(ex, ey, translation):
 # and an array with (restype, atomtype, coord) for the atom positions
 # and compute affine transformation matrices (4,4) from one rigid group to the
 # previous group
-restype_atom37_to_rigid_group = np.zeros([21, 37], dtype=np.int)
+restype_atom37_to_rigid_group = np.zeros([21, 37], dtype=int)
 restype_atom37_mask = np.zeros([21, 37], dtype=np.float32)
 restype_atom37_rigid_group_positions = np.zeros([21, 37, 3], dtype=np.float32)
-restype_atom14_to_rigid_group = np.zeros([21, 14], dtype=np.int)
+restype_atom14_to_rigid_group = np.zeros([21, 14], dtype=int)
 restype_atom14_mask = np.zeros([21, 14], dtype=np.float32)
 restype_atom14_rigid_group_positions = np.zeros([21, 14, 3], dtype=np.float32)
 restype_rigid_group_default_frame = np.zeros([21, 8, 4, 4], dtype=np.float32)

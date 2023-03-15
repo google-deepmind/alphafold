@@ -3,27 +3,32 @@
 # AlphaFold
 
 This package provides an implementation of the inference pipeline of AlphaFold
-v2.0. This is a completely new model that was entered in CASP14 and published in
-Nature. For simplicity, we refer to this model as AlphaFold throughout the rest
-of this document.
+v2. For simplicity, we refer to this model as AlphaFold throughout the rest of
+this document.
 
-We also provide an implementation of AlphaFold-Multimer. This represents a work
-in progress and AlphaFold-Multimer isn't expected to be as stable as our monomer
-AlphaFold system.
-[Read the guide](#updating-existing-alphafold-installation-to-include-alphafold-multimers)
-for how to upgrade and update code.
+We also provide:
 
-Any publication that discloses findings arising from using this source code or the model parameters should [cite](#citing-this-work) the
-[AlphaFold  paper](https://doi.org/10.1038/s41586-021-03819-2) and, if
-applicable, the [AlphaFold-Multimer paper](https://www.biorxiv.org/content/10.1101/2021.10.04.463034v1).
+1.  An implementation of AlphaFold-Multimer. This represents a work in progress
+    and AlphaFold-Multimer isn't expected to be as stable as our monomer
+    AlphaFold system. [Read the guide](#updating-existing-installation) for how
+    to upgrade and update code.
+2.  The [technical note](docs/technical_note_v2.3.0.md) containing the models
+    and inference procedure for an updated AlphaFold v2.3.0.
+3.  A [CASP15 baseline](docs/casp15_predictions.zip) set of predictions along
+    with documentation of any manual interventions performed.
+
+Any publication that discloses findings arising from using this source code or
+the model parameters should [cite](#citing-this-work) the
+[AlphaFold paper](https://doi.org/10.1038/s41586-021-03819-2) and, if
+applicable, the
+[AlphaFold-Multimer paper](https://www.biorxiv.org/content/10.1101/2021.10.04.463034v1).
 
 Please also refer to the
 [Supplementary Information](https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-021-03819-2/MediaObjects/41586_2021_3819_MOESM1_ESM.pdf)
 for a detailed description of the method.
 
 **You can use a slightly simplified version of AlphaFold with
-[this Colab
-notebook](https://colab.research.google.com/github/deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb)**
+[this Colab notebook](https://colab.research.google.com/github/deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb)**
 or community-supported versions (see below).
 
 If you have any questions, please contact the AlphaFold team at
@@ -31,87 +36,15 @@ If you have any questions, please contact the AlphaFold team at
 
 ![CASP14 predictions](imgs/casp14_predictions.gif)
 
-## Non-docker, separated version 
-_Yinying Yao added this for updates with ver 1.0_
 
-### Clone the repo.
-```bash
-git clone https://github.com/YaoYinYing/alphafold.git
-```
-### Use almost the same conda environment of previous_release
-```bash
-conda activate alphafold
-conda install -y pandas
-```
-### Download the supplement databases <pdb_seqres, uniprot,params of new release.>
-newer release may conflict with older, change the directory name to `params_af_multimer`
-```bash
-# apply the patch to modify the final directory of newer params
-patch scripts/download_alphafold_params.sh patches/patch_params_update_dir.patch 
-
-# download and setup the params
-bash scripts/download_alphafold_params.sh /mnt/db
-
-# apply the patch to modify the directory in modeling pipeline
-patch alphafold/model/data.py patches/patch_data_params_dir.patch
-```
-download chemical properties
-```bash
-wget -q -P alphafold/common/ https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
-```
-
-### Enjoy your folding!
-```bash
-cd <working-directory>
-# for monomer with default template date
-bash /repo/alphafold/run_my_alphafold_multimer.sh
-
-# for monomer with no template
-bash /repo/alphafold/run_my_alphafold_multimer.sh -t no
-
-# for monomer with custom template date
-bash /repo/alphafold/run_my_alphafold_multimer.sh -t 1994-01-16
-
-# for multimer
-bash /repo/alphafold/run_my_alphafold_multimer.sh -m multimer
-
-# run w/ customized ensemble numbers
-bash /repo/alphafold/run_my_alphafold_multimer.sh -e 6
-
-# run a clean mode (no pkls will be reserved!)
-bash /repo/alphafold/run_my_alphafold_multimer.sh -c yes
-
-# run w/ a customized pretrain dataset (2022-03-02) for historical reproducibility and don't run further relax after modeling
-bash /repo/alphafold/run_my_alphafold_multimer.sh -p 2022-03-02 -r false
-
-# run to a specific fasta file
-bash /repo/alphafold/run_my_alphafold_snakemake.sh -f ./S4_nosig.fasta 
-
-# run MSA building w/ customized number of processor
-bash /repo/alphafold/run_my_alphafold_multimer.sh -r no -c yes -j 16
-
-```
-
-### Maintenance
-**Setup Weekly Updatable mmcif server**
-
-check [this script](scripts/setup_self_hosted_pdb-mmcif_mirror.sh).
-
-**basically** the crontab will run the following command weekly to update your mirror.
-```shell
-rsync --recursive --links --perms --times --compress --info=progress2 --delete data.pdbj.org::ftp_data/structures/divided/mmCIF/ /mnt/timemachine/db/pdb_mmcif/raw/
-```
-
-in working machine, just execute the following to update pdb_mmcif database
-```shell
-bash /repo/alphafold/scripts/update_pdb_mmcif.sh /mnt/db/
-```
-## First time setup
+## Installation and running your first prediction
 
 You will need a machine running Linux, AlphaFold does not support other
-operating systems.
+operating systems. Full installation requires up to 3 TB of disk space to keep
+genetic databases (SSD storage is recommended) and a modern NVIDIA GPU (GPUs
+with more memory can predict larger protein structures).
 
-The following steps are required in order to run AlphaFold:
+Please follow these steps:
 
 1.  Install [Docker](https://www.docker.com/).
     *   Install
@@ -119,8 +52,37 @@ The following steps are required in order to run AlphaFold:
         for GPU support.
     *   Setup running
         [Docker as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
-1.  Download genetic databases (see below).
-1.  Download model parameters (see below).
+
+1.  Clone this repository and `cd` into it.
+
+    ```bash
+    git clone https://github.com/deepmind/alphafold.git
+    cd ./alphafold
+    ```
+
+1.  Download genetic databases and model parameters:
+
+    *   Install `aria2c`. On most Linux distributions it is available via the
+    package manager as the `aria2` package (on Debian-based distributions this
+    can be installed by running `sudo apt install aria2`).
+
+    *   Please use the script `scripts/download_all_data.sh` to download
+    and set up full databases. This may take substantial time (download size is
+    556 GB), so we recommend running this script in the background:
+
+    ```bash
+    scripts/download_all_data.sh <DOWNLOAD_DIR> > download.log 2> download_all.log &
+    ```
+
+    *   **Note: The download directory `<DOWNLOAD_DIR>` should *not* be a
+    subdirectory in the AlphaFold repository directory.** If it is, the Docker
+    build will be slow as the large databases will be copied into the docker
+    build context.
+
+    *   It is possible to run AlphaFold with reduced databases; please refer to
+    the [complete documentation](#genetic-databases).
+
+
 1.  Check that AlphaFold will be able to use a GPU by running:
 
     ```bash
@@ -133,187 +95,10 @@ The following steps are required in order to run AlphaFold:
     or take a look at the following
     [NVIDIA Docker issue](https://github.com/NVIDIA/nvidia-docker/issues/1447#issuecomment-801479573).
 
-If you wish to run AlphaFold using Singularity (a common containerization platform on HPC systems) we recommend using some of the
-third party Singularity setups as linked in
-https://github.com/deepmind/alphafold/issues/10 or
-https://github.com/deepmind/alphafold/issues/24.
-
-### Genetic databases
-
-This step requires `aria2c` to be installed on your machine.
-
-AlphaFold needs multiple genetic (sequence) databases to run:
-
-*   [BFD](https://bfd.mmseqs.com/),
-*   [MGnify](https://www.ebi.ac.uk/metagenomics/),
-*   [PDB70](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/),
-*   [PDB](https://www.rcsb.org/) (structures in the mmCIF format),
-*   [PDB seqres](https://www.rcsb.org/) – only for AlphaFold-Multimer,
-*   [Uniclust30](https://uniclust.mmseqs.com/),
-*   [UniProt](https://www.uniprot.org/uniprot/) – only for AlphaFold-Multimer,
-*   [UniRef90](https://www.uniprot.org/help/uniref).
-
-We provide a script `scripts/download_all_data.sh` that can be used to download
-and set up all of these databases:
-
-*   Default:
-
-    ```bash
-    scripts/download_all_data.sh <DOWNLOAD_DIR>
-    ```
-
-    will download the full databases.
-
-*   With `reduced_dbs`:
-
-    ```bash
-    scripts/download_all_data.sh <DOWNLOAD_DIR> reduced_dbs
-    ```
-
-    will download a reduced version of the databases to be used with the
-    `reduced_dbs` database preset.
-
-:ledger: **Note: The download directory `<DOWNLOAD_DIR>` should _not_ be a
-subdirectory in the AlphaFold repository directory.** If it is, the Docker build
-will be slow as the large databases will be copied during the image creation.
-
-We don't provide exactly the database versions used in CASP14 – see the [note on
-reproducibility](#note-on-reproducibility). Some of the databases are mirrored
-for speed, see [mirrored databases](#mirrored-databases).
-
-:ledger: **Note: The total download size for the full databases is around 415 GB
-and the total size when unzipped is 2.2 TB. Please make sure you have a large
-enough hard drive space, bandwidth and time to download. We recommend using an
-SSD for better genetic search performance.**
-
-The `download_all_data.sh` script will also download the model parameter files.
-Once the script has finished, you should have the following directory structure:
-
-```
-$DOWNLOAD_DIR/                             # Total: ~ 2.2 TB (download: 438 GB)
-    bfd/                                   # ~ 1.7 TB (download: 271.6 GB)
-        # 6 files.
-    mgnify/                                # ~ 64 GB (download: 32.9 GB)
-        mgy_clusters_2018_12.fa
-    params/                                # ~ 3.5 GB (download: 3.5 GB)
-        # 5 CASP14 models,
-        # 5 pTM models,
-        # 5 AlphaFold-Multimer models,
-        # LICENSE,
-        # = 16 files.
-    pdb70/                                 # ~ 56 GB (download: 19.5 GB)
-        # 9 files.
-    pdb_mmcif/                             # ~ 206 GB (download: 46 GB)
-        mmcif_files/
-            # About 180,000 .cif files.
-        obsolete.dat
-    pdb_seqres/                            # ~ 0.2 GB (download: 0.2 GB)
-        pdb_seqres.txt
-    small_bfd/                             # ~ 17 GB (download: 9.6 GB)
-        bfd-first_non_consensus_sequences.fasta
-    uniclust30/                            # ~ 86 GB (download: 24.9 GB)
-        uniclust30_2018_08/
-            # 13 files.
-    uniprot/                               # ~ 98.3 GB (download: 49 GB)
-        uniprot.fasta
-    uniref90/                              # ~ 58 GB (download: 29.7 GB)
-        uniref90.fasta
-```
-
-`bfd/` is only downloaded if you download the full databases, and `small_bfd/`
-is only downloaded if you download the reduced databases.
-
-### Model parameters
-
-While the AlphaFold code is licensed under the Apache 2.0 License, the AlphaFold
-parameters are made available under the terms of the CC BY 4.0 license. Please
-see the [Disclaimer](#license-and-disclaimer) below for more detail.
-
-The AlphaFold parameters are available from
-https://storage.googleapis.com/alphafold/alphafold_params_2022-03-02.tar, and
-are downloaded as part of the `scripts/download_all_data.sh` script. This script
-will download parameters for:
-
-*   5 models which were used during CASP14, and were extensively validated for
-    structure prediction quality (see Jumper et al. 2021, Suppl. Methods 1.12
-    for details).
-*   5 pTM models, which were fine-tuned to produce pTM (predicted TM-score) and
-    (PAE) predicted aligned error values alongside their structure predictions
-    (see Jumper et al. 2021, Suppl. Methods 1.9.7 for details).
-*   5 AlphaFold-Multimer models that produce pTM and PAE values alongside their
-    structure predictions.
-
-### Updating existing AlphaFold installation to include AlphaFold-Multimers
-
-If you have AlphaFold v2.0.0 or v2.0.1 you can either reinstall AlphaFold fully
-from scratch (remove everything and run the setup from scratch) or you can do an
-incremental update that will be significantly faster but will require a bit more
-work. Make sure you follow these steps in the exact order they are listed below:
-
-1.  **Update the code.**
-    *   Go to the directory with the cloned AlphaFold repository and run
-        `git fetch origin main` to get all code updates.
-1.  **Download the UniProt and PDB seqres databases.**
-    *   Run `scripts/download_uniprot.sh <DOWNLOAD_DIR>`.
-    *   Remove `<DOWNLOAD_DIR>/pdb_mmcif`. It is needed to have PDB SeqRes and
-        PDB from exactly the same date. Failure to do this step will result in
-        potential errors when searching for templates when running
-        AlphaFold-Multimer.
-    *   Run `scripts/download_pdb_mmcif.sh <DOWNLOAD_DIR>`.
-    *   Run `scripts/download_pdb_seqres.sh <DOWNLOAD_DIR>`.
-1.  **Update the model parameters.**
-    *   Remove the old model parameters in `<DOWNLOAD_DIR>/params`.
-    *   Download new model parameters using
-        `scripts/download_alphafold_params.sh <DOWNLOAD_DIR>`.
-1.  **Follow [Running AlphaFold](#running-alphafold).**
-
-#### API changes between v2.0.0 and v2.1.0
-
-We tried to keep the API as much backwards compatible as possible, but we had to
-change the following:
-
-*   The `RunModel.predict()` now needs a `random_seed` argument as MSA sampling
-    happens inside the Multimer model.
-*   The `preset` flag in `run_alphafold.py` and `run_docker.py` was split into
-    `db_preset` and `model_preset`.
-*   The models to use are not specified using `model_names` but rather using the
-    `model_preset` flag. If you want to customize which models are used for each
-    preset, you will have to modify the the `MODEL_PRESETS` dictionary in
-    `alphafold/model/config.py`.
-*   Setting the `data_dir` flag is now needed when using `run_docker.py`.
-
-#### API changes between v2.1.0 and v2.2.0
-
-The AlphaFold-Multimer model weights have been updated, these new models have
-greatly reduced numbers of clashes on average and are slightly more accurate.
-
-A flag `--num_multimer_predictions_per_model` has been added that controls how
-many predictions will be made per model, by default the offline system will run
-each model 5 times for a total of 25 predictions.
-
-The `--is_prokaryote_list` flag has been removed along with the `is_prokaryote`
-argument in `run_alphafold.predict_structure()`, eukaryotes and prokaryotes are
-now paired in the same way.
-
-To use the deprecated v2.1.0 AlphaFold-Multimer model weights:
-
-1.  Change `SOURCE_URL` in `scripts/download_alphafold_params.sh` to
-`https://storage.googleapis.com/alphafold/alphafold_params_2022-01-19.tar`,
-and download the old parameters.
-2.  Remove the `_v2` in the multimer `MODEL_PRESETS` in `config.py`.
-
-## Running AlphaFold
-
-**The simplest way to run AlphaFold is using the provided Docker script.** This
-was tested on Google Cloud with a machine using the `nvidia-gpu-cloud-image`
-with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
-3 TB disk, and an A100 GPU.
-
-1.  Clone this repository and `cd` into it.
-
-    ```bash
-    git clone https://github.com/deepmind/alphafold.git
-    ```
+    If you wish to run AlphaFold using Singularity (a common containerization
+    platform on HPC systems) we recommend using some of the third party Singularity
+    setups as linked in https://github.com/deepmind/alphafold/issues/10 or
+    https://github.com/deepmind/alphafold/issues/24.
 
 1.  Build the Docker image:
 
@@ -341,57 +126,229 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
     ```
 
 1.  Make sure that the output directory exists (the default is `/tmp/alphafold`)
-    and that you have sufficient permissions to write into it. You can make sure
-    that is the case by manually running `mkdir /tmp/alphafold` and
-    `chmod 770 /tmp/alphafold`.
+    and that you have sufficient permissions to write into it.
 
 1.  Run `run_docker.py` pointing to a FASTA file containing the protein
-    sequence(s) for which you wish to predict the structure. If you are
-    predicting the structure of a protein that is already in PDB and you wish to
-    avoid using it as a template, then `max_template_date` must be set to be
-    before the release date of the structure. You must also provide the path to
-    the directory containing the downloaded databases. For example, for the
-    T1050 CASP14 target:
+    sequence(s) for which you wish to predict the structure (`--fasta_paths`
+    parameter). AlphaFold will search for the available templates before the
+    date specified by the `--max_template_date` parameter; this could be used to
+    avoid certain templates during modeling. `--data_dir` is the directory with
+    downloaded genetic databases and `--output_dir` is the absolute path to the
+    output directory.
 
     ```bash
-    python3 docker/run_pprcode.py \
-      --fasta_paths=T1050.fasta \
-      --max_template_date=2020-05-14 \
-      --data_dir=$DOWNLOAD_DIR
+    python3 docker/run_docker.py \
+      --fasta_paths=your_protein.fasta \
+      --max_template_date=2022-01-01 \
+      --data_dir=$DOWNLOAD_DIR \
+      --output_dir=/home/user/absolute_path_to_the_output_dir
     ```
 
-    By default, Alphafold will attempt to use all visible GPU devices. To use a
+1.  Once the run is over, the output directory shall contain predicted
+    structures of the target protein. Please check the documentation below for
+    additional options and troubleshooting tips.
+
+### Genetic databases
+
+This step requires `aria2c` to be installed on your machine.
+
+AlphaFold needs multiple genetic (sequence) databases to run:
+
+*   [BFD](https://bfd.mmseqs.com/),
+*   [MGnify](https://www.ebi.ac.uk/metagenomics/),
+*   [PDB70](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/),
+*   [PDB](https://www.rcsb.org/) (structures in the mmCIF format),
+*   [PDB seqres](https://www.rcsb.org/) – only for AlphaFold-Multimer,
+*   [UniRef30 (FKA UniClust30)](https://uniclust.mmseqs.com/),
+*   [UniProt](https://www.uniprot.org/uniprot/) – only for AlphaFold-Multimer,
+*   [UniRef90](https://www.uniprot.org/help/uniref).
+
+We provide a script `scripts/download_all_data.sh` that can be used to download
+and set up all of these databases:
+
+*   Recommended default:
+
+    ```bash
+    scripts/download_all_data.sh <DOWNLOAD_DIR>
+    ```
+
+    will download the full databases.
+
+*   With `reduced_dbs` parameter:
+
+    ```bash
+    scripts/download_all_data.sh <DOWNLOAD_DIR> reduced_dbs
+    ```
+
+    will download a reduced version of the databases to be used with the
+    `reduced_dbs` database preset. This shall be used with the corresponding
+    AlphaFold parameter `--db_preset=reduced_dbs` later during the AlphaFold run
+    (please see [AlphaFold parameters](#running-alphafold) section).
+
+:ledger: **Note: The download directory `<DOWNLOAD_DIR>` should *not* be a
+subdirectory in the AlphaFold repository directory.** If it is, the Docker build
+will be slow as the large databases will be copied during the image creation.
+
+We don't provide exactly the database versions used in CASP14 – see the
+[note on reproducibility](#note-on-casp14-reproducibility). Some of the
+databases are mirrored for speed, see [mirrored databases](#mirrored-databases).
+
+:ledger: **Note: The total download size for the full databases is around 556 GB
+and the total size when unzipped is 2.62 TB. Please make sure you have a large
+enough hard drive space, bandwidth and time to download. We recommend using an
+SSD for better genetic search performance.**
+
+:ledger: **Note: If the download directory and datasets don't have full read and
+write permissions, it can cause errors with the MSA tools, with opaque
+(external) error messages. Please ensure the required permissions are applied,
+e.g. with the `sudo chmod 755 --recursive "$DOWNLOAD_DIR"` command.**
+
+The `download_all_data.sh` script will also download the model parameter files.
+Once the script has finished, you should have the following directory structure:
+
+```
+$DOWNLOAD_DIR/                             # Total: ~ 2.62 TB (download: 556 GB)
+    bfd/                                   # ~ 1.8 TB (download: 271.6 GB)
+        # 6 files.
+    mgnify/                                # ~ 120 GB (download: 67 GB)
+        mgy_clusters_2022_05.fa
+    params/                                # ~ 5.3 GB (download: 5.3 GB)
+        # 5 CASP14 models,
+        # 5 pTM models,
+        # 5 AlphaFold-Multimer models,
+        # LICENSE,
+        # = 16 files.
+    pdb70/                                 # ~ 56 GB (download: 19.5 GB)
+        # 9 files.
+    pdb_mmcif/                             # ~ 238 GB (download: 43 GB)
+        mmcif_files/
+            # About 199,000 .cif files.
+        obsolete.dat
+    pdb_seqres/                            # ~ 0.2 GB (download: 0.2 GB)
+        pdb_seqres.txt
+    small_bfd/                             # ~ 17 GB (download: 9.6 GB)
+        bfd-first_non_consensus_sequences.fasta
+    uniref30/                              # ~ 206 GB (download: 52.5 GB)
+        # 7 files.
+    uniprot/                               # ~ 105 GB (download: 53 GB)
+        uniprot.fasta
+    uniref90/                              # ~ 67 GB (download: 34 GB)
+        uniref90.fasta
+```
+
+`bfd/` is only downloaded if you download the full databases, and `small_bfd/`
+is only downloaded if you download the reduced databases.
+
+### Model parameters
+
+While the AlphaFold code is licensed under the Apache 2.0 License, the AlphaFold
+parameters and CASP15 prediction data are made available under the terms of the
+CC BY 4.0 license. Please see the [Disclaimer](#license-and-disclaimer) below
+for more detail.
+
+The AlphaFold parameters are available from
+https://storage.googleapis.com/alphafold/alphafold_params_2022-12-06.tar, and
+are downloaded as part of the `scripts/download_all_data.sh` script. This script
+will download parameters for:
+
+*   5 models which were used during CASP14, and were extensively validated for
+    structure prediction quality (see Jumper et al. 2021, Suppl. Methods 1.12
+    for details).
+*   5 pTM models, which were fine-tuned to produce pTM (predicted TM-score) and
+    (PAE) predicted aligned error values alongside their structure predictions
+    (see Jumper et al. 2021, Suppl. Methods 1.9.7 for details).
+*   5 AlphaFold-Multimer models that produce pTM and PAE values alongside their
+    structure predictions.
+
+### Updating existing installation
+
+If you have a previous version you can either reinstall fully from scratch
+(remove everything and run the setup from scratch) or you can do an incremental
+update that will be significantly faster but will require a bit more work. Make
+sure you follow these steps in the exact order they are listed below:
+
+1.  **Update the code.**
+    *   Go to the directory with the cloned AlphaFold repository and run `git
+        fetch origin main` to get all code updates.
+1.  **Update the UniProt, UniRef, MGnify and PDB seqres databases.**
+    *   Remove `<DOWNLOAD_DIR>/uniprot`.
+    *   Run `scripts/download_uniprot.sh <DOWNLOAD_DIR>`.
+    *   Remove `<DOWNLOAD_DIR>/uniclust30`.
+    *   Run `scripts/download_uniref30.sh <DOWNLOAD_DIR>`.
+    *   Remove `<DOWNLOAD_DIR>/uniref90`.
+    *   Run `scripts/download_uniref90.sh <DOWNLOAD_DIR>`.
+    *   Remove `<DOWNLOAD_DIR>/mgnify`.
+    *   Run `scripts/download_mgnify.sh <DOWNLOAD_DIR>`.
+    *   Remove `<DOWNLOAD_DIR>/pdb_mmcif`. It is needed to have PDB SeqRes and
+        PDB from exactly the same date. Failure to do this step will result in
+        potential errors when searching for templates when running
+        AlphaFold-Multimer.
+    *   Run `scripts/download_pdb_mmcif.sh <DOWNLOAD_DIR>`.
+    *   Run `scripts/download_pdb_seqres.sh <DOWNLOAD_DIR>`.
+1.  **Update the model parameters.**
+    *   Remove the old model parameters in `<DOWNLOAD_DIR>/params`.
+    *   Download new model parameters using
+        `scripts/download_alphafold_params.sh <DOWNLOAD_DIR>`.
+1.  **Follow [Running AlphaFold](#running-alphafold).**
+
+#### Using deprecated model weights
+
+To use the deprecated v2.2.0 AlphaFold-Multimer model weights:
+
+1.  Change `SOURCE_URL` in `scripts/download_alphafold_params.sh` to
+    `https://storage.googleapis.com/alphafold/alphafold_params_2022-03-02.tar`,
+    and download the old parameters.
+2.  Change the `_v3` to `_v2` in the multimer `MODEL_PRESETS` in `config.py`.
+
+To use the deprecated v2.1.0 AlphaFold-Multimer model weights:
+
+1.  Change `SOURCE_URL` in `scripts/download_alphafold_params.sh` to
+    `https://storage.googleapis.com/alphafold/alphafold_params_2022-01-19.tar`,
+    and download the old parameters.
+2.  Remove the `_v3` in the multimer `MODEL_PRESETS` in `config.py`.
+
+## Running AlphaFold
+
+**The simplest way to run AlphaFold is using the provided Docker script.** This
+was tested on Google Cloud with a machine using the `nvidia-gpu-cloud-image`
+with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
+3 TB disk, and an A100 GPU. For your first run, please follow the instructions
+from [Installation and running your first prediction](#installation-and-running-your-first-prediction)
+section.
+
+
+1.  By default, Alphafold will attempt to use all visible GPU devices. To use a
     subset, specify a comma-separated list of GPU UUID(s) or index(es) using the
     `--gpu_devices` flag. See
     [GPU enumeration](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/user-guide.html#gpu-enumeration)
     for more details.
 
-1.  You can control which AlphaFold model to run by adding the
-    `--model_preset=` flag. We provide the following models:
+1.  You can control which AlphaFold model to run by adding the `--model_preset=`
+    flag. We provide the following models:
 
-    * **monomer**: This is the original model used at CASP14 with no ensembling.
+    *   **monomer**: This is the original model used at CASP14 with no
+        ensembling.
 
-    * **monomer\_casp14**: This is the original model used at CASP14 with
-      `num_ensemble=8`, matching our CASP14 configuration. This is largely
-      provided for reproducibility as it is 8x more computationally
-      expensive for limited accuracy gain (+0.1 average GDT gain on CASP14
-      domains).
+    *   **monomer\_casp14**: This is the original model used at CASP14 with
+        `num_ensemble=8`, matching our CASP14 configuration. This is largely
+        provided for reproducibility as it is 8x more computationally expensive
+        for limited accuracy gain (+0.1 average GDT gain on CASP14 domains).
 
-    * **monomer\_ptm**: This is the original CASP14 model fine tuned with the
-      pTM head, providing a pairwise confidence measure. It is slightly less
-      accurate than the normal monomer model.
+    *   **monomer\_ptm**: This is the original CASP14 model fine tuned with the
+        pTM head, providing a pairwise confidence measure. It is slightly less
+        accurate than the normal monomer model.
 
-    * **multimer**: This is the [AlphaFold-Multimer](#citing-this-work) model.
-      To use this model, provide a multi-sequence FASTA file. In addition, the
-      UniProt database should have been downloaded.
+    *   **multimer**: This is the [AlphaFold-Multimer](#citing-this-work) model.
+        To use this model, provide a multi-sequence FASTA file. In addition, the
+        UniProt database should have been downloaded.
 
 1.  You can control MSA speed/quality tradeoff by adding
     `--db_preset=reduced_dbs` or `--db_preset=full_dbs` to the run command. We
     provide the following presets:
 
     *   **reduced\_dbs**: This preset is optimized for speed and lower hardware
-        requirements. It runs with a reduced version of the BFD database.
-        It requires 8 CPU cores (vCPUs), 8 GB of RAM, and 600 GB of disk space.
+        requirements. It runs with a reduced version of the BFD database. It
+        requires 8 CPU cores (vCPUs), 8 GB of RAM, and 600 GB of disk space.
 
     *   **full\_dbs**: This runs with all genetic databases used at CASP14.
 
@@ -404,8 +361,25 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
       --max_template_date=2020-05-14 \
       --model_preset=monomer \
       --db_preset=reduced_dbs \
-      --data_dir=$DOWNLOAD_DIR
+      --data_dir=$DOWNLOAD_DIR \
+      --output_dir=/home/user/absolute_path_to_the_output_dir
     ```
+
+1.  After generating the predicted model, AlphaFold runs a relaxation
+    step to improve local geometry. By default, only the best model (by
+    pLDDT) is relaxed (`--models_to_relax=best`), but also all of the models
+    (`--models_to_relax=all`) or none of the models (`--models_to_relax=none`)
+    can be relaxed.
+
+1.  The relaxation step can be run on GPU (faster, but could be less stable) or
+    CPU (slow, but stable). This can be controlled with `--enable_gpu_relax=true`
+    (default) or `--enable_gpu_relax=false`.
+
+1.  AlphaFold can re-use MSAs (multiple sequence alignments) for the same
+    sequence via `--use_precomputed_msas=true` option; this can be useful for
+    trying different AlphaFold parameters. This option assumes that the
+    directory structure generated by the first AlphaFold run in the output
+    directory exists and that the protein sequence is the same.
 
 ### Running AlphaFold-Multimer
 
@@ -421,13 +395,46 @@ python3 docker/run_pprcode.py \
   --fasta_paths=multimer.fasta \
   --max_template_date=2020-05-14 \
   --model_preset=multimer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 By default the multimer system will run 5 seeds per model (25 total predictions)
-for a small drop in accuracy you may wish to run a single seed per model.  This
+for a small drop in accuracy you may wish to run a single seed per model. This
 can be done via the `--num_multimer_predictions_per_model` flag, e.g. set it to
 `--num_multimer_predictions_per_model=1` to run a single seed per model.
+
+### AlphaFold prediction speed
+
+The table below reports prediction runtimes for proteins of various lengths. We
+only measure unrelaxed structure prediction with three recycles while
+excluding runtimes from MSA and template search. When running
+`docker/run_docker.py` with `--benchmark=true`, this runtime is stored in
+`timings.json`. All runtimes are from a single A100 NVIDIA GPU. Prediction
+speed on A100 for smaller structures can be improved by increasing
+`global_config.subbatch_size` in `alphafold/model/config.py`.
+
+No. residues | Prediction time (s)
+-----------: | ------------------:
+100          | 4.9
+200          | 7.7
+300          | 13
+400          | 18
+500          | 29
+600          | 36
+700          | 53
+800          | 60
+900          | 91
+1,000        | 96
+1,100        | 140
+1,500        | 280
+2,000        | 450
+2,500        | 969
+3,000        | 1,240
+3,500        | 2,465
+4,000        | 5,660
+4,500        | 12,475
+5,000        | 18,824
 
 ### Examples
 
@@ -449,13 +456,14 @@ python3 docker/run_pprcode.py \
   --fasta_paths=monomer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=monomer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 #### Folding a homomer
 
-Say we have a homomer with 3 copies of the same sequence
-`<SEQUENCE>`. The input fasta should be:
+Say we have a homomer with 3 copies of the same sequence `<SEQUENCE>`. The input
+fasta should be:
 
 ```fasta
 >sequence_1
@@ -473,13 +481,14 @@ python3 docker/run_pprcode.py \
   --fasta_paths=homomer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 #### Folding a heteromer
 
-Say we have an A2B3 heteromer, i.e. with 2 copies of
-`<SEQUENCE A>` and 3 copies of `<SEQUENCE B>`. The input fasta should be:
+Say we have an A2B3 heteromer, i.e. with 2 copies of `<SEQUENCE A>` and 3 copies
+of `<SEQUENCE B>`. The input fasta should be:
 
 ```fasta
 >sequence_1
@@ -501,7 +510,8 @@ python3 docker/run_pprcode.py \
   --fasta_paths=heteromer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 #### Folding multiple monomers one after another
@@ -515,7 +525,8 @@ python3 docker/run_pprcode.py \
   --fasta_paths=monomer1.fasta,monomer2.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=monomer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 #### Folding multiple multimers one after another
@@ -529,7 +540,8 @@ python3 docker/run_pprcode.py \
   --fasta_paths=multimer1.fasta,multimer2.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
-  --data_dir=$DOWNLOAD_DIR
+  --data_dir=$DOWNLOAD_DIR \
+  --output_dir=/home/user/absolute_path_to_the_output_dir
 ```
 
 ### AlphaFold output
@@ -545,12 +557,13 @@ The `--output_dir` directory will have the following structure:
     features.pkl
     ranked_{0,1,2,3,4}.pdb
     ranking_debug.json
+    relax_metrics.json
     relaxed_model_{1,2,3,4,5}.pdb
     result_model_{1,2,3,4,5}.pkl
     timings.json
     unrelaxed_model_{1,2,3,4,5}.pdb
     msas/
-        bfd_uniclust_hits.a3m
+        bfd_uniref_hits.a3m
         mgnify_hits.sto
         uniref90_hits.sto
 ```
@@ -565,15 +578,20 @@ The contents of each output file are as follows:
     structure, after performing an Amber relaxation procedure on the unrelaxed
     structure prediction (see Jumper et al. 2021, Suppl. Methods 1.8.6 for
     details).
-*   `ranked_*.pdb` – A PDB format text file containing the relaxed predicted
-    structures, after reordering by model confidence. Here `ranked_0.pdb` should
-    contain the prediction with the highest confidence, and `ranked_4.pdb` the
-    prediction with the lowest confidence. To rank model confidence, we use
+*   `ranked_*.pdb` – A PDB format text file containing the predicted structures,
+    after reordering by model confidence. Here `ranked_i.pdb` should contain
+    the prediction with the (`i + 1`)-th highest confidence (so that
+    `ranked_0.pdb` has the highest confidence). To rank model confidence, we use
     predicted LDDT (pLDDT) scores (see Jumper et al. 2021, Suppl. Methods 1.9.6
-    for details).
+    for details). If `--models_to_relax=all` then all ranked structures are
+    relaxed. If `--models_to_relax=best` then only `ranked_0.pdb` is relaxed
+    (the rest are unrelaxed). If `--models_to_relax=none`, then the ranked
+    structures are all unrelaxed.
 *   `ranking_debug.json` – A JSON format text file containing the pLDDT values
     used to perform the model ranking, and a mapping back to the original model
     names.
+*   `relax_metrics.json` – A JSON format text file containing relax metrics, for
+    instance remaining violations.
 *   `timings.json` – A JSON format text file containing the times taken to run
     each section of the AlphaFold pipeline.
 *   `msas/` - A directory containing the files describing the various genetic
@@ -651,7 +669,8 @@ For genetics:
 For templates:
 
 *   PDB: (downloaded 2020-05-14)
-*   PDB70: [2020-05-13](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200513.tar.gz)
+*   PDB70:
+    [2020-05-13](http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/old-releases/pdb70_from_mmcif_200513.tar.gz)
 
 An alternative for templates is to use the latest PDB and PDB70, but pass the
 flag `--max_template_date=2020-05-14`, which restricts templates only to
@@ -676,10 +695,11 @@ If you use the code or data in this package, please cite:
 
 In addition, if you use the AlphaFold-Multimer mode, please cite:
 
+
 ```bibtex
 @article {AlphaFold-Multimer2021,
   author       = {Evans, Richard and O{\textquoteright}Neill, Michael and Pritzel, Alexander and Antropova, Natasha and Senior, Andrew and Green, Tim and {\v{Z}}{\'\i}dek, Augustin and Bates, Russ and Blackwell, Sam and Yim, Jason and Ronneberger, Olaf and Bodenstein, Sebastian and Zielinski, Michal and Bridgland, Alex and Potapenko, Anna and Cowie, Andrew and Tunyasuvunakool, Kathryn and Jain, Rishub and Clancy, Ellen and Kohli, Pushmeet and Jumper, John and Hassabis, Demis},
-  journal      = {bioRxiv}
+  journal      = {bioRxiv},
   title        = {Protein complex prediction with AlphaFold-Multimer},
   year         = {2021},
   elocation-id = {2021.10.04.463034},
@@ -694,10 +714,11 @@ In addition, if you use the AlphaFold-Multimer mode, please cite:
 Colab notebooks provided by the community (please note that these notebooks may
 vary from our full AlphaFold system and we did not validate their accuracy):
 
-*   The [ColabFold AlphaFold2 notebook](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/AlphaFold2.ipynb)
+*   The
+    [ColabFold AlphaFold2 notebook](https://colab.research.google.com/github/sokrypton/ColabFold/blob/main/AlphaFold2.ipynb)
     by Martin Steinegger, Sergey Ovchinnikov and Milot Mirdita, which uses an
-    API hosted at the Södinglab based on the MMseqs2 server [(Mirdita et al.
-    2019, Bioinformatics)](https://academic.oup.com/bioinformatics/article/35/16/2856/5280135)
+    API hosted at the Södinglab based on the MMseqs2 server
+    [(Mirdita et al. 2019, Bioinformatics)](https://academic.oup.com/bioinformatics/article/35/16/2856/5280135)
     for the multiple sequence alignment creation.
 
 ## Acknowledgements
@@ -736,15 +757,15 @@ We thank all their contributors and maintainers!
 If you have any questions not covered in this overview, please contact the
 AlphaFold team at [alphafold@deepmind.com](mailto:alphafold@deepmind.com).
 
-We would love to hear your feedback and understand how AlphaFold has been
-useful in your research. Share your stories with us at
+We would love to hear your feedback and understand how AlphaFold has been useful
+in your research. Share your stories with us at
 [alphafold@deepmind.com](mailto:alphafold@deepmind.com).
 
 ## License and Disclaimer
 
 This is not an officially supported Google product.
 
-Copyright 2021 DeepMind Technologies Limited.
+Copyright 2022 DeepMind Technologies Limited.
 
 ### AlphaFold Code License
 
@@ -774,12 +795,27 @@ before use.
 
 ### Mirrored Databases
 
-The following databases have been mirrored by DeepMind, and are available with reference to the following:
+The following databases have been mirrored by DeepMind, and are available with
+reference to the following:
 
-*   [BFD](https://bfd.mmseqs.com/) (unmodified), by Steinegger M. and Söding J., available under a [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
+*   [BFD](https://bfd.mmseqs.com/) (unmodified), by Steinegger M. and Söding J.,
+    available under a
+    [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
 
-*   [BFD](https://bfd.mmseqs.com/) (modified), by Steinegger M. and Söding J., modified by DeepMind, available under a [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/). See the Methods section of the [AlphaFold proteome paper](https://www.nature.com/articles/s41586-021-03828-1) for details.
+*   [BFD](https://bfd.mmseqs.com/) (modified), by Steinegger M. and Söding J.,
+    modified by DeepMind, available under a
+    [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
+    See the Methods section of the
+    [AlphaFold proteome paper](https://www.nature.com/articles/s41586-021-03828-1)
+    for details.
 
-*   [Uniclust30: v2018_08](http://wwwuser.gwdg.de/~compbiol/uniclust/2018_08/) (unmodified), by Mirdita M. et al., available under a [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
+*   [Uniref30: v2021_03](http://wwwuser.gwdg.de/~compbiol/uniclust/2021_03/)
+    (unmodified), by Mirdita M. et al., available under a
+    [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
 
-*   [MGnify: v2018_12](http://ftp.ebi.ac.uk/pub/databases/metagenomics/peptide_database/current_release/README.txt) (unmodified), by Mitchell AL et al., available free of all copyright restrictions and made fully and freely available for both non-commercial and commercial use under [CC0 1.0 Universal (CC0 1.0) Public Domain Dedication](https://creativecommons.org/publicdomain/zero/1.0/).
+*   [MGnify: v2022_05](http://ftp.ebi.ac.uk/pub/databases/metagenomics/peptide_database/2022_05/README.txt)
+    (unmodified), by Mitchell AL et al., available free of all copyright
+    restrictions and made fully and freely available for both non-commercial and
+    commercial use under
+    [CC0 1.0 Universal (CC0 1.0) Public Domain Dedication](https://creativecommons.org/publicdomain/zero/1.0/).
+

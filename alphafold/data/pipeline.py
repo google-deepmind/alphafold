@@ -135,7 +135,7 @@ class DataPipeline:
                  uniref90_database_path: str,
                  mgnify_database_path: str,
                  bfd_database_path: Optional[str],
-                 uniclust30_database_path: Optional[str],
+                 uniref_database_path: Optional[str],
                  small_bfd_database_path: Optional[str],
                  template_searcher: TemplateSearcher,
                  template_featurizer: templates.TemplateHitFeaturizer,
@@ -159,9 +159,9 @@ class DataPipeline:
                 database_path=small_bfd_database_path,
                 n_cpu=(self.num_threads // 4 ) if self.num_threads>2 else self.num_threads-1 )
         else:
-            self.hhblits_bfd_uniclust_runner = hhblits.HHBlits(
+            self.hhblits_bfd_uniref_runner = hhblits.HHBlits(
                 binary_path=hhblits_binary_path,
-                databases=[bfd_database_path, uniclust30_database_path],
+                databases=[bfd_database_path, uniref_database_path],
                 n_cpu=(self.num_threads // 2 ) if self.num_threads>2 else self.num_threads-1 )
         self.jackhmmer_mgnify_runner = jackhmmer.Jackhmmer(
             binary_path=jackhmmer_binary_path,
@@ -221,10 +221,10 @@ class DataPipeline:
                               0
                           )
         else:
-            self.hhblits_bfd_uniclust_args=(
-                                    self.hhblits_bfd_uniclust_runner,
+            self.hhblits_bfd_uniref_args=(
+                                    self.hhblits_bfd_uniref_runner,
                                     input_fasta_path,
-                                    os.path.join(msa_output_dir, 'bfd_uniclust_hits.a3m'),
+                                    os.path.join(msa_output_dir, 'bfd_uniref_hits.a3m'),
                                     'a3m',
                                     self.use_precomputed_msas,
                                     0
@@ -254,17 +254,17 @@ class DataPipeline:
             [
                 jackhmmer_uniref90_result,
                 jackhmmer_mgnify_result,
-                hhblits_bfd_uniclust_result,
+                hhblits_bfd_uniref_result,
                 other_msa_task
             ] = self.parallel_msa(func=run_msa_tool,
                                   input_args=[
                                       self.jackhmmer_uniref90_args,
                                       self.jackhmmer_mgnify_args,
-                                      self.hhblits_bfd_uniclust_args,
+                                      self.hhblits_bfd_uniref_args,
                                       self.other_args],
                                   num_threads=self.num_threads)
 
-            bfd_msa = parsers.parse_a3m(hhblits_bfd_uniclust_result['a3m'])
+            bfd_msa = parsers.parse_a3m(hhblits_bfd_uniref_result['a3m'])
 
         #
         # # jackhmmer to uniref90
@@ -331,3 +331,4 @@ class DataPipeline:
                      templates_result.features['template_domain_names'].shape[0])
 
         return {**sequence_features, **msa_features, **templates_result.features}
+

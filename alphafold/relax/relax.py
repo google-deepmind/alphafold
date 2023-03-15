@@ -56,7 +56,8 @@ class AmberRelaxation(object):
     self._use_gpu = use_gpu
 
   def process(self, *,
-              prot: protein.Protein) -> Tuple[str, Dict[str, Any], np.ndarray]:
+              prot: protein.Protein
+              ) -> Tuple[str, Dict[str, Any], Sequence[float]]:
     """Runs Amber relax on a prediction, adds hydrogens, returns PDB string."""
     out = amber_minimize.run_pipeline(
         prot=prot, max_iterations=self._max_iterations,
@@ -73,12 +74,11 @@ class AmberRelaxation(object):
         'attempts': out['min_attempts'],
         'rmsd': rmsd
     }
-    pdb_str = amber_minimize.clean_protein(prot)
-    min_pdb = utils.overwrite_pdb_coordinates(pdb_str, min_pos)
+    min_pdb = out['min_pdb']
     min_pdb = utils.overwrite_b_factors(min_pdb, prot.b_factors)
     utils.assert_equal_nonterminal_atom_types(
         protein.from_pdb_string(min_pdb).atom_mask,
         prot.atom_mask)
     violations = out['structural_violations'][
-        'total_per_residue_violations_mask']
+        'total_per_residue_violations_mask'].tolist()
     return min_pdb, debug_data, violations
