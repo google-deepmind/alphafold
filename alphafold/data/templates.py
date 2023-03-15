@@ -29,6 +29,9 @@ from alphafold.data import parsers
 from alphafold.data.tools import kalign
 import numpy as np
 
+# added by Yinying
+#import multiprocessing
+
 # Internal import (7716).
 
 
@@ -873,7 +876,8 @@ class HhsearchHitFeaturizer(TemplateHitFeaturizer):
   def get_templates(
       self,
       query_sequence: str,
-      hits: Sequence[parsers.TemplateHit]) -> TemplateSearchResult:
+      hits: Sequence[parsers.TemplateHit],
+      num_threads: int = 10,) -> TemplateSearchResult:
     """Computes the templates for given query sequence (more details above)."""
     logging.info('Searching for template for: %s', query_sequence)
 
@@ -885,9 +889,16 @@ class HhsearchHitFeaturizer(TemplateHitFeaturizer):
     errors = []
     warnings = []
 
-    for hit in sorted(hits, key=lambda x: x.sum_probs, reverse=True):
+    # TODO: parallel execution
+
+    templates_hit_sorted = sorted(hits, key=lambda x: x.sum_probs, reverse=True)
+    # templates_processing_pool=multiprocessing.Pool(num_threads)
+
+    for hit in templates_hit_sorted:
       # We got all the templates we wanted, stop processing hits.
+      print(f'we alreadly have {num_hits} template hits.')
       if num_hits >= self._max_hits:
+        print(f'Stop processing templates.')
         break
 
       result = _process_single_hit(

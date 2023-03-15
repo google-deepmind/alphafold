@@ -92,7 +92,9 @@ def _openmm_minimize(
     _add_restraints(system, pdb, stiffness, restraint_set, exclude_residues)
 
   integrator = openmm.LangevinIntegrator(0, 0.01, 0.0)
-  platform = openmm.Platform.getPlatformByName("CUDA" if use_gpu else "CPU")
+  device = "CUDA" if use_gpu else "CPU"
+  logging.info(f'using {device} for amber relax.')
+  platform = openmm.Platform.getPlatformByName(device)
   simulation = openmm_app.Simulation(
       pdb.topology, system, integrator, platform)
   simulation.context.setPositions(pdb.positions)

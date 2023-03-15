@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Downloads and unzips the PDB SeqRes database for AlphaFold.
+# Downloads and unzips the PDB70 database for AlphaFold.
 #
-# Usage: bash download_pdb_seqres.sh /path/to/download/directory
+# Usage: bash download_pdb70.sh /path/to/download/directory
 set -e
 
 if [[ $# -eq 0 ]]; then
@@ -30,14 +30,19 @@ if ! command -v aria2c &> /dev/null ; then
 fi
 
 DOWNLOAD_DIR="$1"
-ROOT_DIR="${DOWNLOAD_DIR}/pdb_seqres"
-SOURCE_URL="ftp://ftp.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt"
-BASENAME=$(basename "${SOURCE_URL}")
+ROOT_DIR="${DOWNLOAD_DIR}/pdb70"
 
 mkdir --parents "${ROOT_DIR}"
-aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}"
+mkdir --parents "${ROOT_DIR}/downloading"
 
-# Keep only protein sequences.
-grep --after-context=1 --no-group-separator '>.* mol:protein' "${ROOT_DIR}/pdb_seqres.txt" > "${ROOT_DIR}/pdb_seqres_filtered.txt"
-mv "${ROOT_DIR}/pdb_seqres_filtered.txt" "${ROOT_DIR}/pdb_seqres.txt"
+SOURCE_URL="http://wwwuser.gwdg.de/~compbiol/data/hhsuite/databases/hhsuite_dbs/pdb70_from_mmcif_220313.tar.gz"
+BASENAME=$(basename "${SOURCE_URL}")
 
+aria2c -x 10 "${SOURCE_URL}" --dir="${ROOT_DIR}/downloading/"
+
+mkdir --parents "${ROOT_DIR}/old"
+mv ${ROOT_DIR}/pdb* ${ROOT_DIR}/old/
+
+tar --extract --verbose --file="${ROOT_DIR}/downloading/${BASENAME}" \
+  --directory="${ROOT_DIR}"
+rm "${ROOT_DIR}/downloading/${BASENAME}"

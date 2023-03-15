@@ -33,7 +33,9 @@ class HHSearch:
                *,
                binary_path: str,
                databases: Sequence[str],
-               maxseq: int = 1_000_000):
+               maxseq: int = 1_000_000,
+               n_cpu: int = 8,
+               ):
     """Initializes the Python HHsearch wrapper.
 
     Args:
@@ -50,7 +52,7 @@ class HHSearch:
     self.binary_path = binary_path
     self.databases = databases
     self.maxseq = maxseq
-
+    self.n_cpu=n_cpu
     for database_path in self.databases:
       if not glob.glob(database_path + '_*'):
         logging.error('Could not find HHsearch database %s', database_path)
@@ -79,7 +81,8 @@ class HHSearch:
       cmd = [self.binary_path,
              '-i', input_path,
              '-o', hhr_path,
-             '-maxseq', str(self.maxseq)
+             '-maxseq', str(self.maxseq),
+             '-cpu',str(self.n_cpu),
              ] + db_cmd
 
       logging.info('Launching subprocess "%s"', ' '.join(cmd))

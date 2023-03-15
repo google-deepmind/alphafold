@@ -36,6 +36,7 @@ If you have any questions, please contact the AlphaFold team at
 
 ![CASP14 predictions](imgs/casp14_predictions.gif)
 
+
 ## Installation and running your first prediction
 
 You will need a machine running Linux, AlphaFold does not support other
@@ -315,6 +316,7 @@ with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
 from [Installation and running your first prediction](#installation-and-running-your-first-prediction)
 section.
 
+
 1.  By default, Alphafold will attempt to use all visible GPU devices. To use a
     subset, specify a comma-separated list of GPU UUID(s) or index(es) using the
     `--gpu_devices` flag. See
@@ -354,7 +356,7 @@ section.
     `reduced_dbs` data preset would look like this:
 
     ```bash
-    python3 docker/run_docker.py \
+    python3 docker/run_pprcode.py \
       --fasta_paths=T1050.fasta \
       --max_template_date=2020-05-14 \
       --model_preset=monomer \
@@ -389,7 +391,7 @@ All steps are the same as when running the monomer system, but you will have to
 An example that folds a protein complex `multimer.fasta`:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=multimer.fasta \
   --max_template_date=2020-05-14 \
   --model_preset=multimer \
@@ -450,7 +452,7 @@ Say we have a monomer with the sequence `<SEQUENCE>`. The input fasta should be:
 Then run the following command:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=monomer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=monomer \
@@ -475,7 +477,7 @@ fasta should be:
 Then run the following command:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=homomer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
@@ -504,7 +506,7 @@ of `<SEQUENCE B>`. The input fasta should be:
 Then run the following command:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=heteromer.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
@@ -519,7 +521,7 @@ Say we have a two monomers, `monomer1.fasta` and `monomer2.fasta`.
 We can fold both sequentially by using the following command:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=monomer1.fasta,monomer2.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=monomer \
@@ -534,7 +536,7 @@ Say we have a two multimers, `multimer1.fasta` and `multimer2.fasta`.
 We can fold both sequentially by using the following command:
 
 ```bash
-python3 docker/run_docker.py \
+python3 docker/run_pprcode.py \
   --fasta_paths=multimer1.fasta,multimer2.fasta \
   --max_template_date=2021-11-01 \
   --model_preset=multimer \
