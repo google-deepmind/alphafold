@@ -44,7 +44,7 @@ mkdir --parents "${RAW_DIR}"
 #rsync --recursive --links --perms --times --compress --info=progress2 --delete --port=33444 \
 #  rsync.rcsb.org::ftp_data/structures/divided/mmCIF/ \
 #rsync -avz --delete data.pdbj.org::ftp_data/structures/divided/mmCIF/  "${RAW_DIR}"
-rsync --compress --info=progress2 --delete --recursive --links  --perms --times  git.yaoyy.moe::db/pdb_mmcif/raw/ "${RAW_DIR}"
+rsync --compress --info=progress2 --delete --recursive --links  --perms --times ftp.pdbj.org::ftp_data/structures/divided/mmCIF/ "${RAW_DIR}"
 
 echo "++++++++++++++++++++++++++++++++++++++++"
 
@@ -53,23 +53,28 @@ echo "Unzipping all mmCIF files..."
 
 echo "Flattening all mmCIF files..."
 mkdir --parents "${MMCIF_DIR}"
-
+counter=0
 #find "${RAW_DIR}" -type d -empty -delete  # Delete empty directories.
 for subdir in "${RAW_DIR}"/*; do
+  _counter=0
   for i in "${subdir}/"*.cif.gz;
     do
       if [ ! -f "${MMCIF_DIR}/$(basename ${i%.gz})" ]; then
         gunzip -k "${i}";
       fi
     done
-    if [[ $(ls ${subdir} |grep -e ".cif$" | wc -l ) -gt 1  ]];then
-      echo Find updated cif in ${subdir} ;
+    _counter=$(ls ${subdir} |grep -e ".cif$" | wc -l )
+    if [[ $_counter -gt 1  ]];then
+      counter=$(echo ${counter}+${_counter} |bc)
+      echo "Find $_counter updated cif files in $(basename ${subdir})" ;
       mv "${subdir}/"*.cif "${MMCIF_DIR}"
     else
-      echo No updated cif in ${subdir};
+      echo "No updated cif in $(basename ${subdir})";
     fi
     #mv "${subdir}/"*.cif "${MMCIF_DIR}" || continue
 done
+echo "================================="
+echo  "$counter mmcif files is updated."
 
 # Delete empty download directory structure.
 #find "${RAW_DIR}" -type d -empty -delete
