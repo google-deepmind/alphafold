@@ -85,7 +85,7 @@ fi
 
 
 if [[ "$pretrained_data_date" == ""  ]] ; then
-    pretrained_data_date=2022-03-02
+    pretrained_data_date=2022-12-06
 elif [[ ! -d ${pretrained_data_dir}/${pretrained_data_date}/ ]];then
             echo "ERROR: Unknown pretrained_data_date ${pretrained_data_date} or the pretrained_data_dir ${pretrained_data_dir} inaccessible. "
             usage

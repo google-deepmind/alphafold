@@ -21,7 +21,7 @@ usage() {
         echo "-b <benchmark>                                Run multiple JAX model evaluations to obtain a timing that excludes the compilation time, which should be more indicative of the time required for inferencing many
     proteins (default: 'False')"
         echo "-g <use_gpu>                                  Enable NVIDIA runtime to run with GPUs (default: 'True')"
-        echo "-r <run_relax>                                  Enable NVIDIA runtime to run with GPUs (default: 'True')"
+        echo "-r <models_to_relax>                          Run relax to {all,best,none} model(s)"
         echo "-a <gpu_devices>                              Comma separated list of devices to pass to 'CUDA_VISIBLE_DEVICES' (default: 'all')"
         echo "-p <db_preset>                                Choose db_preset model configuration - no ensembling (full_dbs) or 8 model ensemblings (casp14) (default: 'full_dbs')"
         echo ""
@@ -43,7 +43,7 @@ while getopts ":d:P:o:m:e:r:f:it:a:n:p:bg" x; do
                 num_ensemble=$OPTARG
         ;;
         r)
-                run_relax=$OPTARG
+                models_to_relax=$OPTARG
         ;;
         f)
                 fasta_path=$OPTARG
@@ -93,10 +93,10 @@ fi
 if [[ "$use_gpu" == "" ]] ; then
     use_gpu=true
 fi
-if [[ "$run_relax" == "" || "$run_relax" == "true" ]] ; then
-    run_relax=true
+if [[ "$models_to_relax" == "all" || "$models_to_relax" == "none" || "$models_to_relax" == "best" || ]];then
+  models_to_relax=$models_to_relax
 else
-    run_relax=false
+  models_to_relax=best
 fi
 
 if [[ "$gpu_devices" == "" ]] ; then
@@ -143,7 +143,7 @@ mgnify_database_path="$data_dir/mgnify/mgy_clusters.fa"
 template_mmcif_dir="$data_dir/pdb_mmcif/mmcif_files"
 obsolete_pdbs_path="$data_dir/pdb_mmcif/obsolete.dat"
 
-uniclust30_database_path="$data_dir/uniclust30/uniclust30_2018_08/uniclust30_2018_08"
+uniref30_database_path="$data_dir/uniref30_uc30/UniRef30_2022_02/UniRef30_2022_02"
 uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 
 
@@ -163,7 +163,7 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$m
     pdb70_database_path="$data_dir/pdb70/pdb70"
     cmd="python $alphafold_script \
         --use_gpu_relax=$use_gpu \
-        --run_relax=$run_relax \
+        --models_to_relax=$models_to_relax \
         --num_ensemble=$num_ensemble \
         --hhblits_binary_path=$hhblits_binary_path \
         --hhsearch_binary_path=$hhsearch_binary_path \
@@ -174,7 +174,7 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$m
         --template_mmcif_dir=$template_mmcif_dir \
         --obsolete_pdbs_path=$obsolete_pdbs_path \
         --pdb70_database_path=$pdb70_database_path \
-        --uniclust30_database_path=$uniclust30_database_path \
+        --uniref30_database_path=$uniref30_database_path \
         --uniref90_database_path=$uniref90_database_path \
         --data_dir=$pretrained_data_dir \
         --output_dir=$output_dir \
@@ -194,7 +194,7 @@ if [[  "$model_preset" == "multimer" ]] ; then
     pdb_seqres_database_path="$data_dir/pdb_seqres/pdb_seqres.txt"
     cmd="python $alphafold_script \
         --use_gpu_relax=$use_gpu \
-        --run_relax=$run_relax \
+        --models_to_relax=$models_to_relax \
         --num_ensemble=$num_ensemble \
         --hhblits_binary_path=$hhblits_binary_path \
         --hhsearch_binary_path=$hhsearch_binary_path \
@@ -204,7 +204,7 @@ if [[  "$model_preset" == "multimer" ]] ; then
         --mgnify_database_path=$mgnify_database_path \
         --template_mmcif_dir=$template_mmcif_dir \
         --obsolete_pdbs_path=$obsolete_pdbs_path \
-        --uniclust30_database_path=$uniclust30_database_path \
+        --uniref30_database_path=$uniref30_database_path \
         --pdb_seqres_database_path=$pdb_seqres_database_path \
         --uniprot_database_path=$uniprot_database_path \
         --uniref90_database_path=$uniref90_database_path \
@@ -220,9 +220,8 @@ if [[  "$model_preset" == "multimer" ]] ; then
 
     echo "$cmd"
     eval "$cmd"
-fi
 
-if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" != "multimer" ]] ; then
+elif [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" != "multimer" ]] ; then
     echo "Unknown model_preset! "
     usage
 fi

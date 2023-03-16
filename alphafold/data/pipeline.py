@@ -135,7 +135,7 @@ class DataPipeline:
                  uniref90_database_path: str,
                  mgnify_database_path: str,
                  bfd_database_path: Optional[str],
-                 uniref_database_path: Optional[str],
+                 uniref30_database_path: Optional[str],
                  small_bfd_database_path: Optional[str],
                  template_searcher: TemplateSearcher,
                  template_featurizer: templates.TemplateHitFeaturizer,
@@ -161,7 +161,7 @@ class DataPipeline:
         else:
             self.hhblits_bfd_uniref_runner = hhblits.HHBlits(
                 binary_path=hhblits_binary_path,
-                databases=[bfd_database_path, uniref_database_path],
+                databases=[bfd_database_path, uniref30_database_path],
                 n_cpu=(self.num_threads // 2 ) if self.num_threads>2 else self.num_threads-1 )
         self.jackhmmer_mgnify_runner = jackhmmer.Jackhmmer(
             binary_path=jackhmmer_binary_path,

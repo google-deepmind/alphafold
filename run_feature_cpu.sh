@@ -140,7 +140,7 @@ mgnify_database_path="$data_dir/mgnify/mgy_clusters.fa"
 template_mmcif_dir="$data_dir/pdb_mmcif/mmcif_files"
 obsolete_pdbs_path="$data_dir/pdb_mmcif/obsolete.dat"
 
-uniclust30_database_path="$data_dir/uniref30_uc30/UniRef30_2020_06/UniRef30_2020_06"
+uniref30_database_path="$data_dir/uniref30_uc30/UniRef30_2022_02/UniRef30_2022_02"
 uniref90_database_path="$data_dir/uniref90/uniref90.fasta"
 
 
@@ -169,7 +169,7 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$m
         --template_mmcif_dir=$template_mmcif_dir \
         --obsolete_pdbs_path=$obsolete_pdbs_path \
         --pdb70_database_path=$pdb70_database_path \
-        --uniclust30_database_path=$uniclust30_database_path \
+        --uniref30_database_path=$uniref30_database_path \
         --uniref90_database_path=$uniref90_database_path \
         --data_dir=$pretrained_data_dir \
         --output_dir=$output_dir \
@@ -198,7 +198,7 @@ if [[  "$model_preset" == "multimer" ]] ; then
         --mgnify_database_path=$mgnify_database_path \
         --template_mmcif_dir=$template_mmcif_dir \
         --obsolete_pdbs_path=$obsolete_pdbs_path \
-        --uniclust30_database_path=$uniclust30_database_path \
+        --uniref30_database_path=$uniref30_database_path \
         --pdb_seqres_database_path=$pdb_seqres_database_path \
         --uniprot_database_path=$uniprot_database_path \
         --uniref90_database_path=$uniref90_database_path \
@@ -215,9 +215,7 @@ if [[  "$model_preset" == "multimer" ]] ; then
 
     echo "$cmd"
     eval "$cmd"
-fi
-
-if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" != "multimer" ]] ; then
+elif [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" != "multimer" ]] ; then
     echo "Unknown model_preset! "
     usage
 fi
