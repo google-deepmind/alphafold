@@ -186,9 +186,7 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$m
         --logtostderr"
     echo "$cmd"
     eval "$cmd"
-fi
-
-if [[  "$model_preset" == "multimer" ]] ; then
+elif [[  "$model_preset" == "multimer" ]] ; then
 
     uniprot_database_path="$data_dir/uniprot/uniprot.fasta"
     pdb_seqres_database_path="$data_dir/pdb_seqres/pdb_seqres.txt"
