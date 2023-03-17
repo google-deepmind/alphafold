@@ -33,7 +33,7 @@ usage() {
         echo "-j <nproc>       How many processors (each with a different random seed) will be used in the feature construction"
         echo "-t <template_date> Maximum template release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
         echo "-p <pretrained_data_date> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
-        echo "-r <run_relax> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
+        echo "-r <run_relax> Run relax to {all,best,none} model(s)"
         echo "-c <clean_run>                                Make a clean run, full results (massive pkls) will be deleted"
         echo ""
         exit 1
@@ -124,10 +124,10 @@ else
     num_multimer_predictions_per_model=1
 fi
 
-if [[ "$run_relax" == "" || "$run_relax" == "true" || "$run_relax" == "yes" ]] ; then
-    run_relax=true
+if [[ "$run_relax" == "all" || "$run_relax" == "best" || "$run_relax" == "none" ]]
+    run_relax=$run_relax
 else
-    run_relax=false
+  run_relax=best
 fi
 
 
@@ -137,7 +137,7 @@ else
     clean_run=true
 fi
 
-if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" != "multimer" ]] ; then
+if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" !=~ "multimer" ]] ; then
     echo "Unknown model_preset! "
     usage
 fi
