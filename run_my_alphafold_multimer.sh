@@ -2,7 +2,7 @@
 
 # use traditional way for conda environment
 source /opt/anaconda3/etc/profile.d/conda.sh
-conda activate alphafold
+conda activate alphafold_2.3
 
 
 #setting environment for cuda-11.0 gpu2-5
@@ -76,7 +76,7 @@ while getopts ":m:t:n:e:j:p:r:c:" i; do
 done
 
 if [[ "$max_template_date" == "" ]] ; then
-    max_template_date=2021-10-30
+    max_template_date=2023-03-15
 fi
 
 if [[ "$max_template_date" == "no" ]] ; then
@@ -104,7 +104,7 @@ if [[ "$nproc" == "" ]] ; then
 fi
 
 # set default num_ensemble
-if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_ptm" || "$model_preset" == "multimer" ]] ; then
+if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_ptm" || "$model_preset" =~ "multimer" ]] ; then
     if [[ "$num_ensemble" == "" ]] ; then
         num_ensemble=1
     fi
@@ -116,7 +116,7 @@ if [[ "$model_preset" == "monomer_casp14"  ]] ; then
     fi
 fi
 
-if [[ "$model_preset" == "multimer" ]] ; then
+if [[ "$model_preset" =~ "multimer" ]] ; then
     if [[ "$num_multimer_predictions_per_model" == "" ]];then
         num_multimer_predictions_per_model=2
     fi
