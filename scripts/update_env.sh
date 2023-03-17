@@ -69,15 +69,6 @@ pip install aliyun-python-sdk-core
 # get chemical props
 wget -q -P $alphafold_path/alphafold/common/ https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 
-# cuda 11.4
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
-mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
-wget https://developer.download.nvidia.com/compute/cuda/11.4.2/local_installers/cuda-repo-ubuntu2004-11-4-local_11.4.2-470.57.02-1_amd64.deb
-dpkg -i cuda-repo-ubuntu2004-11-4-local_11.4.2-470.57.02-1_amd64.deb
-apt-key add /var/cuda-repo-ubuntu2004-11-4-local/7fa2af80.pub
-apt-get update
-apt-get -y install cuda
-
 
 # database settings to avoid permission errors
 # remember to rename each db file exactly the same as what it is in run_feature_cpu.sh and run_alphafold.sh
@@ -104,9 +95,9 @@ awk '{
     system("pushd "short_name";if [[ -f "filename" && ! -f "filename".aria2c ]];then echo Find complete file "filename".; else aria2c -x 10 "url";fi; tar -xf "filename" ; rm -f "filename";parallel -k sha256sum {} ::: $(ls)  > "short_name".sha256; popd");
 
     }
-  }'  $SOFTWARE_PATH/alphafold/pretrained_data_url.csv
+  }'  $alphafold_path/pretrained_data_url.csv
 
-
+bash $alphafold_path/scripts/update_pdb_mmcif.sh /mnt/db/
 chmod -R 755 $DB_PATH/
 
 
