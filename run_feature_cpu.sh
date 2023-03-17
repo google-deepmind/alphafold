@@ -182,7 +182,7 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$m
         --logtostderr"
     echo "$cmd"
     eval "$cmd"
-elif [[  "$model_preset" == "multimer" ]] ; then
+elif [[  "$model_preset" =~ "multimer" ]] ; then
 
     uniprot_database_path="$data_dir/uniprot/uniprot.fasta"
     pdb_seqres_database_path="$data_dir/pdb_seqres/pdb_seqres.txt"
@@ -213,7 +213,7 @@ elif [[  "$model_preset" == "multimer" ]] ; then
 
     echo "$cmd"
     eval "$cmd"
-elif [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" != "multimer" ]] ; then
+elif [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" !=~ "multimer" ]] ; then
     echo "Unknown model_preset! "
     usage
 fi
