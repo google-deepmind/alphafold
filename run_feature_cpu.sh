@@ -173,6 +173,7 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_casp14" || "$m
         --uniref90_database_path=$uniref90_database_path \
         --data_dir=$pretrained_data_dir \
         --output_dir=$output_dir \
+        --random_seed=$(($RANDOM*$RANDOM*$RANDOM)) \
         --fasta_paths=$fasta_path \
         --model_preset=$model_preset \
         --max_template_date=$max_template_date \
@@ -203,6 +204,7 @@ elif [[  "$model_preset" =~ "multimer" ]] ; then
         --data_dir=$pretrained_data_dir \
         --output_dir=$output_dir \
         --fasta_paths=$fasta_path \
+        --random_seed=$(($RANDOM*$RANDOM*$RANDOM)) \
         --model_preset=$model_preset \
         --num_multimer_predictions_per_model=$num_multimer_predictions_per_model \
         --max_template_date=$max_template_date \
