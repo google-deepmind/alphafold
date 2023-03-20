@@ -31,11 +31,12 @@ usage() {
         echo "-f <fasta>  input fasta file"
         echo "-m <model_preset>  Choose preset model configuration - the monomer model, the monomer model with extra ensembling, monomer model with pTM head, or multimer model"
         echo "-n <num_multimer_predictions_per_model>       How many predictions (each with a different random seed) will be generated per model"
-        echo "-j <nproc>       How many processors (each with a different random seed) will be used in the feature construction"
-        echo "-t <template_date> Maximum template release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
-        echo "-p <pretrained_data_date> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets"
-        echo "-r <run_relax> Run relax to {all,best,none} model(s)"
-        echo "-c <clean_run>                                Make a clean run, full results (massive pkls) will be deleted"
+        echo "-j <nproc>  How many processors (each with a different random seed) will be used in the feature construction. Default: 8"
+        echo "-t <template_date>  Maximum template release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets. Default: 2023-03-15"
+        echo "-e <num_ensemble>  Ensemble Number for pre-inference"
+        echo "-p <pretrained_data_date> Pretrained data release date to consider (ISO-8601 format - i.e. YYYY-MM-DD). Important if folding historical test sets. Default: 2022-12-06 "
+        echo "-r <run_relax>  Run relax to {best, all, none} model(s). Default: best"
+        echo "-c <clean_run>  Make a clean run, full results (massive pkls) will be deleted. Default: false"
         echo ""
         exit 1
 }
@@ -118,9 +119,7 @@ if [[ "$model_preset" == "monomer" || "$model_preset" == "monomer_ptm" || "$mode
     if [[ "$num_ensemble" == "" ]] ; then
         num_ensemble=1
     fi
-fi
-
-if [[ "$model_preset" == "monomer_casp14"  ]] ; then
+elif [[ "$model_preset" == "monomer_casp14"  ]] ; then
     if [[ "$num_ensemble" == "" ]] ; then
         num_ensemble=8
     fi
@@ -134,7 +133,7 @@ else
     num_multimer_predictions_per_model=1
 fi
 
-if [[ "$run_relax" == "all" || "$run_relax" == "best" || "$run_relax" == "none" ]]
+if [[ "$run_relax" == "all" || "$run_relax" == "best" || "$run_relax" == "none" ]];then
     run_relax=$run_relax
 else
   run_relax=best
@@ -147,7 +146,7 @@ else
     clean_run=true
 fi
 
-if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" !=~ "multimer" ]] ; then
+if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && ! "$model_preset" =~ "multimer" ]] ; then
     echo "Unknown model_preset! "
     usage
 fi
