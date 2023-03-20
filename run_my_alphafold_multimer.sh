@@ -124,7 +124,7 @@ else
     num_multimer_predictions_per_model=1
 fi
 
-if [[ "$run_relax" == "all" || "$run_relax" == "best" || "$run_relax" == "none" ]]
+if [[ "$run_relax" == "all" || "$run_relax" == "best" || "$run_relax" == "none" ]];then
     run_relax=$run_relax
 else
   run_relax=best
@@ -137,7 +137,7 @@ else
     clean_run=true
 fi
 
-if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" !=~ "multimer" ]] ; then
+if [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && ! "$model_preset" =~ "multimer" ]] ; then
     echo "Unknown model_preset! "
     usage
 fi

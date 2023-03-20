@@ -449,7 +449,7 @@ def main(argv):
   '''
   random_seed = FLAGS.random_seed
   if random_seed is None:
-    random.randrange(sys.maxsize // len(config.MODEL_PRESETS[FLAGS.model_preset]))
+    random_seed=random.randrange(sys.maxsize // len(config.MODEL_PRESETS[FLAGS.model_preset]))
   logging.info('Using random seed %d for the data pipeline', random_seed)
 
   # Predict structure for each of the sequences.
@@ -463,7 +463,7 @@ def main(argv):
         # model_runners=model_runners,
         # amber_relaxer=amber_relaxer,
         # benchmark=FLAGS.benchmark,
-        # random_seed=random_seed,
+        random_seed=random_seed,
         # models_to_relax=FLAGS.models_to_relax
     )
 

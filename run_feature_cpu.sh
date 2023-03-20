@@ -213,7 +213,7 @@ elif [[  "$model_preset" =~ "multimer" ]] ; then
 
     echo "$cmd"
     eval "$cmd"
-elif [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && "$model_preset" !=~ "multimer" ]] ; then
+elif [[ "$model_preset" != "monomer" && "$model_preset" != "monomer_casp14" && "$model_preset" != "monomer_ptm" && ! "$model_preset" =~ "multimer" ]] ; then
     echo "Unknown model_preset! "
     usage
 fi
