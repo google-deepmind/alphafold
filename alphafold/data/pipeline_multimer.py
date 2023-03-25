@@ -242,7 +242,9 @@ class DataPipeline:
   def process(self,
               input_fasta_path: str,
               msa_output_dir: str,
-              externally_matched_species_dict_path: Optional[str] = None) -> pipeline.FeatureDict:
+              externally_matched_species_dict_path: Optional[str] = None,
+              many_to_some_species_to_pair_path: Optional[str] = None
+              ) -> pipeline.FeatureDict:
     """Runs alignment tools on the input sequences and creates features."""
     with open(input_fasta_path) as f:
       input_fasta_str = f.read()
@@ -281,7 +283,8 @@ class DataPipeline:
     np_example = feature_processing.pair_and_merge(
         all_chain_features=all_chain_features,
         msa_output_dir=msa_output_dir,
-        externally_matched_species_dict_path=externally_matched_species_dict_path)
+        externally_matched_species_dict_path=externally_matched_species_dict_path,
+        many_to_some_species_to_pair_path=many_to_some_species_to_pair_path)
 
     # Pad MSA to avoid zero-sized extra_msa.
     np_example = pad_msa(np_example, 512)

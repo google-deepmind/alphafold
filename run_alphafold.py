@@ -144,10 +144,18 @@ flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
 flags.DEFINE_string('uniprot_to_ncbi_path', None,
                     'Path to dictionary containing mapping from Uniprot ACs to '
                     'NCBI TaxIDs.')
-flags.DEFINE_string('externally_matched_species_dict_basename', None,
+flags.DEFINE_string('externally_matched_species_dict_basename', '',
                     'Basename of pickled dictionary containing externally '
                     'matched species. Full path will be '
                     'msa_output_path/externally_matched_species_dict_basename.')
+flags.DEFINE_string('many_to_some_species_to_pair_basename', '',
+                    'Basename of pickled collection containing species to '
+                    'which many-to-some pairing should be restricted. Full '
+                    'path will be '
+                    'msa_output_path/many_to_some_species_to_pair_basename.')
+flags.DEFINE_boolean('stop_at_etl', False,
+                     'Whether to stop after input features are created, but '
+                     'before models are run.')
 
 FLAGS = flags.FLAGS
 
@@ -188,7 +196,9 @@ def predict_structure(
     benchmark: bool,
     random_seed: int,
     models_to_relax: ModelsToRelax,
-    externally_matched_species_dict_basename: Optional[str] = None):
+    externally_matched_species_dict_basename: Optional[str] = None,
+    many_to_some_species_to_pair_basename: Optional[str] = None,
+    stop_at_etl: bool = False):
   """Predicts structure using AlphaFold for the given sequence."""
   logging.info('Predicting %s', fasta_name)
   timings = {}
@@ -206,18 +216,31 @@ def predict_structure(
   else:
     externally_matched_species_dict_path = None
 
+  if many_to_some_species_to_pair_basename:
+    many_to_some_species_to_pair_path = os.path.join(
+      msa_output_dir,
+      many_to_some_species_to_pair_basename)
+  else:
+    many_to_some_species_to_pair_path = None
+
   # Get features.
   t_0 = time.time()
   feature_dict = data_pipeline.process(
       input_fasta_path=fasta_path,
       msa_output_dir=msa_output_dir,
-      externally_matched_species_dict_path=externally_matched_species_dict_path)
+      externally_matched_species_dict_path=externally_matched_species_dict_path,
+      many_to_some_species_to_pair_path=many_to_some_species_to_pair_path)
   timings['features'] = time.time() - t_0
 
   # Write out features as a pickled dictionary.
   features_output_path = os.path.join(output_dir, 'features.pkl')
   with open(features_output_path, 'wb') as f:
     pickle.dump(feature_dict, f, protocol=4)
+
+  if stop_at_etl:
+    logging.info('Stopped after ETL. Did not run models on constructed '
+                 'features')
+    return
 
   unrelaxed_pdbs = {}
   unrelaxed_proteins = {}
@@ -471,7 +494,9 @@ def main(argv):
         benchmark=FLAGS.benchmark,
         random_seed=random_seed,
         models_to_relax=FLAGS.models_to_relax,
-        externally_matched_species_dict_basename=FLAGS.externally_matched_species_dict_basename)
+        externally_matched_species_dict_basename=FLAGS.externally_matched_species_dict_basename,
+        many_to_some_species_to_pair_basename=FLAGS.many_to_some_species_to_pair_basename,
+        stop_at_etl=FLAGS.stop_at_etl)
 
 
 if __name__ == '__main__':

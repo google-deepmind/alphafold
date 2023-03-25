@@ -97,10 +97,19 @@ flags.DEFINE_string(
     'uniprot_to_ncbi_path', None,
     'Path to dictionary containing mapping from Uniprot ACs to NCBI TaxIDs.')
 flags.DEFINE_string(
-  'externally_matched_species_dict_basename', None,
+  'externally_matched_species_dict_basename', '',
   'Basename of pickled dictionary containing externally matched species. '
   'Full path will be '
   'msa_output_path/externally_matched_species_dict_basename.')
+flags.DEFINE_string(
+  'many_to_some_species_to_pair_basename', '',
+  'Basename of pickled collection containing species to which many-to-some '
+  'pairing should be restricted. Full path will be '
+  'msa_output_path/many_to_some_species_to_pair_basename.')
+flags.DEFINE_boolean(
+  'stop_at_etl', False,
+  'Whether to stop after input features are created, but before models are '
+  'run.')
 
 FLAGS = flags.FLAGS
 
@@ -240,6 +249,8 @@ def main(argv):
       f'--models_to_relax={FLAGS.models_to_relax}',
       f'--use_gpu_relax={use_gpu_relax}',
       f'--externally_matched_species_dict_basename={FLAGS.externally_matched_species_dict_basename}',
+      f'--many_to_some_species_to_pair_basename={FLAGS.many_to_some_species_to_pair_basename}',
+      f'--stop_at_etl={FLAGS.stop_at_etl}',
       '--logtostderr',
   ])
 

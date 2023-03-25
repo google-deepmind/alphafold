@@ -53,7 +53,9 @@ CHAIN_FEATURES = ('num_alignments', 'seq_length')
 
 def create_paired_features(
     chains: Iterable[pipeline.FeatureDict],
-    externally_matched_species_dict_path: Optional[str] = None) -> List[pipeline.FeatureDict]:
+    externally_matched_species_dict_path: Optional[str] = None,
+    many_to_some_species_to_pair_path: Optional[str] = None
+    ) -> List[pipeline.FeatureDict]:
   """Returns the original chains with paired NUM_SEQ features.
 
   Args:
@@ -72,7 +74,8 @@ def create_paired_features(
     updated_chains = []
     paired_chains_to_paired_row_indices = pair_sequences(
       chains,
-      externally_matched_species_dict_path=externally_matched_species_dict_path)
+      externally_matched_species_dict_path=externally_matched_species_dict_path,
+      many_to_some_species_to_pair_path=many_to_some_species_to_pair_path)
     paired_rows = reorder_paired_rows(
         paired_chains_to_paired_row_indices)
 
@@ -179,7 +182,8 @@ def _match_rows_by_sequence_similarity(this_species_msa_dfs: List[pd.DataFrame]
 
 
 def pair_sequences(examples: List[pipeline.FeatureDict],
-                   externally_matched_species_dict_path: Optional[str] = None
+                   externally_matched_species_dict_path: Optional[str] = None,
+                   many_to_some_species_to_pair_path: Optional[str] = None
                    ) -> Dict[int, np.ndarray]:
   """Returns indices for paired MSA sequences across chains."""
 
@@ -193,14 +197,27 @@ def pair_sequences(examples: List[pipeline.FeatureDict],
 
   all_chain_species_dict = []
   common_species = set()
-  for chain_features in examples:
+  entity_ids_to_first_idxs = {}
+  for i, chain_features in enumerate(examples):
     msa_df = _make_msa_df(chain_features)
     species_dict = _create_species_dict(msa_df)
     all_chain_species_dict.append(species_dict)
     common_species.update(set(species_dict))
+    entity_id = chain_features["entity_id"][0]
+    if entity_id not in entity_ids_to_first_idxs:
+      entity_ids_to_first_idxs[entity_id] = i
+  entity_ids_first_idxs = list(entity_ids_to_first_idxs.values())
+  n_unique_entities = len(entity_ids_first_idxs)
 
   common_species = sorted(common_species)
   common_species.remove(b'')  # Remove target sequence species.
+
+  if many_to_some_species_to_pair_path:
+    with open(many_to_some_species_to_pair_path, "rb") as f:
+      many_to_some_species_to_pair = set(pickle.load(f))
+    species_for_many_to_some_check = set(many_to_some_species_to_pair)
+  else:
+    species_for_many_to_some_check = set(common_species)
 
   all_paired_msa_rows = [np.zeros(len(examples), int)]
   all_paired_msa_rows_dict = {k: [] for k in range(num_examples)}
@@ -223,11 +240,19 @@ def pair_sequences(examples: List[pipeline.FeatureDict],
     if species_dfs_present <= 1:
       continue
 
-    if np.any(
-        np.array([len(species_df) for species_df in
-                  this_species_msa_dfs if
-                  isinstance(species_df, pd.DataFrame)]) > 600):
+    depths_present = np.array(
+      [len(species_df) if isinstance(species_df, pd.DataFrame) else 0
+       for species_df in this_species_msa_dfs]
+    )
+    if np.any(depths_present > 600):
       continue
+
+    # Skip species to be many-to-some paired which are not in the
+    # `species_to_pair` set.
+    depths_present_unique = depths_present[entity_ids_first_idxs]
+    is_there_many_to_some = np.sum(depths_present_unique) > n_unique_entities
+    if is_there_many_to_some and species not in species_for_many_to_some_check:
+        continue
     
     species_msa_dfs.append(this_species_msa_dfs)
     if species in externally_matched_species_dict:
