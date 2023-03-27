@@ -26,6 +26,20 @@ import jax.numpy as jnp
 import numpy as np
 
 
+def stable_softmax(logits: jax.Array) -> jax.Array:
+  """Numerically stable softmax for (potential) bfloat 16."""
+  if logits.dtype == jnp.float32:
+    output = jax.nn.softmax(logits)
+  elif logits.dtype == jnp.bfloat16:
+    # Need to explicitly do softmax in float32 to avoid numerical issues
+    # with large negatives. Large negatives can occur if trying to mask
+    # by adding on large negative logits so that things softmax to zero.
+    output = jax.nn.softmax(logits.astype(jnp.float32)).astype(jnp.bfloat16)
+  else:
+    raise ValueError(f'Unexpected input dtype {logits.dtype}')
+  return output
+
+
 def bfloat16_creator(next_creator, shape, dtype, init, context):
   """Creates float32 variables when bfloat16 is requested."""
   if context.original_dtype == jnp.bfloat16:
