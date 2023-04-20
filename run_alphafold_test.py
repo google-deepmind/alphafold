@@ -84,8 +84,15 @@ class RunAlphafoldTest(parameterized.TestCase):
 
     target_output_files = os.listdir(os.path.join(out_dir, 'test'))
     expected_files = [
-        'features.pkl', 'msas', 'ranked_0.pdb', 'ranking_debug.json',
-        'result_model1.pkl', 'timings.json', 'unrelaxed_model1.pdb',
+        'features.pkl',
+        'msas',
+        'ranked_0.pdb',
+        'ranking_debug.json',
+        'result_model1.pkl',
+        'timings.json',
+        'unrelaxed_model1.pdb',
+        'pae_model1.json',
+        'confidence_model1.json',
     ]
     if models_to_relax == run_alphafold.ModelsToRelax.ALL:
       expected_files.extend(['relaxed_model1.pdb', 'relax_metrics.json'])

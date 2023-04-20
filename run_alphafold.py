@@ -22,11 +22,12 @@ import random
 import shutil
 import sys
 import time
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Dict, Union
 
 from absl import app
 from absl import flags
 from absl import logging
+from alphafold.common import confidence
 from alphafold.common import protein
 from alphafold.common import residue_constants
 from alphafold.data import pipeline
@@ -171,6 +172,38 @@ def _jnp_to_np(output: Dict[str, Any]) -> Dict[str, Any]:
   return output
 
 
+def _save_confidence_json_file(
+    plddt: np.ndarray, output_dir: str, model_name: str
+) -> None:
+  confidence_json = confidence.confidence_json(plddt)
+
+  # Save the confidence json.
+  confidence_json_output_path = os.path.join(
+      output_dir, f'confidence_{model_name}.json'
+  )
+  with open(confidence_json_output_path, 'w') as f:
+    f.write(confidence_json)
+
+
+def _save_pae_json_file(
+    pae: np.ndarray, max_pae: float, output_dir: str, model_name: str
+) -> None:
+  """Check prediction result for PAE data and save to a JSON file if present.
+
+  Args:
+    pae: The n_res x n_res PAE array.
+    max_pae: The maximum possible PAE value.
+    output_dir: Directory to which files are saved.
+    model_name: Name of a model.
+  """
+  pae_json = confidence.pae_json(pae, max_pae)
+
+  # Save the PAE json.
+  pae_json_output_path = os.path.join(output_dir, f'pae_{model_name}.json')
+  with open(pae_json_output_path, 'w') as f:
+    f.write(pae_json)
+
+
 def predict_structure(
     fasta_path: str,
     fasta_name: str,
@@ -240,7 +273,16 @@ def predict_structure(
           model_name, fasta_name, t_diff)
 
     plddt = prediction_result['plddt']
+    _save_confidence_json_file(plddt, output_dir, model_name)
     ranking_confidences[model_name] = prediction_result['ranking_confidence']
+
+    if (
+        'predicted_aligned_error' in prediction_result
+        and 'max_predicted_aligned_error' in prediction_result
+    ):
+      pae = prediction_result['predicted_aligned_error']
+      max_pae = prediction_result['max_predicted_aligned_error']
+      _save_pae_json_file(pae, float(max_pae), output_dir, model_name)
 
     # Remove jax dependency from results.
     np_prediction_result = _jnp_to_np(dict(prediction_result))

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 """Helper methods for the AlphaFold Colab notebook."""
-import json
 from typing import AbstractSet, Any, Mapping, Optional, Sequence
 
 from alphafold.common import residue_constants
@@ -141,31 +140,6 @@ def empty_placeholder_template_features(
       'template_sequence': np.zeros([num_templates], dtype=object),
       'template_sum_probs': np.zeros([num_templates], dtype=np.float32),
   }
-
-
-def get_pae_json(pae: np.ndarray, max_pae: float) -> str:
-  """Returns the PAE in the same format as is used in the AFDB.
-
-  Note that the values are presented as floats to 1 decimal place,
-  whereas AFDB returns integer values.
-
-  Args:
-    pae: The n_res x n_res PAE array.
-    max_pae: The maximum possible PAE value.
-  Returns:
-    PAE output format as a JSON string.
-  """
-  # Check the PAE array is the correct shape.
-  if (pae.ndim != 2 or pae.shape[0] != pae.shape[1]):
-    raise ValueError(f'PAE must be a square matrix, got {pae.shape}')
-
-  # Round the predicted aligned errors to 1 decimal place.
-  rounded_errors = np.round(pae.astype(np.float64), decimals=1)
-  formatted_output = [{
-      'predicted_aligned_error': rounded_errors.tolist(),
-      'max_predicted_aligned_error': max_pae
-  }]
-  return json.dumps(formatted_output, indent=None, separators=(',', ':'))
 
 
 def check_cell_execution_order(
