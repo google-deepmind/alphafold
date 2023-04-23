@@ -107,6 +107,9 @@ flags.DEFINE_string(
   'pairing should be restricted. Full path will be '
   'msa_output_path/many_to_some_species_to_pair_basename.')
 flags.DEFINE_boolean(
+  'match_only_orthologs', False,
+  'Only match orthologs to query chains in multimer mode.')
+flags.DEFINE_boolean(
   'stop_at_etl', False,
   'Whether to stop after input features are created, but before models are '
   'run.')
@@ -250,6 +253,7 @@ def main(argv):
       f'--use_gpu_relax={use_gpu_relax}',
       f'--externally_matched_species_dict_basename={FLAGS.externally_matched_species_dict_basename}',
       f'--many_to_some_species_to_pair_basename={FLAGS.many_to_some_species_to_pair_basename}',
+      f'--match_only_orthologs={FLAGS.match_only_orthologs}',
       f'--stop_at_etl={FLAGS.stop_at_etl}',
       '--logtostderr',
   ])

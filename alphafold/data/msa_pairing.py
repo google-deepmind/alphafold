@@ -54,8 +54,8 @@ CHAIN_FEATURES = ('num_alignments', 'seq_length')
 def create_paired_features(
     chains: Iterable[pipeline.FeatureDict],
     externally_matched_species_dict_path: Optional[str] = None,
-    many_to_some_species_to_pair_path: Optional[str] = None
-    ) -> List[pipeline.FeatureDict]:
+    many_to_some_species_to_pair_path: Optional[str] = None,
+    match_only_orthologs: bool = False) -> List[pipeline.FeatureDict]:
   """Returns the original chains with paired NUM_SEQ features.
 
   Args:
@@ -75,7 +75,8 @@ def create_paired_features(
     paired_chains_to_paired_row_indices = pair_sequences(
       chains,
       externally_matched_species_dict_path=externally_matched_species_dict_path,
-      many_to_some_species_to_pair_path=many_to_some_species_to_pair_path)
+      many_to_some_species_to_pair_path=many_to_some_species_to_pair_path,
+      match_only_orthologs=match_only_orthologs)
     paired_rows = reorder_paired_rows(
         paired_chains_to_paired_row_indices)
 
@@ -181,9 +182,37 @@ def _match_rows_by_sequence_similarity(this_species_msa_dfs: List[pd.DataFrame]
   return all_paired_msa_rows
 
 
+def _match_only_orthologs(this_species_msa_dfs: List[pd.DataFrame]
+                          ) -> List[List[int]]:
+  """Finds MSA sequence pairings across chains based on orthologs.
+
+  Only the first hits according to the homology search results in each chain's
+  MSA are paired.
+
+  Args:
+    this_species_msa_dfs: a list of dataframes containing MSA features for
+      sequences for a specific species.
+
+  Returns:
+   A list of lists, each containing M indices corresponding to paired MSA rows,
+   where M is the number of chains.
+  """
+  all_paired_msa_rows = []
+
+  for species_df in this_species_msa_dfs:
+    if species_df is not None:
+      msa_rows = species_df.msa_row.iloc[:1].values
+    else:
+      msa_rows = [-1]  # take the last 'padding' row
+    all_paired_msa_rows.append(msa_rows)
+  all_paired_msa_rows = list(np.array(all_paired_msa_rows).transpose())
+  return all_paired_msa_rows
+
+
 def pair_sequences(examples: List[pipeline.FeatureDict],
                    externally_matched_species_dict_path: Optional[str] = None,
-                   many_to_some_species_to_pair_path: Optional[str] = None
+                   many_to_some_species_to_pair_path: Optional[str] = None,
+                   match_only_orthologs: bool = False
                    ) -> Dict[int, np.ndarray]:
   """Returns indices for paired MSA sequences across chains."""
 
@@ -192,6 +221,11 @@ def pair_sequences(examples: List[pipeline.FeatureDict],
       externally_matched_species_dict = pickle.load(f)
   else:
     externally_matched_species_dict = {}
+
+  if match_only_orthologs:
+    match_rows = _match_only_orthologs
+  else:
+    match_rows = _match_rows_by_sequence_similarity
 
   num_examples = len(examples)
 
@@ -258,7 +292,7 @@ def pair_sequences(examples: List[pipeline.FeatureDict],
     if species in externally_matched_species_dict:
       paired_msa_rows = externally_matched_species_dict[species]
     else:
-      paired_msa_rows = _match_rows_by_sequence_similarity(this_species_msa_dfs)
+      paired_msa_rows = match_rows(this_species_msa_dfs)
     all_paired_msa_rows.extend(paired_msa_rows)
     all_paired_msa_rows_dict[species_dfs_present].extend(paired_msa_rows)
   all_paired_msa_rows_dict = {
