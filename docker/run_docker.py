@@ -113,6 +113,12 @@ flags.DEFINE_boolean(
   'stop_at_etl', False,
   'Whether to stop after input features are created, but before models are '
   'run.')
+flags.DEFINE_integer(
+  'num_recycle', 20,
+  'Number of recycles.')
+flags.DEFINE_float(
+  'recycle_early_stop_tolerance', 0.5,
+  'Tolerance for early stopping during recycling.')
 
 FLAGS = flags.FLAGS
 
@@ -255,6 +261,8 @@ def main(argv):
       f'--many_to_some_species_to_pair_basename={FLAGS.many_to_some_species_to_pair_basename}',
       f'--match_only_orthologs={FLAGS.match_only_orthologs}',
       f'--stop_at_etl={FLAGS.stop_at_etl}',
+      f'--num_recycle={FLAGS.num_recycle}',
+      f'--recycle_early_stop_tolerance={FLAGS.recycle_early_stop_tolerance}',
       '--logtostderr',
   ])
 

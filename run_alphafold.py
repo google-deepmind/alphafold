@@ -158,6 +158,10 @@ flags.DEFINE_boolean('match_only_orthologs', False,
 flags.DEFINE_boolean('stop_at_etl', False,
                      'Whether to stop after input features are created, but '
                      'before models are run.')
+flags.DEFINE_integer('num_recycle', 20,
+                     'Number of recycles.')
+flags.DEFINE_float('recycle_early_stop_tolerance', 0.5,
+                   'Tolerance for early stopping during recycling.')
 
 FLAGS = flags.FLAGS
 
@@ -463,6 +467,11 @@ def main(argv):
       model_config.model.num_ensemble_eval = num_ensemble
     else:
       model_config.data.eval.num_ensemble = num_ensemble
+    model_config.model.num_recycle = FLAGS.num_recycle
+    if not run_multimer_system:
+      model_config.data.num_recycle = FLAGS.num_recycle
+    else:
+      model_config.model.recycle_early_stop_tolerance = FLAGS.recycle_early_stop_tolerance
     model_params = data.get_model_haiku_params(
         model_name=model_name, data_dir=FLAGS.data_dir)
     model_runner = model.RunModel(model_config, model_params)
@@ -471,6 +480,10 @@ def main(argv):
 
   logging.info('Have %d models: %s', len(model_runners),
                list(model_runners.keys()))
+  logging.info(f'Models will run using {FLAGS.num_recycle} recycles.')
+  if run_multimer_system:
+    logging.info(f'Models will run using {FLAGS.recycle_early_stop_tolerance} '
+                 'as tolerance for early stopping during recycling.')
 
   amber_relaxer = relax.AmberRelaxation(
       max_iterations=RELAX_MAX_ITERATIONS,
