@@ -244,6 +244,8 @@ class DataPipeline:
               msa_output_dir: str,
               externally_matched_species_dict_path: Optional[str] = None,
               many_to_some_species_to_pair_path: Optional[str] = None,
+              confidences_externally_matched_species_path: Optional[str] = None,
+              min_confidence: float = 0.,
               match_only_orthologs: bool = False) -> pipeline.FeatureDict:
     """Runs alignment tools on the input sequences and creates features."""
     with open(input_fasta_path) as f:
@@ -285,6 +287,8 @@ class DataPipeline:
         msa_output_dir=msa_output_dir,
         externally_matched_species_dict_path=externally_matched_species_dict_path,
         many_to_some_species_to_pair_path=many_to_some_species_to_pair_path,
+        confidences_externally_matched_species_path=confidences_externally_matched_species_path,
+        min_confidence=min_confidence,
         match_only_orthologs=match_only_orthologs)
 
     # Pad MSA to avoid zero-sized extra_msa.

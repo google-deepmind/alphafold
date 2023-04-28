@@ -55,6 +55,8 @@ def create_paired_features(
     chains: Iterable[pipeline.FeatureDict],
     externally_matched_species_dict_path: Optional[str] = None,
     many_to_some_species_to_pair_path: Optional[str] = None,
+    confidences_externally_matched_species_path: Optional[str] = None,
+    min_confidence: float = 0.,
     match_only_orthologs: bool = False) -> List[pipeline.FeatureDict]:
   """Returns the original chains with paired NUM_SEQ features.
 
@@ -76,6 +78,8 @@ def create_paired_features(
       chains,
       externally_matched_species_dict_path=externally_matched_species_dict_path,
       many_to_some_species_to_pair_path=many_to_some_species_to_pair_path,
+      confidences_externally_matched_species_path=confidences_externally_matched_species_path,
+      min_confidence=min_confidence,
       match_only_orthologs=match_only_orthologs)
     paired_rows = reorder_paired_rows(
         paired_chains_to_paired_row_indices)
@@ -212,6 +216,8 @@ def _match_only_orthologs(this_species_msa_dfs: List[pd.DataFrame]
 def pair_sequences(examples: List[pipeline.FeatureDict],
                    externally_matched_species_dict_path: Optional[str] = None,
                    many_to_some_species_to_pair_path: Optional[str] = None,
+                   confidences_externally_matched_species_path: Optional[str] = None,
+                   min_confidence: float = 0.,
                    match_only_orthologs: bool = False
                    ) -> Dict[int, np.ndarray]:
   """Returns indices for paired MSA sequences across chains."""
@@ -219,6 +225,14 @@ def pair_sequences(examples: List[pipeline.FeatureDict],
   if externally_matched_species_dict_path:
     with open(externally_matched_species_dict_path, "rb") as f:
       externally_matched_species_dict = pickle.load(f)
+    if confidences_externally_matched_species_path:
+      with open(confidences_externally_matched_species_path, "rb") as f:
+        confidences_externally_matched_species = pickle.load(f)
+    else:
+      confidences_externally_matched_species = {
+        k: [1.] * len(v)
+        for k, v in externally_matched_species_dict.items()
+      }
   else:
     externally_matched_species_dict = {}
 
@@ -290,7 +304,12 @@ def pair_sequences(examples: List[pipeline.FeatureDict],
     
     species_msa_dfs.append(this_species_msa_dfs)
     if species in externally_matched_species_dict:
-      paired_msa_rows = externally_matched_species_dict[species]
+      paired_msa_rows = [
+        idx_pair for idx_pair, conf in zip(
+          externally_matched_species_dict[species],
+          confidences_externally_matched_species[species]
+        ) if conf >= min_confidence
+      ]
     else:
       paired_msa_rows = match_rows(this_species_msa_dfs)
     all_paired_msa_rows.extend(paired_msa_rows)

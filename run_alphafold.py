@@ -153,6 +153,13 @@ flags.DEFINE_string('many_to_some_species_to_pair_basename', '',
                     'which many-to-some pairing should be restricted. Full '
                     'path will be '
                     'msa_output_path/many_to_some_species_to_pair_basename.')
+flags.DEFINE_string('confidences_externally_matched_species_basename', '',
+                    'Basename of pickled dictionary containing the confidence '
+                    'values of the pairings given by '
+                    'externally_matched_species_dict_basename. Full path will be '
+                    'msa_output_path/confidences_externally_matched_species_basename.')
+flags.DEFINE_float('min_confidence', 0.,
+                   'Lowest acceptable confidence value for pairing sequences.')
 flags.DEFINE_boolean('match_only_orthologs', False,
                      'Only match orthologs to query chains in multimer mode.')
 flags.DEFINE_boolean('stop_at_etl', False,
@@ -204,6 +211,8 @@ def predict_structure(
     models_to_relax: ModelsToRelax,
     externally_matched_species_dict_basename: Optional[str] = None,
     many_to_some_species_to_pair_basename: Optional[str] = None,
+    confidences_externally_matched_species_basename: Optional[str] = None,
+    min_confidence: float = 0.,
     match_only_orthologs: bool = False,
     stop_at_etl: bool = False):
   """Predicts structure using AlphaFold for the given sequence."""
@@ -230,6 +239,13 @@ def predict_structure(
   else:
     many_to_some_species_to_pair_path = None
 
+  if confidences_externally_matched_species_basename:
+    confidences_externally_matched_species_path = os.path.join(
+      msa_output_dir,
+      confidences_externally_matched_species_basename)
+  else:
+    confidences_externally_matched_species_path = None
+
   # Get features.
   t_0 = time.time()
   feature_dict = data_pipeline.process(
@@ -237,6 +253,8 @@ def predict_structure(
       msa_output_dir=msa_output_dir,
       externally_matched_species_dict_path=externally_matched_species_dict_path,
       many_to_some_species_to_pair_path=many_to_some_species_to_pair_path,
+      confidences_externally_matched_species_path=confidences_externally_matched_species_path,
+      min_confidence=min_confidence,
       match_only_orthologs=match_only_orthologs)
   timings['features'] = time.time() - t_0
 
@@ -513,6 +531,8 @@ def main(argv):
         models_to_relax=FLAGS.models_to_relax,
         externally_matched_species_dict_basename=FLAGS.externally_matched_species_dict_basename,
         many_to_some_species_to_pair_basename=FLAGS.many_to_some_species_to_pair_basename,
+        confidences_externally_matched_species_basename=FLAGS.confidences_externally_matched_species_basename,
+        min_confidence=FLAGS.min_confidence,
         match_only_orthologs=FLAGS.match_only_orthologs,
         stop_at_etl=FLAGS.stop_at_etl)
 

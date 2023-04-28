@@ -52,6 +52,8 @@ def pair_and_merge(
     msa_output_dir: Optional[str] = None,
     externally_matched_species_dict_path: Optional[str] = None,
     many_to_some_species_to_pair_path: Optional[str] = None,
+    confidences_externally_matched_species_path: Optional[str] = None,
+    min_confidence: float = 0.,
     match_only_orthologs: bool = False
     ) -> pipeline.FeatureDict:
   """Runs processing on features to augment, pair and merge.
@@ -77,6 +79,8 @@ def pair_and_merge(
         chains=np_chains_list,
         externally_matched_species_dict_path=externally_matched_species_dict_path,
         many_to_some_species_to_pair_path=many_to_some_species_to_pair_path,
+        confidences_externally_matched_species_path=confidences_externally_matched_species_path,
+        min_confidence=min_confidence,
         match_only_orthologs=match_only_orthologs)
     np_chains_list = msa_pairing.deduplicate_unpaired_sequences(np_chains_list)
   np_chains_list = crop_chains(

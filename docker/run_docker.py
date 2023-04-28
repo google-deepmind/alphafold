@@ -106,6 +106,15 @@ flags.DEFINE_string(
   'Basename of pickled collection containing species to which many-to-some '
   'pairing should be restricted. Full path will be '
   'msa_output_path/many_to_some_species_to_pair_basename.')
+flags.DEFINE_string(
+  'confidences_externally_matched_species_basename', '',
+  'Basename of pickled dictionary containing the confidence values of '
+  'the pairings given by externally_matched_species_dict_basename. '
+  'Full path will be '
+  'msa_output_path/confidences_externally_matched_species_basename.')
+flags.DEFINE_float(
+  'min_confidence', 0.,
+  'Lowest acceptable confidence value for pairing sequences.')
 flags.DEFINE_boolean(
   'match_only_orthologs', False,
   'Only match orthologs to query chains in multimer mode.')
@@ -259,6 +268,8 @@ def main(argv):
       f'--use_gpu_relax={use_gpu_relax}',
       f'--externally_matched_species_dict_basename={FLAGS.externally_matched_species_dict_basename}',
       f'--many_to_some_species_to_pair_basename={FLAGS.many_to_some_species_to_pair_basename}',
+      f'--confidences_externally_matched_species_basename={FLAGS.confidences_externally_matched_species_basename}',
+      f'--min_confidence={FLAGS.min_confidence}',
       f'--match_only_orthologs={FLAGS.match_only_orthologs}',
       f'--stop_at_etl={FLAGS.stop_at_etl}',
       f'--num_recycle={FLAGS.num_recycle}',
