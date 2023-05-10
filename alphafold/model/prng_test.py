@@ -29,8 +29,7 @@ class PrngTest(absltest.TestCase):
 
     raw_key = safe_key.get()
 
-    self.assertNotEqual(raw_key[0], init_key[0])
-    self.assertNotEqual(raw_key[1], init_key[1])
+    self.assertFalse((raw_key == init_key).all())
 
     with self.assertRaises(RuntimeError):
       safe_key.get()
