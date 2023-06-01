@@ -33,11 +33,11 @@ fi
 DOWNLOAD_DIR="$1"
 ROOT_DIR="${DOWNLOAD_DIR}/uniprot"
 
-TREMBL_SOURCE_URL="ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.fasta.gz"
+TREMBL_SOURCE_URL="https://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_trembl.fasta.gz"
 TREMBL_BASENAME=$(basename "${TREMBL_SOURCE_URL}")
 TREMBL_UNZIPPED_BASENAME="${TREMBL_BASENAME%.gz}"
 
-SPROT_SOURCE_URL="ftp://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz"
+SPROT_SOURCE_URL="https://ftp.ebi.ac.uk/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz"
 SPROT_BASENAME=$(basename "${SPROT_SOURCE_URL}")
 SPROT_UNZIPPED_BASENAME="${SPROT_BASENAME%.gz}"
 
