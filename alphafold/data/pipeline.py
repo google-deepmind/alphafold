@@ -119,12 +119,10 @@ class DataPipeline:
     input_format = input_extension[1:]  # Remove the leading dot
     alignment = AlignIO.read(precomputed_msa, input_format)
 
-    msa_for_templates = output_dir+'//'+input_name+".sto"
-    AlignIO.write(alignment, msa_for_templates, "stockholm")
 
-
-    msa_for_templates = parsers.deduplicate_stockholm_msa(msa_for_templates)
-    msa_for_templates = parsers.remove_empty_columns_from_stockholm_msa(msa_for_templates)
+   
+   
+   
 
     input_sequence = alignment[0]
     input_description = "query"
