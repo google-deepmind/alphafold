@@ -307,37 +307,19 @@ def predict_structure(
 def main(argv):
   if len(argv) > 1:
     raise app.UsageError('Too many command-line arguments.')
+  
+  monomer_data_pipeline = pipeline.DataPipeline(precomputed_msas=FLAGS.precomputed_msas)
 
   run_multimer_system = 'multimer' in FLAGS.model_preset
-
-
-  monomer_data_pipeline = pipeline.DataPipeline( precomputed_msa=FLAGS.use_precomputed_msas)
-
   if run_multimer_system:
     num_predictions_per_model = FLAGS.num_multimer_predictions_per_model
     data_pipeline = pipeline_multimer.DataPipeline(
         monomer_data_pipeline=monomer_data_pipeline,
-        precomputed_msa=FLAGS.precomputed_msa)
+        )
   else:
     num_predictions_per_model = 1
     data_pipeline = monomer_data_pipeline
 
-  model_runners = {}
-  model_names = config.MODEL_PRESETS[FLAGS.model_preset]
-  for model_name in model_names:
-    model_config = config.model_config(model_name)
-    if run_multimer_system:
-      model_config.model.num_ensemble_eval = num_ensemble
-    else:
-      model_config.data.eval.num_ensemble = num_ensemble
-    model_params = data.get_model_haiku_params(
-        model_name=model_name, data_dir=FLAGS.data_dir)
-    model_runner = model.RunModel(model_config, model_params)
-    for i in range(num_predictions_per_model):
-      model_runners[f'{model_name}_pred_{i}'] = model_runner
-
-  logging.info('Have %d models: %s', len(model_runners),
-               list(model_runners.keys()))
 
   amber_relaxer = relax.AmberRelaxation(
       max_iterations=RELAX_MAX_ITERATIONS,
@@ -349,22 +331,17 @@ def main(argv):
 
   random_seed = FLAGS.random_seed
   if random_seed is None:
-    random_seed = random.randrange(sys.maxsize // len(model_runners))
+    random_seed = random.randrange(sys.maxsize // num_predictions_per_model)
   logging.info('Using random seed %d for the data pipeline', random_seed)
 
   # Predict structure for each of the sequences.
-  for i, fasta_path in enumerate(FLAGS.fasta_paths):
-    fasta_name = fasta_names[i]
-    predict_structure(
-        fasta_path=fasta_path,
-        fasta_name=fasta_name,
-        output_dir_base=FLAGS.output_dir,
-        data_pipeline=data_pipeline,
-        model_runners=model_runners,
-        amber_relaxer=amber_relaxer,
-        benchmark=FLAGS.benchmark,
-        random_seed=random_seed,
-        models_to_relax=FLAGS.models_to_relax)
+  predict_structure(
+      precomputed_msa=FLAGS.precomputed_msa,
+      output_dir_base=FLAGS.output_dir,
+      amber_relaxer=amber_relaxer,
+      random_seed=random_seed,
+      data_pipeline=data_pipeline,
+)
 
 
 if __name__ == '__main__':
