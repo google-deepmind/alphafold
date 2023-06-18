@@ -12,11 +12,22 @@
                         "localPath": "${workspaceFolder}",
                         "containerPath": "/app/alphafold"
                     },
+                    {
+                        "localPath": "${workspaceFolder}/test",
+                        "containerPath": "/app/data/"
+                    },
                 ]
             },
             "python": {
                 "file": "/app/alphafold/run_alphafold.py",
-                "args": []
+                "args": [
+                    "--precomputed_msa",
+                    "/app/data/PF02518_seed.fasta",
+                    "--output_dir",
+                    "/app/data/output",
+                    "--data_dir",
+                    "/app/data/data"
+                ]
             }
         }
     ]
