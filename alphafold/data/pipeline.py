@@ -126,9 +126,9 @@ class DataPipeline:
       alignment = fh.read()
       msa_for_templates=parsers.parse_stockholm(alignment)
 
+    input_sequence = msa_for_templates.sequences[0]
     input_description = "query"
     num_res = len(input_sequence)
-
 
     sequence_features = make_sequence_features(
         sequence=input_sequence,
