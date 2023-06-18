@@ -1,7 +1,7 @@
 # AlphaFold
 
 This package provides an implementation of the inference pipeline of AlphaFold
-v2. Using MSA as only input.
+v2. Using MSA as only input and eventually mean for running on serverless GPU (not yet available)
 
 AlphaFold-Multimer is not yet provided
 ## Installation and running your first prediction
