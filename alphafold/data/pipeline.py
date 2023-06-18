@@ -114,38 +114,12 @@ class DataPipeline:
   def __init__(self,
                precomputed_msa: bool = False):
     """Initializes the data pipeline."""
-    self.precomputed_msa = use_precomputed_msas
+    self.precomputed_msa = precomputed_msa
 
   def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
     """Runs alignment tools on the input sequence and creates features."""
-    with open(input_fasta_path) as f:
-      input_fasta_str = f.read()
-    input_seqs, input_descs = parsers.parse_fasta(input_fasta_str)
-    if len(input_seqs) != 1:
-      raise ValueError(
-          f'More than one input sequence found in {input_fasta_path}.')
-    input_sequence = input_seqs[0]
-    input_description = input_descs[0]
-    num_res = len(input_sequence)
 
-    uniref90_out_path = os.path.join(msa_output_dir, 'uniref90_hits.sto')
-    jackhmmer_uniref90_result = run_msa_tool(
-        msa_runner=self.jackhmmer_uniref90_runner,
-        input_fasta_path=input_fasta_path,
-        msa_out_path=uniref90_out_path,
-        msa_format='sto',
-        use_precomputed_msas=self.use_precomputed_msas,
-        max_sto_sequences=self.uniref_max_hits)
-    mgnify_out_path = os.path.join(msa_output_dir, 'mgnify_hits.sto')
-    jackhmmer_mgnify_result = run_msa_tool(
-        msa_runner=self.jackhmmer_mgnify_runner,
-        input_fasta_path=input_fasta_path,
-        msa_out_path=mgnify_out_path,
-        msa_format='sto',
-        use_precomputed_msas=self.use_precomputed_msas,
-        max_sto_sequences=self.mgnify_max_hits)
 
-    msa_for_templates = jackhmmer_uniref90_result['sto']
     msa_for_templates = parsers.deduplicate_stockholm_msa(msa_for_templates)
     msa_for_templates = parsers.remove_empty_columns_from_stockholm_msa(
         msa_for_templates)
