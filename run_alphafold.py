@@ -244,22 +244,22 @@ def predict_structure(
     # --- AMBER relax the best model ---
 
     # Find the best model according to the mean pLDDT.
-    best_model_name = max(ranking_confidences.keys(), key=lambda x: ranking_confidences[x])
+      best_model_name = max(ranking_confidences.keys(), key=lambda x: ranking_confidences[x])
 
-    if run_relax:
-      pbar.set_description(f'AMBER relaxation')
-      amber_relaxer = relax.AmberRelaxation(
-          max_iterations=0,
-          tolerance=2.39,
-          stiffness=10.0,
-          exclude_residues=[],
-          max_outer_iterations=3,
-          use_gpu=relax_use_gpu)
-      relaxed_pdb, _, _ = amber_relaxer.process(prot=unrelaxed_proteins[best_model_name])
-    else:
-      print('Warning: Running without the relaxation stage.')
-      relaxed_pdb = protein.to_pdb(unrelaxed_proteins[best_model_name])
-    pbar.update(n=1)  # Finished AMBER relax.
+      if run_relax:
+        pbar.set_description(f'AMBER relaxation')
+        amber_relaxer = relax.AmberRelaxation(
+            max_iterations=0,
+            tolerance=2.39,
+            stiffness=10.0,
+            exclude_residues=[],
+            max_outer_iterations=3,
+            use_gpu=relax_use_gpu)
+        relaxed_pdb, _, _ = amber_relaxer.process(prot=unrelaxed_proteins[best_model_name])
+      else:
+        print('Warning: Running without the relaxation stage.')
+        relaxed_pdb = protein.to_pdb(unrelaxed_proteins[best_model_name])
+      pbar.update(n=1)  # Finished AMBER relax.
 
   # Write out the prediction
   pred_output_path = os.path.join(output_dir, 'selected_prediction.pdb')
