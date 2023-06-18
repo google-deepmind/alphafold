@@ -111,12 +111,7 @@ def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
 class DataPipeline:
   """Runs the alignment tools and assembles the input features."""
 
-  def __init__(self,
-               precomputed_msa: bool = False):
-    """Initializes the data pipeline."""
-    self.precomputed_msa = precomputed_msa
-
-  def process(self, msa_output_dir: str) -> FeatureDict:
+  def process(self, precomputed_msa: str, output_dir: str) -> FeatureDict:
     """Converts the input MSA to Stockholm and creates features."""
     _, input_name  = os.path.split(precomputed_msa)
     input_name , input_extension = os.path.splitext(input_name)
@@ -128,10 +123,7 @@ class DataPipeline:
 
 
     msa_for_templates = parsers.deduplicate_stockholm_msa(msa_for_templates)
-    mgnify_msa = parsers.parse_stockholm(jackhmmer_mgnify_result['sto'])
-
-    pdb_template_hits = self.template_searcher.get_template_hits(
-        output_string=pdb_templates_result, input_sequence=input_sequence)
+    msa_for_templates = parsers.remove_empty_columns_from_stockholm_msa(msa_for_templates)
 
     input_sequence = alignment[0]
     input_description = "query"
