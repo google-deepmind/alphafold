@@ -118,10 +118,14 @@ class DataPipeline:
 
   def process(self, msa_output_dir: str) -> FeatureDict:
     """Converts the input MSA to Stockholm and creates features."""
-    msa_for_templates = parsers.deduplicate_stockholm_msa(self.precomputed_msa)
-    msa_for_templates = parsers.remove_empty_columns_from_stockholm_msa(self.precomputed_msa)
+    _, input_name  = os.path.split(precomputed_msa)
+    input_name , input_extension = os.path.splitext(input_name)
+    input_format = input_extension[1:]  # Remove the leading dot
+    alignment = AlignIO.read(precomputed_msa, input_format)
 
-    
+    msa_for_templates = output_dir+'//'+input_name+".sto"
+    AlignIO.write(alignment, msa_for_templates, "stockholm")
+
 
     msa_for_templates = parsers.deduplicate_stockholm_msa(msa_for_templates)
     mgnify_msa = parsers.parse_stockholm(jackhmmer_mgnify_result['sto'])
@@ -136,6 +140,7 @@ class DataPipeline:
         description=input_description,
         num_res=num_res)
 
+    msa_features = make_msa_features(msas=[msa_for_templates])
     
 
     return {**sequence_features, **msa_features}
