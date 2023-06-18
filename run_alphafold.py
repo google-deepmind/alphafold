@@ -203,8 +203,6 @@ def main(argv):
   predict_structure(
       precomputed_msa=FLAGS.precomputed_msa,
       output_dir_base=FLAGS.output_dir,
-      amber_relaxer=amber_relaxer,
-      random_seed=random_seed,
       data_pipeline=data_pipeline,
 )
 
