@@ -116,13 +116,10 @@ class DataPipeline:
     """Initializes the data pipeline."""
     self.precomputed_msa = precomputed_msa
 
-  def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
+  def process(self, msa_output_dir: str) -> FeatureDict:
     """Runs alignment tools on the input sequence and creates features."""
-
-
-    msa_for_templates = parsers.deduplicate_stockholm_msa(msa_for_templates)
-    msa_for_templates = parsers.remove_empty_columns_from_stockholm_msa(
-        msa_for_templates)
+    msa_for_templates = parsers.deduplicate_stockholm_msa(self.precomputed_msa)
+    msa_for_templates = parsers.remove_empty_columns_from_stockholm_msa(self.precomputed_msa)
 
     if self.template_searcher.input_format == 'sto':
       pdb_templates_result = self.template_searcher.query(msa_for_templates)
