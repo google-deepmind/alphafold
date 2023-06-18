@@ -16,6 +16,10 @@
                         "localPath": "${workspaceFolder}/test",
                         "containerPath": "/app/data/"
                     },
+                    {
+                        "localPath": "${workspaceFolder}/params",
+                        "containerPath": "/app/alphafold/alphafold/data/params/"
+                    },
                 ]
             },
             "python": {
