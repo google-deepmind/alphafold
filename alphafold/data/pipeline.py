@@ -16,6 +16,7 @@
 
 import os
 from typing import Any, Mapping, MutableMapping, Optional, Sequence, Union
+from Bio import AlignIO
 from absl import logging
 from alphafold.common import residue_constants
 from alphafold.data import msa_identifiers
