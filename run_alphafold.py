@@ -173,7 +173,7 @@ def main(argv):
   if len(argv) > 1:
     raise app.UsageError('Too many command-line arguments.')
   
-  monomer_data_pipeline = pipeline.DataPipeline(precomputed_msa=FLAGS.precomputed_msa)
+  monomer_data_pipeline = pipeline.DataPipeline()
 
   run_multimer_system = False
   if run_multimer_system:
