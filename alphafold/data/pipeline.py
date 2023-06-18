@@ -21,11 +21,9 @@ from absl import logging
 from alphafold.common import residue_constants
 from alphafold.data import msa_identifiers
 from alphafold.data import parsers
-from alphafold.data import templates
-from alphafold.data.tools import hhblits
 from alphafold.data.tools import hhsearch
 from alphafold.data.tools import hmmsearch
-from alphafold.data.tools import jackhmmer
+from alphafold.notebooks import notebook_utils
 import numpy as np
 
 # Internal import (7716).
@@ -136,6 +134,14 @@ class DataPipeline:
         num_res=num_res)
 
     msa_features = make_msa_features(msas=[msa_for_templates])
-    
 
-    return {**sequence_features, **msa_features}
+    # Taken from collab
+    empty_place_holder = notebook_utils.empty_placeholder_template_features(num_templates=0, num_res=num_res)
+    # Turn the raw data into model features.
+    feature_dict = {}
+    feature_dict.update(sequence_features) 
+    feature_dict.update(msa_features)
+    # We don't use templates in AlphaFold Colab notebook, add only empty placeholder features.
+    feature_dict.update(empty_place_holder)
+    
+    return feature_dict
