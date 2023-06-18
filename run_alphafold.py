@@ -429,15 +429,9 @@ def main(argv):
 
 if __name__ == '__main__':
   flags.mark_flags_as_required([
-      'fasta_paths',
+      'precomputed_msa',
       'output_dir',
       'data_dir',
-      'uniref90_database_path',
-      'mgnify_database_path',
-      'template_mmcif_dir',
-      'max_template_date',
-      'obsolete_pdbs_path',
-      'use_gpu_relax',
   ])
 
   app.run(main)
