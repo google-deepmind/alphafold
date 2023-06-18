@@ -23,7 +23,6 @@ from alphafold.data import msa_identifiers
 from alphafold.data import parsers
 from alphafold.data.tools import hhsearch
 from alphafold.data.tools import hmmsearch
-from alphafold.notebooks import notebook_utils
 import numpy as np
 
 # Internal import (7716).
@@ -106,6 +105,23 @@ def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
         result = {msa_format: f.read()}
   return result
 
+#Redefining here to avoid to import notebook_utils that need matplotlib
+def empty_placeholder_template_features(
+    num_templates: int, num_res: int) -> Mapping[str, np.ndarray]:
+  return {
+      'template_aatype': np.zeros(
+          (num_templates, num_res,
+           len(residue_constants.restypes_with_x_and_gap)), dtype=np.float32),
+      'template_all_atom_masks': np.zeros(
+          (num_templates, num_res, residue_constants.atom_type_num),
+          dtype=np.float32),
+      'template_all_atom_positions': np.zeros(
+          (num_templates, num_res, residue_constants.atom_type_num, 3),
+          dtype=np.float32),
+      'template_domain_names': np.zeros([num_templates], dtype=object),
+      'template_sequence': np.zeros([num_templates], dtype=object),
+      'template_sum_probs': np.zeros([num_templates], dtype=np.float32),
+  }
 
 class DataPipeline:
   """Runs the alignment tools and assembles the input features."""
@@ -136,7 +152,7 @@ class DataPipeline:
     msa_features = make_msa_features(msas=[msa_for_templates])
 
     # Taken from collab
-    empty_place_holder = notebook_utils.empty_placeholder_template_features(num_templates=0, num_res=num_res)
+    empty_place_holder = empty_placeholder_template_features(num_templates=0, num_res=num_res)
     # Turn the raw data into model features.
     feature_dict = {}
     feature_dict.update(sequence_features) 
