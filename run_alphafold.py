@@ -23,22 +23,22 @@ import shutil
 import sys
 import time
 from typing import Any, Dict, Union
+from tqdm import tqdm
 
 from absl import app
 from absl import flags
 from absl import logging
 from alphafold.common import confidence
 from alphafold.common import protein
-from alphafold.common import residue_constants
 from alphafold.data import pipeline
 from alphafold.data import pipeline_multimer
-from alphafold.data import templates
-from alphafold.data.tools import hhsearch
-from alphafold.data.tools import hmmsearch
+from alphafold.common import protein
+from alphafold.relax import relax
+
+from alphafold.model import model
 from alphafold.model import config
 from alphafold.model import data
-from alphafold.model import model
-from alphafold.relax import relax
+
 import jax.numpy as jnp
 import numpy as np
 
@@ -52,6 +52,11 @@ class ModelsToRelax(enum.Enum):
   ALL = 0
   BEST = 1
   NONE = 2
+@enum.unique
+class ModelType(enum.Enum):
+  MONOMER = 0
+  MULTIMER = 1
+
 flags.DEFINE_string('precomputed_msa', None, 'MSA to use for this run')
 
 flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
@@ -147,6 +152,10 @@ def predict_structure(
     precomputed_msa: str,
     output_dir_base : str,
     data_pipeline: Union[pipeline.DataPipeline, pipeline_multimer.DataPipeline],
+    model_type_to_use = ModelType.MONOMER,
+    multimer_model_max_num_recycles = 3,
+    run_relax = False,
+    relax_use_gpu  = False
     ):
   """Predicts structure using AlphaFold for the given sequence."""
   logging.info('Predicting %s', precomputed_msa)
@@ -160,12 +169,102 @@ def predict_structure(
   t_0 = time.time()
   feature_dict = data_pipeline.process(precomputed_msa = precomputed_msa, output_dir=output_dir)
   timings['features'] = time.time() - t_0
-
   # Write out features as a pickled dictionary.
   features_output_path = os.path.join(output_dir, 'features.pkl')
   with open(features_output_path, 'wb') as f:
     pickle.dump(feature_dict, f, protocol=4)
 
+  features_for_chain = {}
+  features_for_chain[protein.PDB_CHAIN_IDS[0]] = feature_dict
+
+# Do further feature post-processing depending on the model type.  
+  np_example = features_for_chain[protein.PDB_CHAIN_IDS[0]]  
+  model_names = config.MODEL_PRESETS['monomer'] + ('model_2_ptm',)
+
+  plddts = {}
+  ranking_confidences = {}
+  pae_outputs = {}
+  unrelaxed_proteins = {}
+  TQDM_BAR_FORMAT = '{l_bar}{bar}| {n_fmt}/{total_fmt} [elapsed: {elapsed} remaining: {remaining}]'
+  with tqdm(total=len(model_names) + 1, bar_format=TQDM_BAR_FORMAT) as pbar:
+    for model_name in model_names:
+      pbar.set_description(f'Running {model_name}')
+
+      cfg = config.model_config(model_name)
+
+      if model_type_to_use == ModelType.MONOMER:
+        cfg.data.eval.num_ensemble = 1
+      elif model_type_to_use == ModelType.MULTIMER:
+        cfg.model.num_ensemble_eval = 1
+
+      if model_type_to_use == ModelType.MULTIMER:
+        cfg.model.num_recycle = multimer_model_max_num_recycles
+        cfg.model.recycle_early_stop_tolerance = 0.5
+
+      params = data.get_model_haiku_params(model_name, './alphafold/data')
+      model_runner = model.RunModel(cfg, params)
+      processed_feature_dict = model_runner.process_features(np_example, random_seed=0)
+      prediction = model_runner.predict(processed_feature_dict, random_seed=random.randrange(sys.maxsize))
+
+      mean_plddt = prediction['plddt'].mean()
+
+      if model_type_to_use == ModelType.MONOMER:
+        if 'predicted_aligned_error' in prediction:
+          pae_outputs[model_name] = (prediction['predicted_aligned_error'],
+                                    prediction['max_predicted_aligned_error'])
+        else:
+          # Monomer models are sorted by mean pLDDT. Do not put monomer pTM models here as they
+          # should never get selected.
+          ranking_confidences[model_name] = prediction['ranking_confidence']
+          plddts[model_name] = prediction['plddt']
+      elif model_type_to_use == ModelType.MULTIMER:
+        # Multimer models are sorted by pTM+ipTM.
+        ranking_confidences[model_name] = prediction['ranking_confidence']
+        plddts[model_name] = prediction['plddt']
+        pae_outputs[model_name] = (prediction['predicted_aligned_error'],
+                                  prediction['max_predicted_aligned_error'])
+
+      # Set the b-factors to the per-residue plddt.
+      final_atom_mask = prediction['structure_module']['final_atom_mask']
+      b_factors = prediction['plddt'][:, None] * final_atom_mask
+      unrelaxed_protein = protein.from_prediction(
+          processed_feature_dict,
+          prediction,
+          b_factors=b_factors,
+          remove_leading_feature_dimension=(
+              model_type_to_use == ModelType.MONOMER))
+      unrelaxed_proteins[model_name] = unrelaxed_protein
+
+      # Delete unused outputs to save memory.
+      del model_runner
+      del params
+      del prediction
+      pbar.update(n=1)
+
+    # --- AMBER relax the best model ---
+
+    # Find the best model according to the mean pLDDT.
+    best_model_name = max(ranking_confidences.keys(), key=lambda x: ranking_confidences[x])
+
+    if run_relax:
+      pbar.set_description(f'AMBER relaxation')
+      amber_relaxer = relax.AmberRelaxation(
+          max_iterations=0,
+          tolerance=2.39,
+          stiffness=10.0,
+          exclude_residues=[],
+          max_outer_iterations=3,
+          use_gpu=relax_use_gpu)
+      relaxed_pdb, _, _ = amber_relaxer.process(prot=unrelaxed_proteins[best_model_name])
+    else:
+      print('Warning: Running without the relaxation stage.')
+      relaxed_pdb = protein.to_pdb(unrelaxed_proteins[best_model_name])
+    pbar.update(n=1)  # Finished AMBER relax.
+
+  # Write out the prediction
+  pred_output_path = os.path.join(output_dir, 'selected_prediction.pdb')
+  with open(pred_output_path, 'w') as f:
+    f.write(relaxed_pdb)
 
 
 
