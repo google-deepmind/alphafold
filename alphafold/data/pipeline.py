@@ -112,40 +112,9 @@ class DataPipeline:
   """Runs the alignment tools and assembles the input features."""
 
   def __init__(self,
-               jackhmmer_binary_path: str,
-               hhblits_binary_path: str,
-               uniref90_database_path: str,
-               mgnify_database_path: str,
-               bfd_database_path: Optional[str],
-               uniref30_database_path: Optional[str],
-               small_bfd_database_path: Optional[str],
-               template_searcher: TemplateSearcher,
-               template_featurizer: templates.TemplateHitFeaturizer,
-               use_small_bfd: bool,
-               mgnify_max_hits: int = 501,
-               uniref_max_hits: int = 10000,
-               use_precomputed_msas: bool = False):
+               precomputed_msa: bool = False):
     """Initializes the data pipeline."""
-    self._use_small_bfd = use_small_bfd
-    self.jackhmmer_uniref90_runner = jackhmmer.Jackhmmer(
-        binary_path=jackhmmer_binary_path,
-        database_path=uniref90_database_path)
-    if use_small_bfd:
-      self.jackhmmer_small_bfd_runner = jackhmmer.Jackhmmer(
-          binary_path=jackhmmer_binary_path,
-          database_path=small_bfd_database_path)
-    else:
-      self.hhblits_bfd_uniref_runner = hhblits.HHBlits(
-          binary_path=hhblits_binary_path,
-          databases=[bfd_database_path, uniref30_database_path])
-    self.jackhmmer_mgnify_runner = jackhmmer.Jackhmmer(
-        binary_path=jackhmmer_binary_path,
-        database_path=mgnify_database_path)
-    self.template_searcher = template_searcher
-    self.template_featurizer = template_featurizer
-    self.mgnify_max_hits = mgnify_max_hits
-    self.uniref_max_hits = uniref_max_hits
-    self.use_precomputed_msas = use_precomputed_msas
+    self.precomputed_msa = use_precomputed_msas
 
   def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
     """Runs alignment tools on the input sequence and creates features."""
