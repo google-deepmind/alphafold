@@ -1,0 +1,23 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "docker-run",
+            "label": "docker-run: debug",
+            "dockerRun": {
+                "containerName": "af2_serverless_dev",
+                "image": "af2_serverless_dev:alpha",
+                "volumes": [
+                    {
+                        "localPath": "${workspaceFolder}",
+                        "containerPath": "/app/alphafold"
+                    },
+                ]
+            },
+            "python": {
+                "file": "/app/alphafold/run_alphafold.py",
+                "args": []
+            }
+        }
+    ]
+}
