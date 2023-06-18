@@ -175,7 +175,7 @@ def main(argv):
   
   monomer_data_pipeline = pipeline.DataPipeline(precomputed_msa=FLAGS.precomputed_msa)
 
-  run_multimer_system = 'multimer' in FLAGS.model_preset
+  run_multimer_system = False
   if run_multimer_system:
     num_predictions_per_model = FLAGS.num_multimer_predictions_per_model
     data_pipeline = pipeline_multimer.DataPipeline(
