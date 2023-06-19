@@ -255,7 +255,13 @@ def predict_structure(
           exclude_residues=[],
           max_outer_iterations=3,
           use_gpu=relax_use_gpu)
-      relaxed_pdb, _, _ = amber_relaxer.process(prot=unrelaxed_proteins[best_model_name])
+      unrelaxed_model = unrelaxed_proteins[best_model_name]
+      try:
+        relaxed_pdb, _, _ = amber_relaxer.process(prot=unrelaxed_model)
+      except Exception as e:
+        logging.error(e)
+        logging.error("The model will be kept unrelaxed")
+        relaxed_pdb =  protein.to_pdb(unrelaxed_model)
     else:
       print('Warning: Running without the relaxation stage.')
       relaxed_pdb = protein.to_pdb(unrelaxed_proteins[best_model_name])
