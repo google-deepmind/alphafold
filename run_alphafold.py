@@ -154,8 +154,8 @@ def predict_structure(
     data_pipeline: Union[pipeline.DataPipeline, pipeline_multimer.DataPipeline],
     model_type_to_use = ModelType.MONOMER,
     multimer_model_max_num_recycles = 3,
-    run_relax = False,
-    relax_use_gpu  = False
+    run_relax = True,
+    relax_use_gpu  = True
     ):
   """Predicts structure using AlphaFold for the given sequence."""
   logging.info('Predicting %s', precomputed_msa)
