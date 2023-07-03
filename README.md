@@ -1,14 +1,13 @@
 # AlphaFold
 
 This package provides an implementation of the inference pipeline of AlphaFold
-v2. Using MSA as only input and eventually mean for running on serverless GPU (not yet available)
+v2. Using MSA as only input.
 
 AlphaFold-Multimer is not yet provided
 ## Installation and running your first prediction
 
 You will need a machine running Linux, AlphaFold does not support other
-operating systems. Full installation requires up to 10GB of disk space and a modern 
-NVIDIA GPU (GPUs with more memory can predict larger protein structures).
+operating systems. Full installation requires up to 10GB of disk space and a modern NVIDIA GPU (GPUs with more memory can predict larger protein structures).
 
 Please follow these steps:
 
@@ -102,14 +101,23 @@ will download parameters for:
 
 ## Running AlphaFold
 
-**The simplest way to run AlphaFold is using the provided Makefile.** 
 For the moment only basic capabilities are implemented.
 
-1.  Relaxation is disabled
+To run Alphafold2, modify this command ( meant to run the test )
 
+```
+	docker run -it --rm --name=af2_msa \
+	-v $(PWD):/app/alphafold \
+	-v $(PWD)/test:/app/data \
+	-v $(PWD)/params:/app/alphafold/alphafold/data/params/ \
+	af2_msa:alpha \
+	python3 /app/alphafold/run_alphafold.py \
+	--precomputed_msa /app/data/PF02518_seed.fasta \
+	--output_dir /app/data/output \
+	--data_dir /app/data/data
+```
 ### Running AlphaFold-Multimer
 AlphaFold-Multimer is not yet supported
-
 
 ### AlphaFold output
 
