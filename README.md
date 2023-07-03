@@ -69,11 +69,21 @@ Please follow these steps:
 1.  Make sure that the output directory exists (the default is `/tmp/alphafold`)
     and that you have sufficient permissions to write into it.
 
-1.  Use the Makefile to run AF2. **Attention**: for the moment the Makefile must be
-edited to correctly run AF2
-    ```bash
-    make run
-    ```
+1.  Run Alphafold:
+To run Alphafold2, modify this command ( meant to run the test )
+
+```
+	docker run -it --rm --name=af2_msa \
+	-v $(PWD):/app/alphafold \
+	-v $(PWD)/test:/app/data \
+	-v $(PWD)/params:/app/alphafold/alphafold/data/params/ \
+	af2_msa:alpha \
+	python3 /app/alphafold/run_alphafold.py \
+	--precomputed_msa /app/data/PF02518_seed.fasta \
+	--output_dir /app/data/output \
+	--data_dir /app/data/data
+```
+
 1.  Once the run is over, the output directory shall contain predicted
     structures of the target protein. Please check the documentation below for
     additional options and troubleshooting tips.
@@ -99,23 +109,10 @@ will download parameters for:
 *   5 AlphaFold-Multimer models that produce pTM and PAE values alongside their
     structure predictions.
 
-## Running AlphaFold
+# Running AlphaFold
 
 For the moment only basic capabilities are implemented.
 
-To run Alphafold2, modify this command ( meant to run the test )
-
-```
-	docker run -it --rm --name=af2_msa \
-	-v $(PWD):/app/alphafold \
-	-v $(PWD)/test:/app/data \
-	-v $(PWD)/params:/app/alphafold/alphafold/data/params/ \
-	af2_msa:alpha \
-	python3 /app/alphafold/run_alphafold.py \
-	--precomputed_msa /app/data/PF02518_seed.fasta \
-	--output_dir /app/data/output \
-	--data_dir /app/data/data
-```
 ### Running AlphaFold-Multimer
 AlphaFold-Multimer is not yet supported
 
