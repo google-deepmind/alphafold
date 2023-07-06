@@ -22,68 +22,34 @@ ARG CUDA
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-        build-essential \
-        cmake \
-        cuda-command-line-tools-$(cut -f1,2 -d- <<< ${CUDA//./-}) \
-        git \
-        hmmer \
-        kalign \
-        tzdata \
-        wget \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get autoremove -y \
-    && apt-get clean
+  && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+  git \
+  wget \
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get autoremove -y \
+  && apt-get clean
 
-# Compile HHsuite from source.
-RUN git clone --branch v3.3.0 https://github.com/soedinglab/hh-suite.git /tmp/hh-suite \
-    && mkdir /tmp/hh-suite/build \
-    && pushd /tmp/hh-suite/build \
-    && cmake -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
-    && make -j 4 && make install \
-    && ln -s /opt/hhsuite/bin/* /usr/bin \
-    && popd \
-    && rm -rf /tmp/hh-suite
+RUN wget -qO- https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+RUN mv bin/micromamba /usr/local/bin/
 
-# Install Miniconda package manager.
-RUN wget -q -P /tmp \
-  https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
-    && rm /tmp/Miniconda3-latest-Linux-x86_64.sh
+COPY . /app/alphafold_MSA
 
-# Install conda packages.
-ENV PATH="/opt/conda/bin:$PATH"
-RUN conda install -qy conda==4.13.0 \
-    && conda install -y -c conda-forge \
-      openmm=7.7.0 \
-      cudatoolkit==${CUDA_VERSION} \
-      pdbfixer \
-      pip \
-      python=3.8 \
-      && conda clean --all --force-pkgs-dirs --yes
+RUN micromamba create --prefix /app/env/condaenv  -y -c conda-forge \
+  openmm=7.7.0 \
+  cudatoolkit \
+  pdbfixer \
+  pip \
+  python=3.8 && \
+  micromamba run -p /app/env/condaenv pip3  install -r /app/alphafold_MSA/requirements.txt --no-cache-dir &&\
+  micromamba run -p /app/env/condaenv pip3  install --upgrade --no-cache-dir  \
+  jax==0.3.25  \
+  jaxlib==0.3.25+cuda11.cudnn805  \
+  -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html  &&   \
+  micromamba install  -p /app/env/condaenv  -y   -c nvidia cuda-nvcc=12.1 &&   \
+  micromamba clean --all --force-pkgs-dirs --yes
 
-COPY . /app/alphafold
-RUN wget -q -P /app/alphafold/alphafold/common/ \
+RUN cp /app/env/condaenv/bin/ptxas /usr/local/bin/
+
+RUN wget -q -P /app/alphafold_MSA/alphafold/common/ \
   https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 
-# Install pip packages.
-RUN pip3 install --upgrade pip --no-cache-dir \
-    && pip3 install -r /app/alphafold/requirements.txt --no-cache-dir \
-    && pip3 install --upgrade --no-cache-dir \
-      jax==0.3.25 \
-      jaxlib==0.3.25+cuda11.cudnn805 \
-      -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-
-# Add SETUID bit to the ldconfig binary so that non-root users can run it.
-RUN chmod u+s /sbin/ldconfig.real
-
-# We need to run `ldconfig` first to ensure GPUs are visible, due to some quirk
-# with Debian. See https://github.com/NVIDIA/nvidia-docker/issues/1399 for
-# details.
-# ENTRYPOINT does not support easily running multiple commands, so instead we
-# write a shell script to wrap them up.
-WORKDIR /app/alphafold
-RUN echo $'#!/bin/bash\n\
-ldconfig\n\
-python /app/alphafold/run_alphafold.py "$@"' > /app/run_alphafold.sh \
-  && chmod +x /app/run_alphafold.sh

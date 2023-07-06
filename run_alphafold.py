@@ -150,7 +150,7 @@ def _save_pae_json_file(
 
 def predict_structure(
     precomputed_msa: str,
-    output_dir_base : str,
+    output_dir : str,
     data_pipeline: Union[pipeline.DataPipeline, pipeline_multimer.DataPipeline],
     model_type_to_use = ModelType.MONOMER,
     multimer_model_max_num_recycles = 3,
@@ -160,8 +160,6 @@ def predict_structure(
   """Predicts structure using AlphaFold for the given sequence."""
   logging.info('Predicting %s', precomputed_msa)
   timings = {}
-  msa_name = os.path.basename(precomputed_msa)
-  output_dir = os.path.join(output_dir_base, msa_name)
   if not os.path.exists(output_dir):
     os.makedirs(output_dir)
   
@@ -307,7 +305,7 @@ def main(argv):
   # Predict structure for each of the sequences.
   predict_structure(
       precomputed_msa=FLAGS.precomputed_msa,
-      output_dir_base=FLAGS.output_dir,
+      output_dir=FLAGS.output_dir,
       data_pipeline=data_pipeline,
 )
 
