@@ -22,31 +22,33 @@ ARG CUDA
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
-        git \
-        wget \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get autoremove -y \
-    && apt-get clean
+  && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+  git \
+  wget \
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get autoremove -y \
+  && apt-get clean
 
 RUN wget -qO- https://micromamba.snakepit.net/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
 RUN mv bin/micromamba /usr/local/bin/
 
-WORKDIR /app
+COPY . /app/alphafold_MSA
 
-RUN git clone https://github.com/oteri/alphafold_MSA.git
-WORKDIR alphafold_MSA
-RUN micromamba create --prefix /app/env/condaenv  -y -c conda-forge openmm=7.7.0 cudatoolkit pdbfixer pip python=3.8
-RUN micromamba run -p /app/env/condaenv pip3  install -r requirements.txt --no-cache-dir
-RUN micromamba run -p /app/env/condaenv pip3  install --upgrade --no-cache-dir  \
+RUN micromamba create --prefix /app/env/condaenv  -y -c conda-forge \
+  openmm=7.7.0 \
+  cudatoolkit \
+  pdbfixer \
+  pip \
+  python=3.8 && \
+  micromamba run -p /app/env/condaenv pip3  install -r /app/alphafold_MSA/requirements.txt --no-cache-dir &&\
+  micromamba run -p /app/env/condaenv pip3  install --upgrade --no-cache-dir  \
   jax==0.3.25  \
   jaxlib==0.3.25+cuda11.cudnn805  \
-  -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+  -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html  &&   \
+  micromamba install  -p /app/env/condaenv  -y   -c nvidia cuda-nvcc=12.1 &&   \
+  micromamba clean --all --force-pkgs-dirs --yes
 
-RUN micromamba install  -p /app/env/condaenv  -y   -c nvidia cuda-nvcc=12.1
 RUN cp /app/env/condaenv/bin/ptxas /usr/local/bin/
-
-RUN micromamba clean --all --force-pkgs-dirs --yes
 
 RUN wget -q -P /app/alphafold_MSA/alphafold/common/ \
   https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
