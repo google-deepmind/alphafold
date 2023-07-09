@@ -308,7 +308,7 @@ def main(argv):
   predict_structure(
       precomputed_msa=FLAGS.precomputed_msa,
       output_dir=FLAGS.output_dir,
-      params_root=FLAGS.params_root_dir
+      params_root=FLAGS.params_root_dir,
       data_pipeline=data_pipeline,
 )
 
