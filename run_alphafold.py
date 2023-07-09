@@ -59,7 +59,8 @@ class ModelType(enum.Enum):
 
 flags.DEFINE_string('precomputed_msa', None, 'MSA to use for this run')
 
-flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
+flags.DEFINE_string('params_root_dir', None, 'Path containing the params directory.'
+                    'The models data must be inside params dir.')
 flags.DEFINE_string('output_dir', None, 'Path to a directory that will '
                     'store the results.')
 flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
@@ -314,7 +315,7 @@ if __name__ == '__main__':
   flags.mark_flags_as_required([
       'precomputed_msa',
       'output_dir',
-      'data_dir',
+      'params_root_dir',
   ])
 
   app.run(main)
