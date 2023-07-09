@@ -152,6 +152,7 @@ def _save_pae_json_file(
 def predict_structure(
     precomputed_msa: str,
     output_dir : str,
+    params_root: str,
     data_pipeline: Union[pipeline.DataPipeline, pipeline_multimer.DataPipeline],
     model_type_to_use = ModelType.MONOMER,
     multimer_model_max_num_recycles = 3,
@@ -200,7 +201,7 @@ def predict_structure(
         cfg.model.num_recycle = multimer_model_max_num_recycles
         cfg.model.recycle_early_stop_tolerance = 0.5
 
-      params = data.get_model_haiku_params(model_name, './alphafold/data')
+      params = data.get_model_haiku_params(model_name, params_root)
       model_runner = model.RunModel(cfg, params)
       processed_feature_dict = model_runner.process_features(np_example, random_seed=0)
       prediction = model_runner.predict(processed_feature_dict, random_seed=random.randrange(sys.maxsize))
@@ -307,6 +308,7 @@ def main(argv):
   predict_structure(
       precomputed_msa=FLAGS.precomputed_msa,
       output_dir=FLAGS.output_dir,
+      params_root=FLAGS.params_root_dir
       data_pipeline=data_pipeline,
 )
 
