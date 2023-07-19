@@ -53,13 +53,13 @@ RUN wget -q -P /tmp \
 
 # Install conda packages.
 ENV PATH="/opt/conda/bin:$PATH"
-RUN conda install -qy conda==4.13.0 \
+RUN conda install -qy conda==23.5.2 \
     && conda install -y -c conda-forge \
       openmm=7.7.0 \
       cudatoolkit==${CUDA_VERSION} \
       pdbfixer \
       pip \
-      python=3.8 \
+      python=3.10 \
       && conda clean --all --force-pkgs-dirs --yes
 
 COPY . /app/alphafold
