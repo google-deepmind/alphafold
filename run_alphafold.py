@@ -98,15 +98,6 @@ RELAX_EXCLUDE_RESIDUES = []
 RELAX_MAX_OUTER_ITERATIONS = 3
 
 
-def _check_flag(flag_name: str,
-                other_flag_name: str,
-                should_be_set: bool):
-  if should_be_set != bool(FLAGS[flag_name].value):
-    verb = 'be' if should_be_set else 'not be'
-    raise ValueError(f'{flag_name} must {verb} set when running with '
-                     f'"--{other_flag_name}={FLAGS[other_flag_name].value}".')
-
-
 def _jnp_to_np(output: Dict[str, Any]) -> Dict[str, Any]:
   """Recursively changes jax arrays to numpy arrays."""
   for k, v in output.items():
