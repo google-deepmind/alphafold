@@ -59,7 +59,8 @@ class ModelType(enum.Enum):
 
 flags.DEFINE_string('precomputed_msa', None, 'MSA to use for this run')
 
-flags.DEFINE_string('data_dir', None, 'Path to directory of supporting data.')
+flags.DEFINE_string('params_root_dir', None, 'Path containing the params directory.'
+                    'The models data must be inside params dir.')
 flags.DEFINE_string('output_dir', None, 'Path to a directory that will '
                     'store the results.')
 flags.DEFINE_integer('random_seed', None, 'The random seed for the data '
@@ -95,15 +96,6 @@ RELAX_ENERGY_TOLERANCE = 2.39
 RELAX_STIFFNESS = 10.0
 RELAX_EXCLUDE_RESIDUES = []
 RELAX_MAX_OUTER_ITERATIONS = 3
-
-
-def _check_flag(flag_name: str,
-                other_flag_name: str,
-                should_be_set: bool):
-  if should_be_set != bool(FLAGS[flag_name].value):
-    verb = 'be' if should_be_set else 'not be'
-    raise ValueError(f'{flag_name} must {verb} set when running with '
-                     f'"--{other_flag_name}={FLAGS[other_flag_name].value}".')
 
 
 def _jnp_to_np(output: Dict[str, Any]) -> Dict[str, Any]:
@@ -151,6 +143,7 @@ def _save_pae_json_file(
 def predict_structure(
     precomputed_msa: str,
     output_dir : str,
+    params_root: str,
     data_pipeline: Union[pipeline.DataPipeline, pipeline_multimer.DataPipeline],
     model_type_to_use = ModelType.MONOMER,
     multimer_model_max_num_recycles = 3,
@@ -199,7 +192,7 @@ def predict_structure(
         cfg.model.num_recycle = multimer_model_max_num_recycles
         cfg.model.recycle_early_stop_tolerance = 0.5
 
-      params = data.get_model_haiku_params(model_name, './alphafold/data')
+      params = data.get_model_haiku_params(model_name, params_root)
       model_runner = model.RunModel(cfg, params)
       processed_feature_dict = model_runner.process_features(np_example, random_seed=0)
       prediction = model_runner.predict(processed_feature_dict, random_seed=random.randrange(sys.maxsize))
@@ -306,6 +299,7 @@ def main(argv):
   predict_structure(
       precomputed_msa=FLAGS.precomputed_msa,
       output_dir=FLAGS.output_dir,
+      params_root=FLAGS.params_root_dir,
       data_pipeline=data_pipeline,
 )
 
@@ -314,7 +308,7 @@ if __name__ == '__main__':
   flags.mark_flags_as_required([
       'precomputed_msa',
       'output_dir',
-      'data_dir',
+      'params_root_dir',
   ])
 
   app.run(main)

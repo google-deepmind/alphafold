@@ -34,21 +34,21 @@ RUN mv bin/micromamba /usr/local/bin/
 
 COPY . /app/alphafold_MSA
 
-RUN micromamba create --prefix /app/env/condaenv  -y -c conda-forge \
+RUN micromamba create --prefix /app/env/  -y -c conda-forge \
   openmm=7.7.0 \
   cudatoolkit \
   pdbfixer \
   pip \
   python=3.8 && \
-  micromamba run -p /app/env/condaenv pip3  install -r /app/alphafold_MSA/requirements.txt --no-cache-dir &&\
-  micromamba run -p /app/env/condaenv pip3  install --upgrade --no-cache-dir  \
+  micromamba run -p /app/env/ pip3  install -r /app/alphafold_MSA/requirements.txt --no-cache-dir &&\
+  micromamba run -p /app/env/ pip3  install --upgrade --no-cache-dir  \
   jax==0.3.25  \
   jaxlib==0.3.25+cuda11.cudnn805  \
   -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html  &&   \
-  micromamba install  -p /app/env/condaenv  -y   -c nvidia cuda-nvcc=12.1 &&   \
+  micromamba install  -p /app/env/  -y   -c nvidia cuda-nvcc=12.1 &&   \
   micromamba clean --all --force-pkgs-dirs --yes
 
-RUN cp /app/env/condaenv/bin/ptxas /usr/local/bin/
+RUN cp /app/env//bin/ptxas /usr/local/bin/
 
 RUN wget -q -P /app/alphafold_MSA/alphafold/common/ \
   https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
