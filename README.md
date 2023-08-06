@@ -20,9 +20,9 @@ Please follow these steps:
 
 1.  Clone this repository and `cd` into it.
 
-    ```bash
-    git clone https://github.com/oteri/alphafold_serverless.git
-    cd ./alphafold
+    ```bash    
+    git https://github.com/oteri/alphafold_MSA.git
+    cd alphafold
     ```
 
 1.  Download model parameters:
