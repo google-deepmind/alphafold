@@ -81,7 +81,7 @@ To run Alphafold2, modify this command ( meant to run the test )
 	python3 /app/alphafold/run_alphafold.py \
 	--precomputed_msa /app/data/PF02518_seed.fasta \
 	--output_dir /app/data/output \
-	--data_dir /app/data/data
+        --params_root_dir /app/data/data/
 ```
 
 1.  Once the run is over, the output directory shall contain predicted
@@ -112,9 +112,6 @@ will download parameters for:
 # Running AlphaFold
 
 For the moment only basic capabilities are implemented.
-
-### Running AlphaFold-Multimer
-AlphaFold-Multimer is not yet supported
 
 ### AlphaFold output
 
