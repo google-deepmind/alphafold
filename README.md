@@ -21,7 +21,7 @@ Please follow these steps:
 1.  Clone this repository and `cd` into it.
 
     ```bash    
-    git https://github.com/oteri/alphafold_MSA.git
+    git clone https://github.com/oteri/alphafold_MSA.git
     cd alphafold
     ```
 
