@@ -22,11 +22,12 @@ import random
 import shutil
 import sys
 import time
-from typing import Any, Dict, Mapping, Union, Optional
+from typing import Any, Dict, Union, Optional
 
 from absl import app
 from absl import flags
 from absl import logging
+from alphafold.common import confidence
 from alphafold.common import protein
 from alphafold.common import residue_constants
 from alphafold.data import pipeline
@@ -199,6 +200,63 @@ def _jnp_to_np(output: Dict[str, Any]) -> Dict[str, Any]:
   return output
 
 
+def _save_confidence_json_file(
+    plddt: np.ndarray, output_dir: str, model_name: str
+) -> None:
+  confidence_json = confidence.confidence_json(plddt)
+
+  # Save the confidence json.
+  confidence_json_output_path = os.path.join(
+      output_dir, f'confidence_{model_name}.json'
+  )
+  with open(confidence_json_output_path, 'w') as f:
+    f.write(confidence_json)
+
+
+def _save_mmcif_file(
+    prot: protein.Protein,
+    output_dir: str,
+    model_name: str,
+    file_id: str,
+    model_type: str,
+) -> None:
+  """Crate mmCIF string and save to a file.
+
+  Args:
+    prot: Protein object.
+    output_dir: Directory to which files are saved.
+    model_name: Name of a model.
+    file_id: The file ID (usually the PDB ID) to be used in the mmCIF.
+    model_type: Monomer or multimer.
+  """
+
+  mmcif_string = protein.to_mmcif(prot, file_id, model_type)
+
+  # Save the MMCIF.
+  mmcif_output_path = os.path.join(output_dir, f'{model_name}.cif')
+  with open(mmcif_output_path, 'w') as f:
+    f.write(mmcif_string)
+
+
+def _save_pae_json_file(
+    pae: np.ndarray, max_pae: float, output_dir: str, model_name: str
+) -> None:
+  """Check prediction result for PAE data and save to a JSON file if present.
+
+  Args:
+    pae: The n_res x n_res PAE array.
+    max_pae: The maximum possible PAE value.
+    output_dir: Directory to which files are saved.
+    model_name: Name of a model.
+  """
+  pae_json = confidence.pae_json(pae, max_pae)
+
+  # Save the PAE json.
+  pae_json_output_path = os.path.join(output_dir, f'pae_{model_name}.json')
+  with open(pae_json_output_path, 'w') as f:
+    f.write(pae_json)
+
+
 def predict_structure(
     fasta_path: str,
     fasta_name: str,
@@ -209,12 +267,14 @@ def predict_structure(
     benchmark: bool,
     random_seed: int,
     models_to_relax: ModelsToRelax,
+    model_type: str,
     externally_matched_species_dict_basename: Optional[str] = None,
     many_to_some_species_to_pair_basename: Optional[str] = None,
     confidences_externally_matched_species_basename: Optional[str] = None,
     min_confidence: float = 0.,
     match_only_orthologs: bool = False,
-    stop_at_etl: bool = False):
+    stop_at_etl: bool = False
+):
   """Predicts structure using AlphaFold for the given sequence."""
   logging.info('Predicting %s', fasta_name)
   timings = {}
@@ -305,7 +365,16 @@ def predict_structure(
           model_name, fasta_name, t_diff)
 
     plddt = prediction_result['plddt']
+    _save_confidence_json_file(plddt, output_dir, model_name)
     ranking_confidences[model_name] = prediction_result['ranking_confidence']
+
+    if (
+        'predicted_aligned_error' in prediction_result
+        and 'max_predicted_aligned_error' in prediction_result
+    ):
+      pae = prediction_result['predicted_aligned_error']
+      max_pae = prediction_result['max_predicted_aligned_error']
+      _save_pae_json_file(pae, float(max_pae), output_dir, model_name)
 
     # Remove jax dependency from results.
     np_prediction_result = _jnp_to_np(dict(prediction_result))
@@ -330,6 +399,14 @@ def predict_structure(
     unrelaxed_pdb_path = os.path.join(output_dir, f'unrelaxed_{model_name}.pdb')
     with open(unrelaxed_pdb_path, 'w') as f:
       f.write(unrelaxed_pdbs[model_name])
+
+    _save_mmcif_file(
+        prot=unrelaxed_protein,
+        output_dir=output_dir,
+        model_name=f'unrelaxed_{model_name}',
+        file_id=str(model_index),
+        model_type=model_type,
+    )
 
   # Rank by model confidence.
   ranked_order = [
@@ -362,6 +439,15 @@ def predict_structure(
     with open(relaxed_output_path, 'w') as f:
       f.write(relaxed_pdb_str)
 
+    relaxed_protein = protein.from_pdb_string(relaxed_pdb_str)
+    _save_mmcif_file(
+        prot=relaxed_protein,
+        output_dir=output_dir,
+        model_name=f'relaxed_{model_name}',
+        file_id='0',
+        model_type=model_type,
+    )
+
   # Write out relaxed PDBs in rank order.
   for idx, model_name in enumerate(ranked_order):
     ranked_output_path = os.path.join(output_dir, f'ranked_{idx}.pdb')
@@ -370,6 +456,19 @@ def predict_structure(
         f.write(relaxed_pdbs[model_name])
       else:
         f.write(unrelaxed_pdbs[model_name])
+
+    if model_name in relaxed_pdbs:
+      protein_instance = protein.from_pdb_string(relaxed_pdbs[model_name])
+    else:
+      protein_instance = protein.from_pdb_string(unrelaxed_pdbs[model_name])
+
+    _save_mmcif_file(
+        prot=protein_instance,
+        output_dir=output_dir,
+        model_name=f'ranked_{idx}',
+        file_id=str(idx),
+        model_type=model_type,
+    )
 
   ranking_output_path = os.path.join(output_dir, 'ranking_debug.json')
   with open(ranking_output_path, 'w') as f:
@@ -410,6 +509,7 @@ def main(argv):
               should_be_set=not use_small_bfd)
 
   run_multimer_system = 'multimer' in FLAGS.model_preset
+  model_type = 'Multimer' if run_multimer_system else 'Monomer'
   _check_flag('pdb70_database_path', 'model_preset',
               should_be_set=not run_multimer_system)
   _check_flag('pdb_seqres_database_path', 'model_preset',
@@ -529,12 +629,14 @@ def main(argv):
         benchmark=FLAGS.benchmark,
         random_seed=random_seed,
         models_to_relax=FLAGS.models_to_relax,
+        model_type=model_type,
         externally_matched_species_dict_basename=FLAGS.externally_matched_species_dict_basename,
         many_to_some_species_to_pair_basename=FLAGS.many_to_some_species_to_pair_basename,
         confidences_externally_matched_species_basename=FLAGS.confidences_externally_matched_species_basename,
         min_confidence=FLAGS.min_confidence,
         match_only_orthologs=FLAGS.match_only_orthologs,
-        stop_at_etl=FLAGS.stop_at_etl)
+        stop_at_etl=FLAGS.stop_at_etl
+    )
 
 
 if __name__ == '__main__':

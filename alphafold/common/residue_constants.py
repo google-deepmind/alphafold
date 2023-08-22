@@ -17,7 +17,7 @@
 import collections
 import functools
 import os
-from typing import List, Mapping, Tuple
+from typing import Final, List, Mapping, Tuple
 
 import numpy as np
 import tree
@@ -498,6 +498,7 @@ atom_types = [
 atom_order = {atom_type: i for i, atom_type in enumerate(atom_types)}
 atom_type_num = len(atom_types)  # := 37.
 
+
 # A compact atom encoding with 14 columns
 # pylint: disable=line-too-long
 # pylint: disable=bad-whitespace
@@ -608,6 +609,35 @@ restype_1to3 = {
     'Y': 'TYR',
     'V': 'VAL',
 }
+
+PROTEIN_CHAIN: Final[str] = 'polypeptide(L)'
+POLYMER_CHAIN: Final[str] = 'polymer'
+
+
+def atom_id_to_type(atom_id: str) -> str:
+  """Convert atom ID to atom type, works only for standard protein residues.
+
+  Args:
+    atom_id: Atom ID to be converted.
+
+  Returns:
+    String corresponding to atom type.
+
+  Raises:
+    ValueError: If atom ID not recognized.
+  """
+
+  if atom_id.startswith('C'):
+    return 'C'
+  elif atom_id.startswith('N'):
+    return 'N'
+  elif atom_id.startswith('O'):
+    return 'O'
+  elif atom_id.startswith('H'):
+    return 'H'
+  elif atom_id.startswith('S'):
+    return 'S'
+  raise ValueError('Atom ID not recognized.')
 
 
 # NB: restype_3to1 differs from Bio.PDB.protein_letters_3to1 by being a simple

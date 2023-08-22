@@ -53,13 +53,13 @@ RUN wget -q -P /tmp \
 
 # Install conda packages.
 ENV PATH="/opt/conda/bin:$PATH"
-RUN conda install -qy conda==4.13.0 \
+RUN conda install -qy conda==23.5.2 \
     && conda install -y -c conda-forge \
-      openmm=7.5.1 \
+      openmm=7.7.0 \
       cudatoolkit==${CUDA_VERSION} \
       pdbfixer \
       pip \
-      python=3.8 \
+      python=3.10 \
       && conda clean --all --force-pkgs-dirs --yes
 
 COPY . /app/alphafold
@@ -73,10 +73,6 @@ RUN pip3 install --upgrade pip --no-cache-dir \
       jax==0.3.25 \
       jaxlib==0.3.25+cuda11.cudnn805 \
       -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-
-# Apply OpenMM patch.
-WORKDIR /opt/conda/lib/python3.8/site-packages
-RUN patch -p0 < /app/alphafold/docker/openmm.patch
 
 # Add SETUID bit to the ldconfig binary so that non-root users can run it.
 RUN chmod u+s /sbin/ldconfig.real

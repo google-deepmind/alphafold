@@ -184,12 +184,17 @@ class NotebookUtilsTest(parameterized.TestCase):
         [np.array([], dtype=templates.TEMPLATE_FEATURES[feat_name]).dtype
          for feat_name in template_features])
 
-  def test_get_pae_json(self):
-    pae = np.array([[0.01, 13.12345], [20.0987, 0.0]])
-    pae_json = notebook_utils.get_pae_json(pae=pae, max_pae=31.75)
-    self.assertEqual(
-        pae_json, '[{"predicted_aligned_error":[[0.0,13.1],[20.1,0.0]],'
-        '"max_predicted_aligned_error":31.75}]')
+  def test_check_cell_execution_order_correct(self):
+    notebook_utils.check_cell_execution_order({1, 2}, 3)
+
+  @parameterized.named_parameters(
+      ('One missing', 4, {1, 2}, '3'),
+      ('Two missing', 5, {1, 2}, '3, 4'),
+  )
+  def test_check_cell_execution_order_missing(
+      self, cell_num, cells_ran, cells_missing):
+    with self.assertRaisesRegex(ValueError, f'.+{cells_missing}'):
+      notebook_utils.check_cell_execution_order(cells_ran, cell_num)
 
 
 if __name__ == '__main__':
