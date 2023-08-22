@@ -175,7 +175,7 @@ def main(argv):
 
   # Path to the BFD database for use by HHblits.
   bfd_database_path = os.path.join(
-      '/data2/common/af_data', 'bfd',
+      FLAGS.data_dir, 'bfd',
       'bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt')
 
   # Path to the Small BFD database for use by JackHMMER.
