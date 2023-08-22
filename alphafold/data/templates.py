@@ -981,7 +981,8 @@ class HmmsearchHitFeaturizer(TemplateHitFeaturizer):
       else:
         already_seen_key = result.features['template_sequence']
         if already_seen_key in already_seen:
-          continue
+          logging.info("Found identical template sequence: %s", already_seen_key)
+
         # Increment the hit counter, since we got features out of this hit.
         already_seen.add(already_seen_key)
         for k in template_features:
