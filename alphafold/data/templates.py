@@ -176,8 +176,8 @@ def _assess_hhsearch_hit(
     query_sequence: str,
     release_dates: Mapping[str, datetime.datetime],
     release_date_cutoff: datetime.datetime,
-    max_subsequence_ratio: float = 0.95,
-    min_align_ratio: float = 0.1) -> bool:
+    max_subsequence_ratio: float = 1.05,
+    min_align_ratio: float = 0.01) -> bool:
   """Determines if template is valid (without parsing the template mmcif file).
 
   Args:
@@ -981,7 +981,7 @@ class HmmsearchHitFeaturizer(TemplateHitFeaturizer):
       else:
         already_seen_key = result.features['template_sequence']
         if already_seen_key in already_seen:
-          continue
+          logging.info("Found identical template sequence: %s", already_seen_key)
         # Increment the hit counter, since we got features out of this hit.
         already_seen.add(already_seen_key)
         for k in template_features:
