@@ -15,9 +15,7 @@
 """Pairing logic for multimer data pipeline."""
 
 import collections
-import functools
-import string
-from typing import Any, Dict, Iterable, List, Sequence
+from typing import Dict, Iterable, List, Sequence
 
 from alphafold.common import residue_constants
 from alphafold.data import pipeline
