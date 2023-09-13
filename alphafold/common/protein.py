@@ -363,6 +363,7 @@ def to_mmcif(
     prot: Protein,
     file_id: str,
     model_type: str,
+    chain_id: Optional[str] = None
 ) -> str:
   """Converts a `Protein` instance to an mmCIF string.
 
@@ -384,7 +385,7 @@ def to_mmcif(
     Protein object (e.g. all fields except for the _atom_site loop).
 
   WARNING 3: Converting ground truth mmCIF file to Protein and then back to
-    mmCIF using this method will not retain the original chain indices.
+    mmCIF using this method will not retain the original chain indices. (Unless chain id is provided)
 
   WARNING 4: In case of multiple identical chains, they are assigned different
     `_atom_site.label_entity_id` values.
@@ -407,12 +408,18 @@ def to_mmcif(
   residue_index = prot.residue_index.astype(np.int32)
   chain_index = prot.chain_index.astype(np.int32)
   b_factors = prot.b_factors
-
+  truemultimer = False
+  if chain_id is not None:
+    truemultimer = True
   # Construct a mapping from chain integer indices to chain ID strings.
   chain_ids = {}
   # We count unknown residues as protein residues.
   for entity_id in np.unique(chain_index):  # np.unique gives sorted output.
     chain_ids[entity_id] = _int_id_to_str_id(entity_id + 1)
+  if truemultimer: # TrueMultimer: If chain id is provided, we use it instead of the generated one
+    entity_id = ord(chain_id.upper()) - 64
+    chain_index = np.ones_like(chain_index) * entity_id # we have only 1 chain!
+    chain_ids = {entity_id: chain_id}  # Mapping 0 to the provided chain_id
 
   mmcif_dict = collections.defaultdict(list)
 
@@ -439,6 +446,8 @@ def to_mmcif(
       aatype, residue_index, chain_index
   ).items():
     for res_id, aa in zip(res_ids, aas):
+      if truemultimer and aa == 20: # don't save UNK residues in case of TrueMultimer
+        continue
       mmcif_dict['_entity_poly_seq.entity_id'].append(str(entity_id))
       mmcif_dict['_entity_poly_seq.num'].append(str(res_id))
       mmcif_dict['_entity_poly_seq.mon_id'].append(
