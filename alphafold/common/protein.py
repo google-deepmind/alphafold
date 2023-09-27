@@ -363,7 +363,9 @@ def to_mmcif(
     prot: Protein,
     file_id: str,
     model_type: str,
-    chain_id: Optional[str] = None
+    chain_id: Optional[str] = None,
+    sequence: Optional[str] = None,
+    atom_to_seqres_mapping: Optional[np.ndarray] = None,
 ) -> str:
   """Converts a `Protein` instance to an mmCIF string.
 
@@ -408,18 +410,15 @@ def to_mmcif(
   residue_index = prot.residue_index.astype(np.int32)
   chain_index = prot.chain_index.astype(np.int32)
   b_factors = prot.b_factors
-  truemultimer = False
-  if chain_id is not None:
-    truemultimer = True
   # Construct a mapping from chain integer indices to chain ID strings.
   chain_ids = {}
   # We count unknown residues as protein residues.
   for entity_id in np.unique(chain_index):  # np.unique gives sorted output.
     chain_ids[entity_id] = _int_id_to_str_id(entity_id + 1)
-  if truemultimer: # TrueMultimer: If chain id is provided, we use it instead of the generated one
+  if chain_id is not None: # TrueMultimer
     entity_id = ord(chain_id.upper()) - 64
     chain_index = np.ones_like(chain_index) * entity_id # we have only 1 chain!
-    chain_ids = {entity_id: chain_id}  # Mapping 0 to the provided chain_id
+    chain_ids = {entity_id: chain_id}
 
   mmcif_dict = collections.defaultdict(list)
 
@@ -441,18 +440,30 @@ def to_mmcif(
     mmcif_dict['_entity.id'].append(str(entity_id))
     mmcif_dict['_entity.type'].append(residue_constants.POLYMER_CHAIN)
 
-  # Add the residues to the _entity_poly_seq table.
-  for entity_id, (res_ids, aas) in _get_entity_poly_seq(
-      aatype, residue_index, chain_index
-  ).items():
-    for res_id, aa in zip(res_ids, aas):
-      if truemultimer and aa == 20: # don't save UNK residues in case of TrueMultimer
-        continue
-      mmcif_dict['_entity_poly_seq.entity_id'].append(str(entity_id))
-      mmcif_dict['_entity_poly_seq.num'].append(str(res_id))
-      mmcif_dict['_entity_poly_seq.mon_id'].append(
+  # Save SEQRES directly if provided (TrueMultimer)
+  if sequence:
+    entity_poly_seq_dict = collections.defaultdict(list)
+    for i, aa in enumerate(sequence, start=1):
+      restype_idx = residue_constants.restype_order.get(aa, residue_constants.restype_num)
+      res_id = i
+      entity_id = ord(chain_id.upper()) - 64
+      entity_poly_seq_dict['_entity_poly_seq.entity_id'].append(str(entity_id))
+      entity_poly_seq_dict['_entity_poly_seq.num'].append(str(res_id))
+      entity_poly_seq_dict['_entity_poly_seq.mon_id'].append(residue_constants.resnames[restype_idx])
+    mmcif_dict['_entity_poly_seq.entity_id'] = entity_poly_seq_dict['_entity_poly_seq.entity_id']
+    mmcif_dict['_entity_poly_seq.num'] = entity_poly_seq_dict['_entity_poly_seq.num']
+    mmcif_dict['_entity_poly_seq.mon_id'] = entity_poly_seq_dict['_entity_poly_seq.mon_id']
+  else:
+    # Add the residues to the _entity_poly_seq table.
+    for entity_id, (res_ids, aas) in _get_entity_poly_seq(
+            aatype, residue_index, chain_index
+    ).items():
+      for res_id, aa in zip(res_ids, aas):
+        mmcif_dict['_entity_poly_seq.entity_id'].append(str(entity_id))
+        mmcif_dict['_entity_poly_seq.num'].append(str(res_id))
+        mmcif_dict['_entity_poly_seq.mon_id'].append(
           residue_constants.resnames[aa]
-      )
+        )
 
   # Populate the chem comp table.
   for chem_type, chem_comp in _CHEM_COMP.items():
@@ -488,7 +499,8 @@ def to_mmcif(
       mmcif_dict['_atom_site.label_entity_id'].append(
           label_asym_id_to_entity_id[chain_ids[chain_index[i]]]
       )
-      mmcif_dict['_atom_site.label_seq_id'].append(str(residue_index[i]))
+      if atom_to_seqres_mapping is None:
+        mmcif_dict['_atom_site.label_seq_id'].append(str(residue_index[i]))
       mmcif_dict['_atom_site.pdbx_PDB_ins_code'].append('.')
       mmcif_dict['_atom_site.Cartn_x'].append(f'{pos[0]:.3f}')
       mmcif_dict['_atom_site.Cartn_y'].append(f'{pos[1]:.3f}')
@@ -500,7 +512,8 @@ def to_mmcif(
       mmcif_dict['_atom_site.pdbx_PDB_model_num'].append('1')
 
       atom_index += 1
-
+  if atom_to_seqres_mapping is not None: #TrueMultimer
+    mmcif_dict['_atom_site.label_seq_id'] = atom_to_seqres_mapping
   metadata_dict = mmcif_metadata.add_metadata_to_mmcif(mmcif_dict, model_type)
   mmcif_dict.update(metadata_dict)
 
