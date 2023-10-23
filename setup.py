@@ -43,7 +43,7 @@ setup(
         'numpy',
         'pandas',
         'scipy',
-        'tensorflow-cpu',
+        # 'tensorflow-cpu',  # BigHat: Removed so we can handle tensorflow-cpu, tensorflow, and tensorflow-macos ourselves.
     ],
     tests_require=[
         'matplotlib',  # For notebook_utils_test.
