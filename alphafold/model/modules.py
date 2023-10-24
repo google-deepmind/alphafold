@@ -290,7 +290,8 @@ class AlphaFold(hk.Module):
       is_training,
       compute_loss=False,
       ensemble_representations=False,
-      return_representations=False):
+      return_representations=False,
+      initial_guess=None):
     """Run the AlphaFold model.
 
     Arguments:
@@ -326,7 +327,8 @@ class AlphaFold(hk.Module):
 
     def do_call(prev,
                 recycle_idx,
-                compute_loss=compute_loss):
+                compute_loss=compute_loss,
+                initial_guess=None):
       if self.config.resample_msa_in_recycling:
         num_ensemble = batch_size // (self.config.num_recycle + 1)
         def slice_recycle_idx(x):
@@ -357,6 +359,10 @@ class AlphaFold(hk.Module):
           [num_residues, emb_config.msa_channel])
       prev['prev_pair'] = jnp.zeros(
           [num_residues, num_residues, emb_config.pair_channel])
+    if emb_config.initial_guess:
+        prev['prev_pos'] = jnp.zeros(
+            [num_residues, residue_constants.atom_type_num, 3])
+        prev['prev_pos'] += initial_guess
 
     if self.config.num_recycle:
       if 'num_iter_recycling' in batch:
@@ -374,7 +380,7 @@ class AlphaFold(hk.Module):
 
       body = lambda x: (x[0] + 1,  # pylint: disable=g-long-lambda
                         get_prev(do_call(x[1], recycle_idx=x[0],
-                                         compute_loss=False)))
+                                         compute_loss=False, initial_guess=initial_guess)))
       if hk.running_init():
         # When initializing the Haiku module, run one iteration of the
         # while_loop to initialize the Haiku modules used in `body`.

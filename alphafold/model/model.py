@@ -78,13 +78,14 @@ class RunModel:
             batch,
             is_training=False)
     else:
-      def _forward_fn(batch):
+      def _forward_fn(batch, initial_guess=None):
         model = modules.AlphaFold(self.config.model)
         return model(
             batch,
             is_training=False,
             compute_loss=False,
-            ensemble_representations=True)
+            ensemble_representations=True,
+            initial_guess=initial_guess)
 
     self.apply = jax.jit(hk.transform(_forward_fn).apply)
     self.init = jax.jit(hk.transform(_forward_fn).init)
