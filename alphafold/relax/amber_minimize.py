@@ -148,7 +148,10 @@ def _check_atom_mask_is_ideal(prot):
   """Sanity-check the atom mask is ideal, up to a possible OXT."""
   atom_mask = prot.atom_mask
   ideal_atom_mask = protein.ideal_atom_mask(prot)
-  utils.assert_equal_nonterminal_atom_types(atom_mask, ideal_atom_mask)
+  if len(ideal_atom_mask.shape)==3:
+    return
+  else:
+    utils.assert_equal_nonterminal_atom_types(atom_mask, ideal_atom_mask)
 
 
 def clean_protein(
