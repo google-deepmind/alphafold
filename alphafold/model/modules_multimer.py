@@ -693,10 +693,9 @@ class EmbeddingsAndEvoformer(hk.Module):
         # computed, since all templates are for each chain individually.
         if 'multichain_mask' in batch:
           multichain_mask = batch['multichain_mask']
-          print(f"Modeling using multimeric template: {multichain_mask.shape}")
         else:
             multichain_mask = batch['asym_id'][:, None] == batch['asym_id'][None, :]
-            print("Modeling without multimeric template")
+            
         safe_key, safe_subkey = safe_key.split()
         template_act = template_module(
             query_embedding=pair_activations,
