@@ -255,6 +255,7 @@ class DataPipeline:
           use_precomputed_msas=self.use_precomputed_msas)
       custom_msa = parsers.parse_a3m(custom_msa_result['a3m'])
       msa_features = make_msa_features((custom_msa,), self.uniprot_to_ncbi)
+      logging.info('Using custom MSA from %s and ignoring the precomputed MSAs.', new_msa_out_path)
     else:
       msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa), self.uniprot_to_ncbi)
 
