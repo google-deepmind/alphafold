@@ -176,7 +176,12 @@ class DataPipeline:
                uniprot_database_path: str,
                uniprot_to_ncbi: dict,
                max_uniprot_hits: int = 50000,
-               use_precomputed_msas: bool = False):
+               use_precomputed_msas: bool = False,
+               externally_matched_species_dict_path: Optional[str] = None,
+               many_to_some_species_to_pair_path: Optional[str] = None,
+               confidences_externally_matched_species_path: Optional[str] = None,
+               min_confidence: float = 0.,
+               match_only_orthologs: bool = False):
     """Initializes the data pipeline.
 
     Args:
@@ -195,6 +200,11 @@ class DataPipeline:
     self._max_uniprot_hits = max_uniprot_hits
     self.use_precomputed_msas = use_precomputed_msas
     self.uniprot_to_ncbi = uniprot_to_ncbi
+    self.externally_matched_species_dict_path = externally_matched_species_dict_path
+    self.many_to_some_species_to_pair_path = many_to_some_species_to_pair_path
+    self.confidences_externally_matched_species_path = confidences_externally_matched_species_path
+    self.min_confidence = min_confidence
+    self.match_only_orthologs = match_only_orthologs
 
   def _process_single_chain(
       self,
@@ -241,12 +251,7 @@ class DataPipeline:
 
   def process(self,
               input_fasta_path: str,
-              msa_output_dir: str,
-              externally_matched_species_dict_path: Optional[str] = None,
-              many_to_some_species_to_pair_path: Optional[str] = None,
-              confidences_externally_matched_species_path: Optional[str] = None,
-              min_confidence: float = 0.,
-              match_only_orthologs: bool = False) -> pipeline.FeatureDict:
+              msa_output_dir: str) -> pipeline.FeatureDict:
     """Runs alignment tools on the input sequences and creates features."""
     with open(input_fasta_path) as f:
       input_fasta_str = f.read()
@@ -285,11 +290,11 @@ class DataPipeline:
     np_example = feature_processing.pair_and_merge(
         all_chain_features=all_chain_features,
         msa_output_dir=msa_output_dir,
-        externally_matched_species_dict_path=externally_matched_species_dict_path,
-        many_to_some_species_to_pair_path=many_to_some_species_to_pair_path,
-        confidences_externally_matched_species_path=confidences_externally_matched_species_path,
-        min_confidence=min_confidence,
-        match_only_orthologs=match_only_orthologs)
+        externally_matched_species_dict_path=self.externally_matched_species_dict_path,
+        many_to_some_species_to_pair_path=self.many_to_some_species_to_pair_path,
+        confidences_externally_matched_species_path=self.confidences_externally_matched_species_path,
+        min_confidence=self.min_confidence,
+        match_only_orthologs=self.match_only_orthologs)
 
     # Pad MSA to avoid zero-sized extra_msa.
     np_example = pad_msa(np_example, 512)

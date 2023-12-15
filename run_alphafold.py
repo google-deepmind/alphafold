@@ -268,11 +268,6 @@ def predict_structure(
     random_seed: int,
     models_to_relax: ModelsToRelax,
     model_type: str,
-    externally_matched_species_dict_basename: Optional[str] = None,
-    many_to_some_species_to_pair_basename: Optional[str] = None,
-    confidences_externally_matched_species_basename: Optional[str] = None,
-    min_confidence: float = 0.,
-    match_only_orthologs: bool = False,
     stop_at_etl: bool = False
 ):
   """Predicts structure using AlphaFold for the given sequence."""
@@ -285,37 +280,11 @@ def predict_structure(
   if not os.path.exists(msa_output_dir):
     os.makedirs(msa_output_dir)
 
-  if externally_matched_species_dict_basename:
-    externally_matched_species_dict_path = os.path.join(
-      msa_output_dir,
-      externally_matched_species_dict_basename)
-  else:
-    externally_matched_species_dict_path = None
-
-  if many_to_some_species_to_pair_basename:
-    many_to_some_species_to_pair_path = os.path.join(
-      msa_output_dir,
-      many_to_some_species_to_pair_basename)
-  else:
-    many_to_some_species_to_pair_path = None
-
-  if confidences_externally_matched_species_basename:
-    confidences_externally_matched_species_path = os.path.join(
-      msa_output_dir,
-      confidences_externally_matched_species_basename)
-  else:
-    confidences_externally_matched_species_path = None
-
   # Get features.
   t_0 = time.time()
   feature_dict = data_pipeline.process(
       input_fasta_path=fasta_path,
-      msa_output_dir=msa_output_dir,
-      externally_matched_species_dict_path=externally_matched_species_dict_path,
-      many_to_some_species_to_pair_path=many_to_some_species_to_pair_path,
-      confidences_externally_matched_species_path=confidences_externally_matched_species_path,
-      min_confidence=min_confidence,
-      match_only_orthologs=match_only_orthologs)
+      msa_output_dir=msa_output_dir)
   timings['features'] = time.time() - t_0
 
   # Write out features as a pickled dictionary.
@@ -567,12 +536,39 @@ def main(argv):
 
   if run_multimer_system:
     num_predictions_per_model = FLAGS.num_multimer_predictions_per_model
+
+    if FLAGS.externally_matched_species_dict_basename:
+      externally_matched_species_dict_path = os.path.join(
+        msa_output_dir,
+        externally_matched_species_dict_basename)
+    else:
+      externally_matched_species_dict_path = None
+
+    if FLAGS.many_to_some_species_to_pair_basename:
+      many_to_some_species_to_pair_path = os.path.join(
+        msa_output_dir,
+        many_to_some_species_to_pair_basename)
+    else:
+      many_to_some_species_to_pair_path = None
+
+    if FLAGS.confidences_externally_matched_species_basename:
+      confidences_externally_matched_species_path = os.path.join(
+        msa_output_dir,
+        confidences_externally_matched_species_basename)
+    else:
+      confidences_externally_matched_species_path = None
+
     data_pipeline = pipeline_multimer.DataPipeline(
         monomer_data_pipeline=monomer_data_pipeline,
         jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
         uniprot_database_path=FLAGS.uniprot_database_path,
         uniprot_to_ncbi=uniprot_to_ncbi,
-        use_precomputed_msas=FLAGS.use_precomputed_msas)
+        use_precomputed_msas=FLAGS.use_precomputed_msas,
+        externally_matched_species_dict_path=externally_matched_species_dict_path,
+        many_to_some_species_to_pair_path=many_to_some_species_to_pair_path,
+        confidences_externally_matched_species_path=confidences_externally_matched_species_path,
+        min_confidence=FLAGS.min_confidence,
+        match_only_orthologs=FLAGS.match_only_orthologs)
   else:
     num_predictions_per_model = 1
     data_pipeline = monomer_data_pipeline
@@ -587,7 +583,7 @@ def main(argv):
       model_config.data.eval.num_ensemble = num_ensemble
     model_config.model.num_recycle = FLAGS.num_recycle
     if not run_multimer_system:
-      model_config.data.num_recycle = FLAGS.num_recycle
+      model_config.data.common.num_recycle = FLAGS.num_recycle
     else:
       model_config.model.recycle_early_stop_tolerance = FLAGS.recycle_early_stop_tolerance
     model_params = data.get_model_haiku_params(
@@ -630,11 +626,6 @@ def main(argv):
         random_seed=random_seed,
         models_to_relax=FLAGS.models_to_relax,
         model_type=model_type,
-        externally_matched_species_dict_basename=FLAGS.externally_matched_species_dict_basename,
-        many_to_some_species_to_pair_basename=FLAGS.many_to_some_species_to_pair_basename,
-        confidences_externally_matched_species_basename=FLAGS.confidences_externally_matched_species_basename,
-        min_confidence=FLAGS.min_confidence,
-        match_only_orthologs=FLAGS.match_only_orthologs,
         stop_at_etl=FLAGS.stop_at_etl
     )
 
