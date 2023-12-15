@@ -170,6 +170,10 @@ flags.DEFINE_integer('num_recycle', 20,
                      'Number of recycles.')
 flags.DEFINE_float('recycle_early_stop_tolerance', 0.5,
                    'Tolerance for early stopping during recycling.')
+flags.DEFINE_string('custom_msa_out_path', '', 'Name of the custom MSA file to use. '
+                     'WARNING: This will work only when use_precomputed_msas '
+                     'is True and will use only this MSA, not the precomputed ones.'
+                    'It should be in the same folder of the other precomputed MSAs.')
 
 FLAGS = flags.FLAGS
 
@@ -532,7 +536,8 @@ def main(argv):
       template_searcher=template_searcher,
       template_featurizer=template_featurizer,
       use_small_bfd=use_small_bfd,
-      use_precomputed_msas=FLAGS.use_precomputed_msas)
+      use_precomputed_msas=FLAGS.use_precomputed_msas,
+      custom_msa_out_path=FLAGS.custom_msa_out_path)
 
   if run_multimer_system:
     num_predictions_per_model = FLAGS.num_multimer_predictions_per_model

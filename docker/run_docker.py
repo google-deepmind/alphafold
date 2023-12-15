@@ -128,6 +128,10 @@ flags.DEFINE_integer(
 flags.DEFINE_float(
   'recycle_early_stop_tolerance', 0.5,
   'Tolerance for early stopping during recycling.')
+flags.DEFINE_string('custom_msa_out_path', '', 'Name of the custom MSA file to use. '
+                     'WARNING: This will work only when use_precomputed_msas '
+                     'is True and will use only this MSA, not the precomputed ones.'
+                    'It should be in the same folder of the other precomputed MSAs.')
 
 FLAGS = flags.FLAGS
 
@@ -275,6 +279,7 @@ def main(argv):
       f'--num_recycle={FLAGS.num_recycle}',
       f'--recycle_early_stop_tolerance={FLAGS.recycle_early_stop_tolerance}',
       '--logtostderr',
+      f'--custom_msa_out_path={FLAGS.custom_msa_out_path}',
   ])
 
   client = docker.from_env()

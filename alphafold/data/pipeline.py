@@ -129,7 +129,8 @@ class DataPipeline:
                use_small_bfd: bool,
                mgnify_max_hits: int = 501,
                uniref_max_hits: int = 10000,
-               use_precomputed_msas: bool = False):
+               use_precomputed_msas: bool = False,
+               custom_msa_out_path: str = None):
     """Initializes the data pipeline."""
     self._use_small_bfd = use_small_bfd
     self.jackhmmer_uniref90_runner = jackhmmer.Jackhmmer(
@@ -151,6 +152,7 @@ class DataPipeline:
     self.mgnify_max_hits = mgnify_max_hits
     self.uniref_max_hits = uniref_max_hits
     self.use_precomputed_msas = use_precomputed_msas
+    self.custom_msa_out_path = custom_msa_out_path
     self.uniprot_to_ncbi = uniprot_to_ncbi
 
   def process(self, input_fasta_path: str, msa_output_dir: str) -> FeatureDict:
@@ -240,7 +242,21 @@ class DataPipeline:
         description=input_description,
         num_res=num_res)
 
-    msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa), self.uniprot_to_ncbi)
+    # If custom_msa_out_path is set, use only that as the MSA
+    if self.custom_msa_out_path:
+      if not self.use_precomputed_msas:
+        raise ValueError('use_precomputed_msas must be True to use custom_msas')
+      new_msa_out_path=os.path.join(msa_output_dir, self.custom_msa_out_path)
+      custom_msa_result = run_msa_tool(
+          msa_runner=self.hhblits_bfd_uniref_runner,
+          input_fasta_path=input_fasta_path,
+          msa_out_path=new_msa_out_path,
+          msa_format='a3m',
+          use_precomputed_msas=self.use_precomputed_msas)
+      custom_msa = parsers.parse_a3m(custom_msa_result['a3m'])
+      msa_features = make_msa_features((custom_msa,), self.uniprot_to_ncbi)
+    else:
+      msa_features = make_msa_features((uniref90_msa, bfd_msa, mgnify_msa), self.uniprot_to_ncbi)
 
     logging.info('Uniref90 MSA size: %d sequences.', len(uniref90_msa))
     logging.info('BFD MSA size: %d sequences.', len(bfd_msa))
