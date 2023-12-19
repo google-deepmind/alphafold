@@ -184,10 +184,11 @@ class DataPipeline:
         use_precomputed_msas=self.use_precomputed_msas,
         max_sto_sequences=self.mgnify_max_hits)
 
-    msa_for_templates = jackhmmer_uniref90_result['sto']
-    msa_for_templates = parsers.deduplicate_stockholm_msa(msa_for_templates)
-    msa_for_templates = parsers.remove_empty_columns_from_stockholm_msa(
-        msa_for_templates)
+    if not self.custom_msa_out_path:
+      msa_for_templates = jackhmmer_uniref90_result['sto']
+      msa_for_templates = parsers.deduplicate_stockholm_msa(msa_for_templates)
+      msa_for_templates = parsers.remove_empty_columns_from_stockholm_msa(
+          msa_for_templates)
 
     _max_template_date = self.template_featurizer._max_template_date
     # If max_template_date is before start of the PDB, skip this step
