@@ -53,10 +53,10 @@ source /miniconda/etc/profile.d/conda.sh
 envname=alphafold
 if ! $(conda info --envs | grep -q $envname); then
     conda init
-    conda create -y -c conda-forge -n $envname python=3.11
+    conda create -y -c conda-forge -n $envname python=3.10  # do not use greater than 3.10, required by openmm 
 fi
 conda activate $envname
-conda install -y -c conda-forge -n $envname openmm pdbfixer
+conda install -y -c conda-forge -n $envname openmm=7.7.0 pdbfixer cudatoolkit
 conda clean --all --force-pkgs-dirs --yes
 
 
@@ -80,3 +80,6 @@ pip install --upgrade --no-cache-dir jax==0.4.10 jaxlib==0.4.10+cuda12.cudnn88 \
 
 # downgrade ml_dtypes 
 pip install --no-cache-dir ml_dtypes==0.2.0
+
+# install alphafold -e 
+pip install -e $BASE
