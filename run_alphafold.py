@@ -250,8 +250,9 @@ def predict_structure(
   msa_output_dir = os.path.join(output_dir, 'msas')
   if not os.path.exists(msa_output_dir):
     os.makedirs(msa_output_dir)
-
-  # Get features.
+  
+  # Block: Prepare feature_dict 
+  # ----------------------------------------------------------------------------
   t_0 = time.time()
   feature_dict = data_pipeline.process(
       input_fasta_path=fasta_path,
@@ -262,7 +263,10 @@ def predict_structure(
   features_output_path = os.path.join(output_dir, 'features.pkl')
   with open(features_output_path, 'wb') as f:
     pickle.dump(feature_dict, f, protocol=4)
+  # END Block: Prepare feature_dict --------------------------------------------
 
+  # Block: Run models -> un-relaxed models
+  # ----------------------------------------------------------------------------
   unrelaxed_pdbs = {}
   unrelaxed_proteins = {}
   relaxed_pdbs = {}
@@ -271,8 +275,7 @@ def predict_structure(
 
   # Run the models.
   num_models = len(model_runners)
-  for model_index, (model_name, model_runner) in enumerate(
-      model_runners.items()):
+  for model_index, (model_name, model_runner) in enumerate(model_runners.items()):
     logging.info('Running model %s on %s', model_name, fasta_name)
     t_0 = time.time()
     model_random_seed = model_index + random_seed * num_models
@@ -347,7 +350,11 @@ def predict_structure(
   ranked_order = [
       model_name for model_name, confidence in
       sorted(ranking_confidences.items(), key=lambda x: x[1], reverse=True)]
+  # END Block: Run models -> un-relaxed models ---------------------------------
+  
 
+  # Block: Relax models
+  # ------------------------------------------------------------------------------
   # Relax predictions.
   if models_to_relax == ModelsToRelax.BEST:
     to_relax = [ranked_order[0]]
@@ -382,7 +389,7 @@ def predict_structure(
         file_id='0',
         model_type=model_type,
     )
-
+  
   # Write out relaxed PDBs in rank order.
   for idx, model_name in enumerate(ranked_order):
     ranked_output_path = os.path.join(output_dir, f'ranked_{idx}.pdb')
@@ -404,6 +411,7 @@ def predict_structure(
         file_id=str(idx),
         model_type=model_type,
     )
+  # END Block: Relax models  ---------------------------------------------------
 
   ranking_output_path = os.path.join(output_dir, 'ranking_debug.json')
   with open(ranking_output_path, 'w') as f:
