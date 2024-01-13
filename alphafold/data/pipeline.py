@@ -89,7 +89,8 @@ def run_msa_tool(msa_runner, input_fasta_path: str, msa_out_path: str,
                  max_sto_sequences: Optional[int] = None
                  ) -> Mapping[str, Any]:
   """Runs an MSA tool, checking if output already exists first."""
-  if not use_precomputed_msas or not os.path.exists(msa_out_path):
+  # if not use_precomputed_msas or not os.path.exists(msa_out_path):
+  if not os.path.exists(msa_out_path):
     if msa_format == 'sto' and max_sto_sequences is not None:
       result = msa_runner.query(input_fasta_path, max_sto_sequences)[0]  # pytype: disable=wrong-arg-count
     else:
@@ -218,7 +219,7 @@ class DataPipeline:
           msa_out_path=bfd_out_path,
           msa_format='a3m',
           use_precomputed_msas=self.use_precomputed_msas)
-      bfd_msa = parsers.parse_a3m(hhblits_bfd_uniref_result['a3m'])
+      bfd_msa = parsers.parse_a3m(hhblits_bfd_uniref_result['a3m'])  # this is simply read the a3m file as string 
 
     templates_result = self.template_featurizer.get_templates(
         query_sequence=input_sequence,
