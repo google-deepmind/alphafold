@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 experiments
 dev
+.vscode/PythonImportHelper-v2-Completion.json
