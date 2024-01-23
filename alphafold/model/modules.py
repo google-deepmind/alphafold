@@ -1004,7 +1004,7 @@ class MaskedMsaHead(hk.Module):
     Returns:
       Dictionary containing:
         * 'logits': logits of shape [N_seq, N_res, N_aatype] with
-            (unnormalized) log probabilies of predicted aatype at position.
+            (unnormalized) log probabilities of predicted aatype at position.
     """
     del batch
     logits = common_modules.Linear(
@@ -1048,7 +1048,7 @@ class PredictedLDDTHead(hk.Module):
     Returns:
       Dictionary containing :
         * 'logits': logits of shape [N_res, N_bins] with
-            (unnormalized) log probabilies of binned predicted lDDT.
+            (unnormalized) log probabilities of binned predicted lDDT.
     """
     act = representations['structure_module']
 
