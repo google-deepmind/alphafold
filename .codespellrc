@@ -2,5 +2,6 @@
 [codespell]
 skip = .git,.codespellrc
 check-hidden = true
-ignore-regex = ^\s*"image/\S+": ".*
-# ignore-words-list =
+# ignore images in ipynb and acronyms
+ignore-regex = (^\s*"image/\S+": ".*|\b[A-Z]+\b)
+ignore-words-list = aas
