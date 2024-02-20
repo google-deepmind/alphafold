@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG CUDA=11.1.1
-FROM nvidia/cuda:${CUDA}-cudnn8-runtime-ubuntu18.04
+ARG CUDA=11.8.0
+FROM nvidia/cuda:${CUDA}-cudnn8-devel-ubuntu22.04
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
 ARG CUDA
@@ -71,8 +71,8 @@ RUN wget -q -P /app/alphafold/alphafold/common/ \
 RUN pip3 install --upgrade pip --no-cache-dir \
     && pip3 install -r /app/alphafold/requirements.txt --no-cache-dir \
     && pip3 install --upgrade --no-cache-dir \
-      jax==0.3.25 \
-      jaxlib==0.3.25+cuda11.cudnn805 \
+      jax==0.4.23 \
+      jaxlib==0.4.23+cuda11.cudnn86 \
       -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
 # Add SETUID bit to the ldconfig binary so that non-root users can run it.
