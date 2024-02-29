@@ -192,7 +192,7 @@ def _save_mmcif_file(
     file_id: str,
     model_type: str,
 ) -> None:
-  """Crate mmCIF string and save to a file.
+  """Create mmCIF string and save to a file.
 
   Args:
     prot: Protein object.

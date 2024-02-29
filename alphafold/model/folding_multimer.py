@@ -138,7 +138,7 @@ class QuatRigid(hk.Module):
 
 
 class PointProjection(hk.Module):
-  """Given input reprensentation and frame produces points in global frame."""
+  """Given input representation and frame produces points in global frame."""
 
   def __init__(self,
                num_points: Union[Iterable[int], int],
