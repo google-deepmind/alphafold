@@ -328,7 +328,7 @@ class AlphaFold(hk.Module):
                 recycle_idx,
                 compute_loss=compute_loss):
       if self.config.resample_msa_in_recycling:
-        num_ensemble = batch_size // (self.config.num_recycle + 1)
+        num_ensemble = batch_size
         def slice_recycle_idx(x):
           start = recycle_idx * num_ensemble
           size = num_ensemble
