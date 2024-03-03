@@ -64,11 +64,9 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh
 # Copy alphafold
 # ------------------------------------------------------------------------------
 RUN mkdir -p /home/vscode/alphafold/
-COPY alphafold docker noteboooks scripts requirements.txt \
-    run_alphafold_msa.py run_alphafold.py setup.py \
-    /home/vscode/alphafold/
-# RUN wget -q -P /app/alphafold/alphafold/common/ \
-#   https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+COPY --chown=vscode:vscode ./ /home/vscode/alphafold/
+RUN wget -q -P /home/vscode/alphafold/alphafold/common/ \
+  https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 
 # ------------------------------------------------------------------------------
 # End of base image
