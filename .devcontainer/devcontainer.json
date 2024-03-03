@@ -34,8 +34,9 @@
         "source=/mnt/Data/AbDb/abdb_newdata_20220926,target=/AbDb,type=bind",
        // Add any extra bind mounts here
        "source=/mnt/Data/wwPDB,target=/wwPDB,type=bind",
-       "source=/mnt/bob/alphafold,target=/alphafold,type=bind",
-       "source=/mnt/bob/alphafold,target=/mnt/bob/alphafold,type=bind",
+       "source=/mnt/stuart/dataset/alphafold,target=/alphafold,type=bind",
+       "source=/mnt/stuart/dataset/alphafold,target=/mnt/bob/alphafold,type=bind",
+       "source=/mnt/kevin/projects/josephine,target=/workspaces/alphafold/josephine,type=bind",
     ],
     "remoteUser": "vscode",
     "overrideCommand": false,
