@@ -64,7 +64,16 @@ RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh
 # Copy alphafold
 # ------------------------------------------------------------------------------
 RUN mkdir -p /home/vscode/alphafold/
-COPY --chown=vscode:vscode ./ /home/vscode/alphafold/
+COPY --chown=vscode:vscode ./.devcontainer /home/vscode/alphafold/.devcontainer
+COPY --chown=vscode:vscode ./alphafold /home/vscode/alphafold/alphafold
+COPY --chown=vscode:vscode ./cmds /home/vscode/alphafold/cmds
+COPY --chown=vscode:vscode ./docker /home/vscode/alphafold/docker
+COPY --chown=vscode:vscode ./docs /home/vscode/alphafold/docs
+COPY --chown=vscode:vscode ./scripts /home/vscode/alphafold/scripts
+COPY --chown=vscode:vscode ./LICENSE ./README.md ./requirements.txt \
+    ./run_alphafold_msa.py ./run_alphafold.py ./setup.py \
+    /home/vscode/alphafold/
+
 RUN wget -q -P /home/vscode/alphafold/alphafold/common/ \
   https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 
@@ -72,3 +81,5 @@ RUN wget -q -P /home/vscode/alphafold/alphafold/common/ \
 # End of base image
 # ------------------------------------------------------------------------------
 WORKDIR /home/vscode
+
+ENTRYPOINT [ "zsh" ]
