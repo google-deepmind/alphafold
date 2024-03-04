@@ -69,7 +69,7 @@ docker run --name $containerName \
     --network none \
     -itd \
     -v $AF2MDATA:/mnt/data/alphafold \
-    -v $HOSTOUTDIR:/home/vscode/out \
+    -v $hostOUTDIR:/home/vscode/out \
     chunan/alphafold2.3:base
 
 # # example exec for computing MSAs
