@@ -81,12 +81,3 @@ pip install -e $BASE
 conda clean -a -y && \
 pip cache purge && \
 sudo apt autoremove -y
-
-# init zsh
-conda init zsh
-
-# activate alphafold environment by default
-echo "conda activate alphafold" >> $HOME/.zshrc
-
-# source zsh
-source $HOME/.zshrc
