@@ -85,14 +85,6 @@ if [ -z "$FASTA" ]; then
     usage
 fi
 
-# Assert $OUTDIR/$fastaName/features.pkl exists
-fastaName=$(basename ${FASTA%.fasta})
-if [ ! -f $OUTDIR/$fastaName/features.pkl ]; then
-    echo "ERROR: $OUTDIR/$fastaName/features.pkl does not exist"
-    echo "Please run run-af2m-msa.sh first to compute MSAs and features first."
-    exit 1
-fi
-
 
 # ------------------------------------------------------------------------------
 # MAIN
