@@ -1,0 +1,2 @@
+requests==2.31.0
+google-cloud-compute==1.18.0

@@ -14,7 +14,7 @@ env:
   TERRAFORM_WORKING_DIR: ./terraform/insmed-dev/
   TERRAFORM_VERSION: latest
   VM_NAME_PREFIX: vm-compbio
-  DOCKER_WORKING_DIR: ./docker
+  DOCKER_WORKING_DIR: ./test
 jobs:
   # Build and Push docker image
   build-push-artifact:
