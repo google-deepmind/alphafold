@@ -14,6 +14,7 @@ env:
   TERRAFORM_WORKING_DIR: ./terraform/insmed-dev/
   TERRAFORM_VERSION: latest
   VM_NAME_PREFIX: vm-compbio
+  DOCKER_WORKING_DIR: ./docker
 jobs:
   # Build and Push docker image
   build-push-artifact:
@@ -42,7 +43,7 @@ jobs:
           
       - name: Build image
         run: docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-        working-directory: ./test
+        working-directory: ${{ env.DOCKER_WORKING_DIR }}
 
       - name: Push image
         run: docker push ${{ env.GAR_LOCATION }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
