@@ -1,0 +1,94 @@
+name: Build and Push to Artifact Registry
+
+on:
+  push:
+    branches: ["main"]
+  # pull_request:
+  #   branches: ["main"]
+
+env:
+  PROJECT_ID: quantiphi-sandox-env
+  REGION: us-central1
+  GAR_LOCATION: us-central1-docker.pkg.dev/quantiphi-sandox-env/docker-repo
+  IMAGE_NAME: test
+  TERRAFORM_WORKING_DIR: ./terraform/insmed-dev/
+  TERRAFORM_VERSION: latest
+  VM_NAME_PREFIX: vm-compbio
+jobs:
+  # Build and Push docker image
+  build-push-artifact:
+  # Allow job to fetch a Github ID token
+    permissions:
+      id-token: write
+      contents: read
+      pages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout"
+        uses: "actions/checkout@v4"
+
+      - id: 'auth'
+        name: 'Authenticate to GoogleCloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          create_credentials_file: true
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER}}
+          service_account: ${{secrets.SERVICE_ACCOUNT_EMAIL }}
+
+      - name: "Docker auth"
+        run: |-
+          gcloud auth login --brief --cred-file="${{ steps.auth.outputs.credentials_file_path }}"
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+          
+      - name: Build image
+        run: docker build . --file Dockerfile --tag ${{ env.GAR_LOCATION }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        working-directory: ./test
+
+      - name: Push image
+        run: docker push ${{ env.GAR_LOCATION }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Set outputs
+        id: sha_short
+        run: |
+            echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+            echo "vm_name=${{env.VM_NAME_PREFIX}}-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+            terraform_version: 1.7.4
+            terraform_wrapper: false
+      
+      - name: Terraform init
+        run: |
+          cd ${{ env.TERRAFORM_WORKING_DIR }}
+          terraform init
+      
+      - name: Terraform validate
+        run: |
+            cd ${{ env.TERRAFORM_WORKING_DIR }}
+            terraform validate
+
+      - name: Terraform plan
+        run: |
+          cd ${{ env.TERRAFORM_WORKING_DIR }}
+          sed -i 's/VM_NAME/${{steps.sha_short.outputs.vm_name}}/g' terraform.tfvars
+          terraform plan -out plan.out
+
+      - name: Terraform apply
+        id: tf_apply
+        run: |
+            cd ${{ env.TERRAFORM_WORKING_DIR }}
+            terraform apply plan.out
+            echo "connect_vm_cmd=$(terraform output -raw connect)" >> $GITHUB_OUTPUT
+            # $(terraform output -raw connect)
+
+      - name: SSH to VM
+        run: | 
+            cd ${{ env.TERRAFORM_WORKING_DIR }}
+            # terraform output
+            sleep 60
+            ${{steps.tf_apply.outputs.connect_vm_cmd}} --command="gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet && \
+            docker run -p 8081:80 -d ${{ env.GAR_LOCATION }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+            # gcloud compute ssh ${{steps.sha_short.outputs.vm_name}} --project=${{ env.PROJECT_ID }} --zone=us-central1-a --command="gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet && \
+            # docker run -p 8081:80 -d ${{ env.GAR_LOCATION }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
