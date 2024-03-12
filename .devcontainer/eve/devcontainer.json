@@ -10,16 +10,16 @@
     // Use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
     // This will use the Dockerfile in the .devcontainer folder if it exists.
     "build": {"dockerfile": "Dockerfile"},
-    
+
     // Set *default* container specific settings.json values on container create.
     "settings": {"terminal.integrated.defaultProfile.linux": "zsh"},
-    
+
     // Use 'forwardPorts' to make a list of ports inside the container to be made available on the local machine.
     "forwardPorts": [3000],
 
     // // Use 'postCreateCommand' to run commands after the container is created.
     // "updateContentCommand": "",
-    
+
     // Additional arguments passed to Docker when the container is created.
     // --gpus=all is required for for enabling CUDA GPU support.
     "runArgs": [
@@ -29,13 +29,13 @@
         "${localEnv:USER}_devcontainer_alphafold2.3",  // name of the container
         "--add-host=host.docker.internal:host-gateway",  // access the Docker daemon or other services on host
     ],
-    "mounts": [ 
+    "mounts": [
         "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind",
         // Add any extra bind mounts here
         "source=/mnt/bob/shared/AbDb/abdb_newdata_20220926,target=/AbDb,type=bind",
         "source=/mnt/bob/shared/wwPDB,target=/wwPDB,type=bind",
         "source=/mnt/bob/shared/alphafold,target=/alphafold,type=bind",
-        "source=/mnt/yotta_1/chunan/josephine,target=/workspaces/alphafold/josephine,type=bind",
+        "source=/mnt/yotta_1/chunan/josephine,target=/workspaces/alphafold/mount/josephine,type=bind",
     ],
     "remoteUser": "vscode",
     "overrideCommand": false,
@@ -48,19 +48,19 @@
         "XLA_FLAGS": "--xla_gpu_cuda_data_dir=/usr/local/cuda",
         // Using bind mounts when working with Docker inside the container
         // ref: https://github.com/microsoft/vscode-dev-containers/tree/main/containers/docker-from-docker#using-bind-mounts-when-working-with-docker-inside-the-container
-        // Then Reference the env var when running Docker commands from the terminal inside the container 
+        // Then Reference the env var when running Docker commands from the terminal inside the container
         // `docker run -it --rm -v "${LOCAL_WORKSPACE_FOLDER//\/\/}:/workspace" debian bash`
         "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}",
-        // access the MongoDB on host 
+        // access the MongoDB on host
         // 172.17.0.1 is the default gateway IP address of the devcontainer, make sure mongod allows access from this IP address
-        // on host machine, sudo vim /etc/mongod.conf, edit net section 
+        // on host machine, sudo vim /etc/mongod.conf, edit net section
         // net:
         //   port: 27017
         //   bindIp: 127.0.0.1,172.17.0.1
         "MONGODB_URI": "mongodb://host.docker.internal:27017",
     },
 
-    // Defines the action to take when VS Code is closed. 
+    // Defines the action to take when VS Code is closed.
     // "none" => the container will not automatically shut down when VS Code is closed.
     "shutdownAction": "none",
 }
