@@ -18,12 +18,14 @@ function usage() {
 
 function setGPUIndex() {
     if [ -z "$gpuIndex" ]; then
-        echo "No GPU specified, running without GPU access"
+        # echo "No GPU specified, running without GPU access"
+        echo ""
     elif [ "$gpuIndex" = "all" ]; then
-        echo "Using all GPUs"
+        echo "device=all"
     else
-        echo "Using GPU $gpuIndex"
-        gpuIndex="device=$gpuIndex"
+        # echo "Using GPU $gpuIndex"
+        # gpuIndex="device=$gpuIndex"
+        echo "device=$gpuIndex"
     fi
 }
 
@@ -77,13 +79,42 @@ echo "  gpuIndex     : $gpuIndex"
 echo "----------------------------------------"
 echo
 
-setGPUIndex
+gpuArg="$(setGPUIndex)"
 
 # Add --gpus option only if gpuIndex is not empty
-docker run --name $containerName \
-    ${gpuIndex:+--gpus $gpuIndex} \
-    --network none \
-    -itd \
-    -v $AF2MDATA:/mnt/data/alphafold \
-    -v $hostOUTDIR:/home/vscode/out \
-    chunan/alphafold2.3:base
+if [ -z "$gpuIndex" ]; then
+    docker run --name $containerName \
+        --network none \
+        -itd \
+        -v $AF2MDATA:/mnt/data/alphafold \
+        -v $hostOUTDIR:/home/vscode/out \
+        chunan/alphafold2.3:base
+else
+    docker run --name $containerName \
+        --gpus $gpuArg \
+        --network none \
+        -itd \
+        -v $AF2MDATA:/mnt/data/alphafold \
+        -v $hostOUTDIR:/home/vscode/out \
+        chunan/alphafold2.3:base
+fi
+
+# # example exec for computing MSAs
+# docker exec $containerName \
+#     zsh /home/vscode/alphafold/cmds/run-af2m-msa.sh \
+#     --fasta /home/vscode/out/agName/abName/abag.fasta \
+#     --outdir /home/vscode/out/agName/abName/ \
+#     --data /mnt/data/alphafold
+
+# # example exec for predicting structures
+# docker exec $containerName \
+#     zsh /home/vscode/alphafold/cmds/run-af2m-struct.sh \
+#     --fasta /home/vscode/out/agName/abName/abag.fasta \
+#     --outdir /home/vscode/out/agName/abName/ \
+#     --data /mnt/data/alphafold
+
+# NOTE:
+# The arguments for both steps are identical.
+# The only difference is the script name.
+# This is because predicting structure script makes use of the precomputed MSAs.
+# And the location of precomputed MSAs are determined by the input FASTA file name and output directory.
