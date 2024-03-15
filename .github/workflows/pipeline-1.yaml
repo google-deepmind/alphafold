@@ -93,3 +93,4 @@ jobs:
             docker run -p 8081:80 -d ${{ env.GAR_LOCATION }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
             # gcloud compute ssh ${{steps.sha_short.outputs.vm_name}} --project=${{ env.PROJECT_ID }} --zone=us-central1-a --command="gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet && \
             # docker run -p 8081:80 -d ${{ env.GAR_LOCATION }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+
