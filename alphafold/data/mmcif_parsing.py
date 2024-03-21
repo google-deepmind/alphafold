@@ -315,6 +315,7 @@ def _get_header(parsed_info: MmCIFDict) -> PdbHeader:
       try:
         raw_resolution = parsed_info[res_key][0]
         header['resolution'] = float(raw_resolution)
+        break
       except ValueError:
         logging.debug('Invalid resolution format: %s', parsed_info[res_key])
 
