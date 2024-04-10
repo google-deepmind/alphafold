@@ -163,7 +163,7 @@ def padding_consistent_rng(f):
     keys = grid_keys(key, shape)
     signature = (
         '()->()'
-        if isinstance(keys, jax.random.PRNGKeyArray)
+        if jax.dtypes.issubdtype(keys.dtype, jax.dtypes.prng_key)
         else '(2)->()'
     )
     return jnp.vectorize(
