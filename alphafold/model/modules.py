@@ -629,7 +629,6 @@ class Attention(hk.Module):
     # kernel
     q_len, k_len = q.shape[1], k.shape[1]
     kernel = functools.partial(self.flash_kernel, **self.global_config.flash) if (
-      ('use_flash_attention' in self.global_config) and 
       self.global_config.use_flash_attention and 
       q_len >= self.global_config.flash.block_q and 
       k_len >= self.global_config.flash.block_k) else self.reference_kernel
@@ -676,7 +675,7 @@ class Attention(hk.Module):
     _rowmax = lambda x: x.max(axis=-1)
     _rowsum = lambda x: x.sum(axis=-1)
     _diag = lambda x: x[:, None]
-    _dot = pl.dot
+    _dot = lambda a, b: pl.dot(a.astype(b.dtype), b) # matches dtype of second element, in dot(p,v) this pushes to use bfloat16
     _generate_1d_bounds_mask = lambda ref, start, block_size: lax.iota(jnp.int32, block_size)+start*block_size < ref.shape[0]
     # When head_dim < 16 pl.dot is not supported so we pad up
     _head_dim_mask = lambda ref: jax.lax.iota(jnp.int32, 16)<ref.shape[-1]
