@@ -560,7 +560,7 @@ class Attention(hk.Module):
       q_data: A tensor of queries, shape [batch_size, N_queries, q_channels].
       m_data: A tensor of memories from which the keys and values are
         projected, shape [batch_size, N_keys, m_channels].
-      mask: A mask for the attention, shape [batch_size, N_heads or 1, N_queries or 1, N_keys].
+      mask: A mask for the attention, shape [batch_size or 1, N_heads or 1, N_queries or 1, N_keys].
       nonbatched_bias: Shared bias, shape [N_heads, N_queries, N_keys].
 
     Returns:
@@ -803,8 +803,13 @@ class Attention(hk.Module):
     in_specs+= (None,) if (gate_values is None) else (
       pl.BlockSpec(lambda _, j, k: (j, 0, k, 0), (None, q_len, None, v_head_dim)), # bqh(c_v)
     )
+    # mask might be (b or 1, h or 1, q or 1, k) in shape, we deal with b and/or h broadcast here. 
+    # we deal with q broadcast in the kernel
     in_specs+= (None,) if (mask is None) else (
-      pl.BlockSpec(lambda _, j, k: (j, k if mask.shape[1]!=1 else 0, 0, 0), (None,  None,)+mask.shape[2:4]), # bhqk
+      pl.BlockSpec(lambda _, j, k: (
+        j if mask.shape[0]!=1 else 0,
+        k if mask.shape[1]!=1 else 0,
+        0, 0), (None,  None,)+mask.shape[2:4]), # bhqk
     )
     in_specs+= (None,) if (nonbatched_bias is None) else (
       pl.BlockSpec(lambda _, j, k: (k, 0, 0), (None, q_len, kv_len)), # hqk
