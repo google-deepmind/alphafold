@@ -831,6 +831,9 @@ class Attention(hk.Module):
         interpret=interpret,
         name="flash_attention",
     )(q, k, v, gate_values, mask, nonbatched_bias)
+    # NOTE: I found nans on an occassion with model_2_multimer_v3. This solved it.
+    # Leaving this callback in as should do no harm and later work out the change in MHLO
+    jax.debug.callback(lambda: None)
     return out
       
 class GlobalAttention(hk.Module):
