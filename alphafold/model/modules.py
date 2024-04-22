@@ -662,8 +662,8 @@ class Attention(hk.Module):
     mask_ref: jax.Array | None,
     logit_bias_ref: jax.Array | None,
     # Output arrays
-    o_ref: jax.Array,  
-    L_ref: jax.Array | None, 
+    o_ref: jax.Array,
+    L_ref: jax.Array | None,
     # Options
     block_q: int,
     block_k: int,
@@ -676,15 +676,25 @@ class Attention(hk.Module):
     _rowsum = lambda x: x.sum(axis=-1)
     _diag = lambda x: x[:, None]
     _dot = lambda a, b: pl.dot(a.astype(b.dtype), b) # matches dtype of second element, in dot(p,v) this pushes to use bfloat16
-    _generate_1d_bounds_mask = lambda ref, start, block_size: lax.iota(jnp.int32, block_size)+start*block_size < ref.shape[0]
+    _generate_1d_bounds_mask = lambda ref, start, block_size: lax.iota(jnp.int32, block_size)+start*block_size < ref.shape[0] if (ref.shape[0]%block_size!=0) else None
     # When head_dim < 16 pl.dot is not supported so we pad up
     _head_dim_mask = lambda ref: jax.lax.iota(jnp.int32, 16)<ref.shape[-1]
-    def _padding_load(ref, slice):
-      return pl.load(ref, (slice, pl.dslice(None))) if (ref.shape[-1]>=16) else \
-        pl.load(ref, (slice, pl.dslice(0,16)), mask=_head_dim_mask(ref)[None,:], other=0.)
-    def _padding_store(ref, slice, val, dim0_mask):
-      pl.store(ref, (slice, pl.dslice(None)), val, mask=dim0_mask[:,None]) if (ref.shape[-1]>=16) else \
-        pl.store(ref, (slice, pl.dslice(0,16)), val, mask=(dim0_mask[:,None] & _head_dim_mask(ref)[None,:]))
+    def _combine_masks(*masks: jax.Array | None):
+      # Combines a set of masks matching the dimension of the tensor to store. None for an all-True array
+      dims = set(range(len(masks)))
+      masks = [jnp.expand_dims(mask, tuple(dims-set({i}))) for i, mask in enumerate(masks) if mask is not None]
+      if (len(masks)==0): return None; # all None case - don't use a mask
+      mask = functools.reduce(lambda x, y: x & y, masks)
+      return mask
+    def _load_mask_kwargs(masks: tuple[jax.Array | None, ...], other=0.):
+      mask = _combine_masks(*masks)
+      return {'mask':mask, 'other':other} if (mask is not None) else {}
+    def _padding_load(ref, slice, dim0_mask=None):
+      return pl.load(ref, (slice, pl.dslice(None)), **_load_mask_kwargs((dim0_mask, None))) if (ref.shape[-1]>=16) else \
+        pl.load(ref, (slice, pl.dslice(0,16)), **_load_mask_kwargs((dim0_mask, _head_dim_mask(ref))))
+    def _padding_store(ref, slice, val, dim0_mask=None):
+      pl.store(ref, (slice, pl.dslice(None)), val, mask=_combine_masks(dim0_mask, None)) if (ref.shape[-1]>=16) else \
+        pl.store(ref, (slice, pl.dslice(0,16)), val, mask=_combine_masks(dim0_mask, _head_dim_mask(ref)))
 
     # m and l are updated during the kv loop.
     # o is the buffer where we accumulate the output on sram.
@@ -695,34 +705,35 @@ class Attention(hk.Module):
     # Grid loops over q
     start_q = pl.program_id(0)
     q_slice = pl.dslice(start_q * block_q, block_q)
-    q = _padding_load(q_ref, q_slice)
     q_bounds_mask = _generate_1d_bounds_mask(q_ref, start_q, block_q)
+    q = _padding_load(q_ref, q_slice, q_bounds_mask)
 
     # Here we only loop over blocks of kv to process entire seq_len, the loop over
     # blocks of q is carried out by the grid.
     def body(start_k, carry):
       o_prev, m_prev, l_prev = carry
       k_slice = pl.dslice(start_k * block_k, block_k)
+      kv_bounds_mask = _generate_1d_bounds_mask(k_ref, start_k, block_k)
 
-      k = _padding_load(k_ref, k_slice)
-      v = _padding_load(v_ref, k_slice)
+      k = _padding_load(k_ref, k_slice, kv_bounds_mask)
+      v = _padding_load(v_ref, k_slice, kv_bounds_mask)
       qk = pl.dot(q, k.T)   # (block_q, block_k)
 
       if (logit_bias_ref is not None):
-        logit_bias = pl.load(logit_bias_ref, (q_slice, k_slice))
+        logit_bias = pl.load(logit_bias_ref, (q_slice, k_slice),
+                             **_load_mask_kwargs((q_bounds_mask, kv_bounds_mask)))
         qk += logit_bias
 
       if (mask_ref is not None):
         kv_only_mask = (mask_ref.shape[0]==1)
-        mask = pl.load(mask_ref, (
-          pl.dslice(0,1) if kv_only_mask else q_slice, 
-          k_slice))
+        mask = pl.load(mask_ref, (pl.dslice(0,1) if kv_only_mask else q_slice, k_slice), 
+                       **_load_mask_kwargs((None if kv_only_mask else q_bounds_mask, kv_bounds_mask)))
         qk = jnp.where(mask, qk, _SOFTMAX_MASK)
 
       # boundary checks
-      kv_bounds_mask = _generate_1d_bounds_mask(k_ref, start_k, block_k)
-      bounds_mask = (q_bounds_mask[:,None] & kv_bounds_mask[None,:])
-      qk = jnp.where(bounds_mask, qk, _SOFTMAX_MASK)
+      bounds_mask = _combine_masks(q_bounds_mask, kv_bounds_mask)
+      if (bounds_mask is not None):
+        qk = jnp.where(bounds_mask, qk, _SOFTMAX_MASK)
       
       # Mapping of indexing to FlashAttention2 papers notation:
       # x_{i}^{j-1} = x_prev
@@ -740,7 +751,7 @@ class Attention(hk.Module):
     o, m, l = lax.fori_loop(0, n_blocks, body, (o_init, m_init, l_init))
 
     if (gate_values_ref is not None):
-      gate_values = _padding_load(gate_values_ref, q_slice)
+      gate_values = _padding_load(gate_values_ref, q_slice, q_bounds_mask)
       o *= gate_values
     
     o *= _diag(1./l)
@@ -831,9 +842,6 @@ class Attention(hk.Module):
         interpret=interpret,
         name="flash_attention",
     )(q, k, v, gate_values, mask, nonbatched_bias)
-    # NOTE: I found nans on an occassion with model_2_multimer_v3. This solved it.
-    # Leaving this callback in as should do no harm and later work out the change in MHLO
-    jax.debug.callback(lambda: None)
     return out
       
 class GlobalAttention(hk.Module):
