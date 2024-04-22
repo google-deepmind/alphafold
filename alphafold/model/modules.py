@@ -669,8 +669,8 @@ class Attention(hk.Module):
     block_k: int,
   ):
     # convenience functions to match syntax of FlashAttention2 forward pass (Algorithm 1) 
-    _log = jnp.log2
-    _exp = jnp.exp2
+    _log = jnp.log
+    _exp = jnp.exp
     _maximum = jnp.maximum
     _rowmax = lambda x: x.max(axis=-1)
     _rowsum = lambda x: x.sum(axis=-1)
