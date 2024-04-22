@@ -739,8 +739,7 @@ class Attention(hk.Module):
       # x_{i}^{j-1} = x_prev
       # x_{i}^{j} = x
       s = qk
-      rowmax_s = _rowmax(s)
-      m = _maximum(m_prev, rowmax_s)
+      m = _maximum(m_prev, _rowmax(s))
       p = _exp(s-_diag(m)) # _diag not present in paper, but is needed
       l = _exp(m_prev-m)*l_prev + _rowsum(p)
       o = _diag(_exp(m_prev-m)) * o_prev + _dot(p,v)
