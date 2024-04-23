@@ -780,7 +780,8 @@ class Attention(hk.Module):
       interpret: bool = False,
       debug: bool = False,
   ):
-    mask = mask.astype(jnp.bool_)
+    if (mask is not None):
+      mask = mask.astype(jnp.bool_)
     batch_size, q_len, num_heads, qk_head_dim = q.shape
     _, kv_len, _, _ = k.shape
     _, _, _, v_head_dim = v.shape
