@@ -129,6 +129,7 @@ flags.DEFINE_boolean('use_precomputed_msas', False, 'Whether to read MSAs that '
                      'runs that are to reuse the MSAs. WARNING: This will not '
                      'check if the sequence, database or configuration have '
                      'changed.')
+flags.DEFINE_string('suffix','','suffix to all model output, added before model counter.')
 flags.DEFINE_enum_class('models_to_relax', ModelsToRelax.BEST, ModelsToRelax,
                         'The models to run the final relaxation step on. '
                         'If `all`, all models are relaxed, which may be time '
@@ -138,11 +139,13 @@ flags.DEFINE_enum_class('models_to_relax', ModelsToRelax.BEST, ModelsToRelax,
                         'distracting stereochemical violations but might help '
                         'in case you are having issues with the relaxation '
                         'stage.')
+flags.DEFINE_integer('max_recycles', 3,'Max recycles')
 flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
                      'Relax on GPU can be much faster than CPU, so it is '
                      'recommended to enable if possible. GPUs must be available'
                      ' if this setting is enabled.')
-
+flags.DEFINE_boolean('dropout',False,'Turn on drop out during inference to get more diversity')
+flags.DEFINE_boolean('dropout_structure_module',True, 'Dropout in structure module at inference')
 FLAGS = flags.FLAGS
 
 MAX_TEMPLATE_HITS = 20
@@ -515,6 +518,19 @@ def main(argv):
       model_config.model.num_ensemble_eval = num_ensemble
     else:
       model_config.data.eval.num_ensemble = num_ensemble
+
+    if FLAGS.dropout:
+      #dropout set is_training to True and during training models can be assembled. Here num_ensemble will always be 1 though. But unless this variable is set the program will crash.
+      model_config.model.num_ensemble_train = num_ensemble
+      if not FLAGS.dropout_structure_module:
+        model_config.model.heads.structure_module.dropout=0.0
+
+    if FLAGS.max_recycles != 3:
+      logging.info(f'Setting max_recycles to {FLAGS.max_recycles}')
+      model_config.model.num_recycle = FLAGS.max_recycles
+      if not run_multimer_system:
+        model_config.data.common.num_recycle = FLAGS.max_recycles
+
     model_params = data.get_model_haiku_params(
         model_name=model_name, data_dir=FLAGS.data_dir)
     model_runner = model.RunModel(model_config, model_params)
