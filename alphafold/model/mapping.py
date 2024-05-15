@@ -125,7 +125,7 @@ def sharded_apply(
     # Expand in axes and Determine Loop range
     in_axes_ = _expand_axes(in_axes, args)
 
-    in_sizes = jax.tree_map(_maybe_get_size, args, in_axes_)
+    in_sizes = jax.tree.map(_maybe_get_size, args, in_axes_)
     flat_sizes = jax.tree_util.tree_flatten(in_sizes)[0]
     in_size = max(flat_sizes)
     assert all(i in {in_size, -1} for i in flat_sizes)
@@ -137,28 +137,28 @@ def sharded_apply(
     last_shard_size = shard_size if last_shard_size == 0 else last_shard_size
 
     def apply_fun_to_slice(slice_start, slice_size):
-      input_slice = jax.tree_map(
+      input_slice = jax.tree.map(
           lambda array, axis: _maybe_slice(array, slice_start, slice_size, axis
                                           ), args, in_axes_)
       return fun(*input_slice)
 
     remainder_shape_dtype = hk.eval_shape(
         partial(apply_fun_to_slice, 0, last_shard_size))
-    out_dtypes = jax.tree_map(lambda x: x.dtype, remainder_shape_dtype)
-    out_shapes = jax.tree_map(lambda x: x.shape, remainder_shape_dtype)
+    out_dtypes = jax.tree.map(lambda x: x.dtype, remainder_shape_dtype)
+    out_shapes = jax.tree.map(lambda x: x.shape, remainder_shape_dtype)
     out_axes_ = _expand_axes(out_axes, remainder_shape_dtype)
 
     if num_extra_shards > 0:
       regular_shard_shape_dtype = hk.eval_shape(
           partial(apply_fun_to_slice, 0, shard_size))
-      shard_shapes = jax.tree_map(lambda x: x.shape, regular_shard_shape_dtype)
+      shard_shapes = jax.tree.map(lambda x: x.shape, regular_shard_shape_dtype)
 
       def make_output_shape(axis, shard_shape, remainder_shape):
         return shard_shape[:axis] + (
             shard_shape[axis] * num_extra_shards +
             remainder_shape[axis],) + shard_shape[axis + 1:]
 
-      out_shapes = jax.tree_map(make_output_shape, out_axes_, shard_shapes,
+      out_shapes = jax.tree.map(make_output_shape, out_axes_, shard_shapes,
                                 out_shapes)
 
     # Calls dynamic Update slice with different argument order
@@ -170,7 +170,7 @@ def sharded_apply(
       slice_out = apply_fun_to_slice(slice_start, slice_size)
       update_slice = partial(
           dynamic_update_slice_in_dim, i=slice_start)
-      return jax.tree_map(update_slice, outputs, slice_out, out_axes_)
+      return jax.tree.map(update_slice, outputs, slice_out, out_axes_)
 
     def scan_iteration(outputs, i):
       new_outputs = compute_shard(outputs, i, shard_size)
@@ -181,7 +181,7 @@ def sharded_apply(
     def allocate_buffer(dtype, shape):
       return jnp.zeros(shape, dtype=dtype)
 
-    outputs = jax.tree_map(allocate_buffer, out_dtypes, out_shapes)
+    outputs = jax.tree.map(allocate_buffer, out_dtypes, out_shapes)
 
     if slice_starts.shape[0] > 0:
       outputs, _ = hk.scan(scan_iteration, outputs, slice_starts)

@@ -496,11 +496,11 @@ def torsion_angles_to_frames(
 
   # chi2, chi3, and chi4 frames do not transform to the backbone frame but to
   # the previous frame. So chain them up accordingly.
-  chi2_frame_to_frame = jax.tree_map(lambda x: x[:, 5], all_frames)
-  chi3_frame_to_frame = jax.tree_map(lambda x: x[:, 6], all_frames)
-  chi4_frame_to_frame = jax.tree_map(lambda x: x[:, 7], all_frames)
+  chi2_frame_to_frame = jax.tree.map(lambda x: x[:, 5], all_frames)
+  chi3_frame_to_frame = jax.tree.map(lambda x: x[:, 6], all_frames)
+  chi4_frame_to_frame = jax.tree.map(lambda x: x[:, 7], all_frames)
 
-  chi1_frame_to_backb = jax.tree_map(lambda x: x[:, 4], all_frames)
+  chi1_frame_to_backb = jax.tree.map(lambda x: x[:, 4], all_frames)
   chi2_frame_to_backb = r3.rigids_mul_rigids(chi1_frame_to_backb,
                                              chi2_frame_to_frame)
   chi3_frame_to_backb = r3.rigids_mul_rigids(chi2_frame_to_backb,
@@ -513,7 +513,7 @@ def torsion_angles_to_frames(
     return jnp.concatenate(
         [xall[:, 0:5], x5[:, None], x6[:, None], x7[:, None]], axis=-1)
 
-  all_frames_to_backb = jax.tree_map(
+  all_frames_to_backb = jax.tree.map(
       _concat_frames,
       all_frames,
       chi2_frame_to_backb,
@@ -523,7 +523,7 @@ def torsion_angles_to_frames(
   # Create the global frames.
   # shape (N, 8)
   all_frames_to_global = r3.rigids_mul_rigids(
-      jax.tree_map(lambda x: x[:, None], backb_to_global),
+      jax.tree.map(lambda x: x[:, None], backb_to_global),
       all_frames_to_backb)
 
   return all_frames_to_global
@@ -551,7 +551,7 @@ def frames_and_literature_positions_to_atom14_pos(
       residx_to_group_idx, num_classes=8)  # shape (N, 14, 8)
 
   # r3.Rigids with shape (N, 14)
-  map_atoms_to_global = jax.tree_map(
+  map_atoms_to_global = jax.tree.map(
       lambda x: jnp.sum(x[:, None, :] * group_mask, axis=-1),
       all_frames_to_global)
 
@@ -567,7 +567,7 @@ def frames_and_literature_positions_to_atom14_pos(
 
   # Mask out non-existing atoms.
   mask = utils.batched_gather(residue_constants.restype_atom14_mask, aatype)
-  pred_positions = jax.tree_map(lambda x: x * mask, pred_positions)
+  pred_positions = jax.tree.map(lambda x: x * mask, pred_positions)
 
   return pred_positions
 
@@ -1050,14 +1050,14 @@ def frame_aligned_point_error(
   # Compute array of predicted positions in the predicted frames.
   # r3.Vecs (num_frames, num_positions)
   local_pred_pos = r3.rigids_mul_vecs(
-      jax.tree_map(lambda r: r[:, None], r3.invert_rigids(pred_frames)),
-      jax.tree_map(lambda x: x[None, :], pred_positions))
+      jax.tree.map(lambda r: r[:, None], r3.invert_rigids(pred_frames)),
+      jax.tree.map(lambda x: x[None, :], pred_positions))
 
   # Compute array of target positions in the target frames.
   # r3.Vecs (num_frames, num_positions)
   local_target_pos = r3.rigids_mul_vecs(
-      jax.tree_map(lambda r: r[:, None], r3.invert_rigids(target_frames)),
-      jax.tree_map(lambda x: x[None, :], target_positions))
+      jax.tree.map(lambda r: r[:, None], r3.invert_rigids(target_frames)),
+      jax.tree.map(lambda x: x[None, :], target_positions))
 
   # Compute errors between the structures.
   # jnp.ndarray (num_frames, num_positions)
@@ -1129,8 +1129,8 @@ def get_alt_atom14(aatype, positions, mask):
   renaming_transform = utils.batched_gather(
       jnp.asarray(RENAMING_MATRICES), aatype)
 
-  positions = jax.tree_map(lambda x: x[:, :, None], positions)
-  alternative_positions = jax.tree_map(
+  positions = jax.tree.map(lambda x: x[:, :, None], positions)
+  alternative_positions = jax.tree.map(
       lambda x: jnp.sum(x, axis=1), positions * renaming_transform)
 
   # Create the mask for the alternative ground truth (differs from the

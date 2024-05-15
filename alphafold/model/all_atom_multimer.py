@@ -247,7 +247,7 @@ def atom37_to_atom14(aatype, all_atom_pos, all_atom_mask):
   # create a mask for known groundtruth positions
   atom14_mask *= utils.batched_gather(jnp.asarray(RESTYPE_ATOM14_MASK), aatype)
   # gather the groundtruth positions
-  atom14_positions = jax.tree_map(
+  atom14_positions = jax.tree.map(
       lambda x: utils.batched_gather(x, residx_atom14_to_atom37, batch_dims=1),
       all_atom_pos)
   atom14_positions = atom14_mask * atom14_positions
@@ -261,7 +261,7 @@ def get_alt_atom14(aatype, positions: geometry.Vec3Array, mask):
   renaming_transform = utils.batched_gather(
       jnp.asarray(RENAMING_MATRICES), aatype)
 
-  alternative_positions = jax.tree_map(
+  alternative_positions = jax.tree.map(
       lambda x: jnp.sum(x, axis=1), positions[:, :, None] * renaming_transform)
 
   # Create the mask for the alternative ground truth (differs from the
@@ -288,7 +288,7 @@ def atom37_to_frames(
   # If there is a batch axis, just flatten it away, and reshape everything
   # back at the end of the function.
   aatype = jnp.reshape(aatype, [-1])
-  all_atom_positions = jax.tree_map(lambda x: jnp.reshape(x, [-1, 37]),
+  all_atom_positions = jax.tree.map(lambda x: jnp.reshape(x, [-1, 37]),
                                     all_atom_positions)
   all_atom_mask = jnp.reshape(all_atom_mask, [-1, 37])
 
@@ -298,7 +298,7 @@ def atom37_to_frames(
       RESTYPE_RIGIDGROUP_BASE_ATOM37_IDX, aatype)
 
   # Gather the base atom positions for each rigid group.
-  base_atom_pos = jax.tree_map(
+  base_atom_pos = jax.tree.map(
       lambda x: utils.batched_gather(  # pylint: disable=g-long-lambda
           x, residx_rigidgroup_base_atom37_idx, batch_dims=1),
       all_atom_positions)
@@ -355,11 +355,11 @@ def atom37_to_frames(
   fix_shape = lambda x: jnp.reshape(x, aatype_in_shape + (8,))
 
   # reshape back to original residue layout
-  gt_frames = jax.tree_map(fix_shape, gt_frames)
+  gt_frames = jax.tree.map(fix_shape, gt_frames)
   gt_exists = fix_shape(gt_exists)
   group_exists = fix_shape(group_exists)
   residx_rigidgroup_is_ambiguous = fix_shape(residx_rigidgroup_is_ambiguous)
-  alt_gt_frames = jax.tree_map(fix_shape, alt_gt_frames)
+  alt_gt_frames = jax.tree.map(fix_shape, alt_gt_frames)
 
   return {
       'rigidgroups_gt_frames': gt_frames,  # Rigid (..., 8)
@@ -426,7 +426,7 @@ def torsion_angles_to_frames(
   chi3_frame_to_backb = chi2_frame_to_backb @ all_frames[:, 6]
   chi4_frame_to_backb = chi3_frame_to_backb @ all_frames[:, 7]
 
-  all_frames_to_backb = jax.tree_map(
+  all_frames_to_backb = jax.tree.map(
       lambda *x: jnp.concatenate(x, axis=-1), all_frames[:, 0:5],
       chi2_frame_to_backb[:, None], chi3_frame_to_backb[:, None],
       chi4_frame_to_backb[:, None])
@@ -451,7 +451,7 @@ def frames_and_literature_positions_to_atom14_pos(
       residx_to_group_idx, num_classes=8)  # shape (N, 14, 8)
 
   # geometry.Rigid3Array with shape (N, 14)
-  map_atoms_to_global = jax.tree_map(
+  map_atoms_to_global = jax.tree.map(
       lambda x: jnp.sum(x[:, None, :] * group_mask, axis=-1),
       all_frames_to_global)
 
@@ -916,7 +916,7 @@ def compute_chi_angles(positions: geometry.Vec3Array,
   atom_indices = utils.batched_gather(
       params=chi_atom_indices, indices=aatype, axis=0)
   # Gather atom positions. Shape: [num_res, chis=4, atoms=4, xyz=3].
-  chi_angle_atoms = jax.tree_map(
+  chi_angle_atoms = jax.tree.map(
       lambda x: utils.batched_gather(  # pylint: disable=g-long-lambda
           params=x, indices=atom_indices, axis=-1, batch_dims=1), positions)
   a, b, c, d = [chi_angle_atoms[..., i] for i in range(4)]

@@ -56,7 +56,7 @@ class Rigid3Array:
 
   def compose_rotation(self, other_rotation):
     rot = self.rotation @ other_rotation
-    trans = jax.tree_map(lambda x: jnp.broadcast_to(x, rot.shape),
+    trans = jax.tree.map(lambda x: jnp.broadcast_to(x, rot.shape),
                          self.translation)
     return Rigid3Array(rot, trans)
 

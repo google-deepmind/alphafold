@@ -331,7 +331,7 @@ class InvariantPointAttention(hk.Module):
                               name='v_point_projection')(inputs_1d,
                                                          rigid)
 
-    result_point_global = jax.tree_map(
+    result_point_global = jax.tree.map(
         lambda x: jnp.sum(attn[..., None] * x, axis=-3), v_point[None])
 
     # Features used in the linear output projection. Should have the size
@@ -344,7 +344,7 @@ class InvariantPointAttention(hk.Module):
     result_scalar = jnp.reshape(result_scalar, flat_shape)
     output_features.append(result_scalar)
 
-    result_point_global = jax.tree_map(lambda r: jnp.reshape(r, flat_shape),
+    result_point_global = jax.tree.map(lambda r: jnp.reshape(r, flat_shape),
                                        result_point_global)
     result_point_local = rigid[..., None].apply_inverse_to_point(
         result_point_global)
@@ -465,7 +465,7 @@ class FoldIteration(hk.Module):
 
     outputs = {'rigid': rigid, 'sc': sc}
 
-    rotation = jax.tree_map(jax.lax.stop_gradient, rigid.rotation)
+    rotation = jax.tree.map(jax.lax.stop_gradient, rigid.rotation)
     rigid = geometry.Rigid3Array(rotation, rigid.translation)
 
     new_activations = {
@@ -546,7 +546,7 @@ def generate_monomer_rigids(representations: Mapping[str, jnp.ndarray],
         )
     outputs.append(output)
 
-  output = jax.tree_map(lambda *x: jnp.stack(x), *outputs)
+  output = jax.tree.map(lambda *x: jnp.stack(x), *outputs)
   # Pass along for LDDT-Head.
   output['act'] = activations['act']
 
@@ -823,7 +823,7 @@ def compute_frames(
   alt_gt_frames = frames_batch['rigidgroups_alt_gt_frames']
   use_alt = use_alt[:, None]
 
-  renamed_gt_frames = jax.tree_map(
+  renamed_gt_frames = jax.tree.map(
       lambda x, y: (1. - use_alt) * x + use_alt * y, gt_frames, alt_gt_frames)
 
   return renamed_gt_frames, frames_batch['rigidgroups_gt_exists']
@@ -839,18 +839,18 @@ def sidechain_loss(gt_frames: geometry.Rigid3Array,
                    ) -> Dict[str, jnp.ndarray]:
   """Sidechain Loss using cleaned up rigids."""
 
-  flat_gt_frames = jax.tree_map(jnp.ravel, gt_frames)
+  flat_gt_frames = jax.tree.map(jnp.ravel, gt_frames)
   flat_frames_mask = jnp.ravel(gt_frames_mask)
 
-  flat_gt_positions = jax.tree_map(jnp.ravel, gt_positions)
+  flat_gt_positions = jax.tree.map(jnp.ravel, gt_positions)
   flat_positions_mask = jnp.ravel(gt_mask)
 
   # Compute frame_aligned_point_error score for the final layer.
   def _slice_last_layer_and_flatten(x):
     return jnp.ravel(x[-1])
 
-  flat_pred_frames = jax.tree_map(_slice_last_layer_and_flatten, pred_frames)
-  flat_pred_positions = jax.tree_map(_slice_last_layer_and_flatten,
+  flat_pred_frames = jax.tree.map(_slice_last_layer_and_flatten, pred_frames)
+  flat_pred_positions = jax.tree.map(_slice_last_layer_and_flatten,
                                      pred_positions)
   fape = all_atom_multimer.frame_aligned_point_error(
       pred_frames=flat_pred_frames,

@@ -301,8 +301,8 @@ class QuatAffine(object):
     translation = self.translation
     for _ in range(extra_dims):
       expand_fn = functools.partial(jnp.expand_dims, axis=-1)
-      rotation = jax.tree_map(expand_fn, rotation)
-      translation = jax.tree_map(expand_fn, translation)
+      rotation = jax.tree.map(expand_fn, rotation)
+      translation = jax.tree.map(expand_fn, translation)
 
     rot_point = apply_rot_to_vec(rotation, point)
     return [
@@ -327,8 +327,8 @@ class QuatAffine(object):
     translation = self.translation
     for _ in range(extra_dims):
       expand_fn = functools.partial(jnp.expand_dims, axis=-1)
-      rotation = jax.tree_map(expand_fn, rotation)
-      translation = jax.tree_map(expand_fn, translation)
+      rotation = jax.tree.map(expand_fn, rotation)
+      translation = jax.tree.map(expand_fn, translation)
 
     rot_point = [
         transformed_point[0] - translation[0],

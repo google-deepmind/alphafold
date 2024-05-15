@@ -322,7 +322,7 @@ class AlphaFold(hk.Module):
           'prev_msa_first_row': ret['representations']['msa_first_row'],
           'prev_pair': ret['representations']['pair'],
       }
-      return jax.tree_map(jax.lax.stop_gradient, new_prev)
+      return jax.tree.map(jax.lax.stop_gradient, new_prev)
 
     def do_call(prev,
                 recycle_idx,
@@ -333,12 +333,12 @@ class AlphaFold(hk.Module):
           start = recycle_idx * num_ensemble
           size = num_ensemble
           return jax.lax.dynamic_slice_in_dim(x, start, size, axis=0)
-        ensembled_batch = jax.tree_map(slice_recycle_idx, batch)
+        ensembled_batch = jax.tree.map(slice_recycle_idx, batch)
       else:
         num_ensemble = batch_size
         ensembled_batch = batch
 
-      non_ensembled_batch = jax.tree_map(lambda x: x, prev)
+      non_ensembled_batch = jax.tree.map(lambda x: x, prev)
 
       return impl(
           ensembled_batch=ensembled_batch,

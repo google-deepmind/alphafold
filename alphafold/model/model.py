@@ -169,7 +169,7 @@ class RunModel:
     # This block is to ensure benchmark timings are accurate. Some blocking is
     # already happening when computing get_confidence_metrics, and this ensures
     # all outputs are blocked on.
-    jax.tree_map(lambda x: x.block_until_ready(), result)
+    jax.tree.map(lambda x: x.block_until_ready(), result)
     result.update(
         get_confidence_metrics(result, multimer_mode=self.multimer_mode))
     logging.info('Output shape was %s',

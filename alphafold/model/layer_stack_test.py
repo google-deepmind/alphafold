@@ -198,7 +198,7 @@ class LayerStackTest(parameterized.TestCase):
     assert_fn = functools.partial(
         np.testing.assert_allclose, atol=1e-4, rtol=1e-4)
 
-    jax.tree_map(assert_fn, unrolled_grad,
+    jax.tree.map(assert_fn, unrolled_grad,
                  _slice_layers_params(layer_stack_grad))
 
   def test_random(self):
