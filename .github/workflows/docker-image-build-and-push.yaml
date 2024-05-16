@@ -1,4 +1,4 @@
-name: Test build Alphafold Docker Image
+name: Build Alphafold Docker image and push to Dockerhub
 
 on:
   # run it during pull request
