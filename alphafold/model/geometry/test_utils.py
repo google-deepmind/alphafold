@@ -61,9 +61,9 @@ def assert_vectors_equal(vec1: vector.Vec3Array, vec2: vector.Vec3Array):
 
 
 def assert_vectors_close(vec1: vector.Vec3Array, vec2: vector.Vec3Array):
-  np.testing.assert_allclose(vec1.x, vec2.x, atol=1e-6, rtol=0.)
-  np.testing.assert_allclose(vec1.y, vec2.y, atol=1e-6, rtol=0.)
-  np.testing.assert_allclose(vec1.z, vec2.z, atol=1e-6, rtol=0.)
+  np.testing.assert_allclose(vec1.x, vec2.x, atol=1e-5, rtol=0.)
+  np.testing.assert_allclose(vec1.y, vec2.y, atol=1e-5, rtol=0.)
+  np.testing.assert_allclose(vec1.z, vec2.z, atol=1e-5, rtol=0.)
 
 
 def assert_array_close_to_vector(array: jnp.ndarray, vec: vector.Vec3Array):

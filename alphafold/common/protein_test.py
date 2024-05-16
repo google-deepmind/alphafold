@@ -82,16 +82,55 @@ class ProteinTest(parameterized.TestCase):
     np.testing.assert_array_almost_equal(
         prot_reconstr.b_factors, prot.b_factors)
 
+  @parameterized.named_parameters(
+      dict(
+          testcase_name='glucagon',
+          pdb_file='glucagon.pdb',
+          model_type='Monomer',
+      ),
+      dict(testcase_name='7bui', pdb_file='5nmu.pdb', model_type='Multimer'),
+  )
+  def test_to_mmcif(self, pdb_file, model_type):
+    with open(
+        os.path.join(
+            absltest.get_default_test_srcdir(), TEST_DATA_DIR, pdb_file
+        )
+    ) as f:
+      pdb_string = f.read()
+    prot = protein.from_pdb_string(pdb_string)
+
+    file_id = 'test'
+    mmcif_string = protein.to_mmcif(prot, file_id, model_type)
+    prot_reconstr = protein.from_mmcif_string(mmcif_string)
+
+    np.testing.assert_array_equal(prot_reconstr.aatype, prot.aatype)
+    np.testing.assert_array_almost_equal(
+        prot_reconstr.atom_positions, prot.atom_positions
+    )
+    np.testing.assert_array_almost_equal(
+        prot_reconstr.atom_mask, prot.atom_mask
+    )
+    np.testing.assert_array_equal(
+        prot_reconstr.residue_index, prot.residue_index
+    )
+    np.testing.assert_array_equal(prot_reconstr.chain_index, prot.chain_index)
+    np.testing.assert_array_almost_equal(
+        prot_reconstr.b_factors, prot.b_factors
+    )
+
   def test_ideal_atom_mask(self):
     with open(
-        os.path.join(absltest.get_default_test_srcdir(), TEST_DATA_DIR,
-                     '2rbg.pdb')) as f:
+        os.path.join(
+            absltest.get_default_test_srcdir(), TEST_DATA_DIR, '2rbg.pdb'
+        )
+    ) as f:
       pdb_string = f.read()
     prot = protein.from_pdb_string(pdb_string)
     ideal_mask = protein.ideal_atom_mask(prot)
     non_ideal_residues = set([102] + list(range(127, 286)))
     for i, (res, atom_mask) in enumerate(
-        zip(prot.residue_index, prot.atom_mask)):
+        zip(prot.residue_index, prot.atom_mask)
+    ):
       if res in non_ideal_residues:
         self.assertFalse(np.all(atom_mask == ideal_mask[i]), msg=f'{res}')
       else:

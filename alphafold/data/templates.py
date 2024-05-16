@@ -449,6 +449,7 @@ def _get_atom_positions(
     mask = np.zeros([residue_constants.atom_type_num], dtype=np.float32)
     res_at_position = mmcif_object.seqres_to_structure[auth_chain_id][res_index]
     if not res_at_position.is_missing:
+      assert res_at_position.position is not None
       res = chain[(res_at_position.hetflag,
                    res_at_position.position.residue_number,
                    res_at_position.position.insertion_code)]

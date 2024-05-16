@@ -62,4 +62,4 @@ done
 # Delete empty download directory structure.
 find "${RAW_DIR}" -type d -empty -delete
 
-aria2c "ftp://ftp.wwpdb.org/pub/pdb/data/status/obsolete.dat" --dir="${ROOT_DIR}"
+aria2c "https://files.wwpdb.org/pub/pdb/data/status/obsolete.dat" --dir="${ROOT_DIR}"

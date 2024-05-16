@@ -775,7 +775,7 @@ def compute_atom14_gt(
   gt_mask = (1. - use_alt) * gt_mask + use_alt * alt_gt_mask
   gt_positions = (1. - use_alt) * gt_positions + use_alt * alt_gt_positions
 
-  return gt_positions, alt_gt_mask, alt_naming_is_better
+  return gt_positions, gt_mask, alt_naming_is_better
 
 
 def backbone_loss(gt_rigid: geometry.Rigid3Array,
