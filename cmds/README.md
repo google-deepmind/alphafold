@@ -36,17 +36,17 @@ add the `--network host` option to the `docker run` command in the script.
 Usage: (1) compute MSA; (2) Predict structure
 
 ```sh
-outdir="out"  # host output dir
+wdDir="out"  # host working dir, put sequences and output dir under this dir
 data="/mnt/data/alphafold"  # host alphafold data dir
 containerName="af2mrun-msa"  # container name
-./cmds/run-af2m-container.sh -o $outdir -d $data -c $containerName
+./cmds/run-af2m-container.sh -o $wdDir -d $data -c $containerName
 ```
 
 ```sh
-outdir="out"  # host output dir
+wdDir="out"  # host working dir, put sequences and output dir under this dir
 data="/mnt/data/alphafold"  # host alphafold data dir
 containerName="af2mrun-struct"  # container name
-./cmds/run-af2m-container.sh -o $outdir -d $data -c $containerName
+./cmds/run-af2m-container.sh -o $wdDir -d $data -c $containerName
 ```
 
 ## cmds/run-af2m-msa.sh
