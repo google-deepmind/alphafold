@@ -21,7 +21,7 @@ from typing import Any, Mapping, Optional, Sequence, Tuple
 
 from absl import logging
 from Bio import PDB
-from Bio.Data import SCOPData
+from Bio.Data import PDBData
 
 # Type aliases:
 ChainId = str
