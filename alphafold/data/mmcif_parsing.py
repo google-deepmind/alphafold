@@ -20,8 +20,8 @@ import io
 from typing import Any, Mapping, Optional, Sequence, Tuple
 
 from absl import logging
+from alphafold.common import residue_constants
 from Bio import PDB
-from Bio.Data import SCOPData
 
 # Type aliases:
 ChainId = str
@@ -258,7 +258,7 @@ def parse(*,
       author_chain = mmcif_to_author_chain_id[chain_id]
       seq = []
       for monomer in seq_info:
-        code = SCOPData.protein_letters_3to1.get(monomer.id, 'X')
+        code = residue_constants.CCD_NAME_TO_ONE_LETTER.get(monomer.id, 'X')
         seq.append(code if len(code) == 1 else 'X')
       seq = ''.join(seq)
       author_chain_to_sequence[author_chain] = seq
