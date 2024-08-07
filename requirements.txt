@@ -9,5 +9,6 @@ jax==0.4.26
 ml-collections==0.1.0
 numpy==1.24.3
 pandas==2.0.3
+setuptools<72.0.0
 scipy==1.11.1
 tensorflow-cpu==2.16.1
