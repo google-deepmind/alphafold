@@ -40,6 +40,7 @@ wdDir="out"  # host working dir e.g. wd/{seqs,out} where seqs contains fasta fil
 data="/mnt/data/alphafold"  # host alphafold data dir
 containerName="af2mrun-msa"  # container name
 ./cmds/run-af2m-container.sh -o $wdDir -d $data -c $containerName
+./cmds/run-af2m-container.sh -o $wdDir -d $data -c $containerName
 ```
 
 - `wdDir` is mapped to `/home/vscode/out` in the container.
