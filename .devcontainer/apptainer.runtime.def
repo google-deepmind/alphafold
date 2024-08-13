@@ -40,46 +40,39 @@ From: nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
   curl -LO "http://repo.continuum.io/miniconda/Miniconda3-${CONDA_VER}-${PLATFORM}-${OS_TYPE}.sh"
   bash Miniconda3-${CONDA_VER}-${PLATFORM}-${OS_TYPE}.sh -p /miniconda -b
   rm Miniconda3-${CONDA_VER}-${PLATFORM}-${OS_TYPE}.sh
+  export PATH=/miniconda/bin:$PATH
 
   conda update -y conda
 
-  # 清理
-  apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+  # cleanup
+  apt-get clean
   conda clean -a -y && pip cache purge
 
   # ------------------------------------------------------------------------------
-  # Copy alphafold related files
+  # alphafold related files
   # ------------------------------------------------------------------------------
   mkdir -p /home/vscode/alphafold/
-  cp -r ./.devcontainer /home/vscode/alphafold/.devcontainer
-  cp -r ./alphafold /home/vscode/alphafold/alphafold
-  cp -r ./cmds /home/vscode/alphafold/cmds
-  cp -r ./docker /home/vscode/alphafold/docker
-  cp -r ./docs /home/vscode/alphafold/docs
-  cp -r ./scripts /home/vscode/alphafold/scripts
-  cp ./LICENSE ./README.md ./requirements.txt ./run_alphafold_msa.py ./run_alphafold.py ./setup.py /home/vscode/alphafold/
-
   wget -q -P /home/vscode/alphafold/alphafold/common/ \
     https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 
   # ------------------------------------------------------------------------------
   # Create conda environment
   # ------------------------------------------------------------------------------
-  /home/vscode/alphafold/.devcontainer/create-env.sh
+  zsh /home/vscode/alphafold/.devcontainer/create-env-apptainer.sh
 
 %files
-  ./.devcontainer /home/vscode/alphafold/.devcontainer
-  ./alphafold /home/vscode/alphafold/alphafold
-  ./cmds /home/vscode/alphafold/cmds
-  ./docker /home/vscode/alphafold/docker
-  ./docs /home/vscode/alphafold/docs
-  ./scripts /home/vscode/alphafold/scripts
-  ./LICENSE /home/vscode/alphafold/LICENSE
-  ./README.md /home/vscode/alphafold/README.md
-  ./requirements.txt /home/vscode/alphafold/requirements.txt
+  ./.devcontainer        /home/vscode/alphafold/.devcontainer
+  ./alphafold            /home/vscode/alphafold/alphafold
+  ./cmds                 /home/vscode/alphafold/cmds
+  ./docker               /home/vscode/alphafold/docker
+  ./docs                 /home/vscode/alphafold/docs
+  ./scripts              /home/vscode/alphafold/scripts
+  ./LICENSE              /home/vscode/alphafold/LICENSE
+  ./README.md            /home/vscode/alphafold/README.md
+  ./requirements.txt     /home/vscode/alphafold/requirements.txt
   ./run_alphafold_msa.py /home/vscode/alphafold/run_alphafold_msa.py
-  ./run_alphafold.py /home/vscode/alphafold/run_alphafold.py
-  ./setup.py /home/vscode/alphafold/setup.py
+  ./run_alphafold.py     /home/vscode/alphafold/run_alphafold.py
+  ./setup.py             /home/vscode/alphafold/setup.py
 
 %runscript
   exec zsh
