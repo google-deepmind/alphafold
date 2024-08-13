@@ -87,7 +87,7 @@ RUN wget -q -P /home/vscode/alphafold/alphafold/common/ \
 # ------------------------------------------------------------------------------
 # Create conda environment
 # ------------------------------------------------------------------------------
-RUN /home/vscode/alphafold/.devcontainer/create-env.sh
+RUN /home/vscode/alphafold/.devcontainer/create-env-docker.sh
 
 # ------------------------------------------------------------------------------
 # End of base image
