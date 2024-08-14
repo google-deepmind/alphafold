@@ -14,10 +14,10 @@
 
 """Library to run Jackhmmer from Python."""
 
-from concurrent import futures
 import glob
 import os
 import subprocess
+from concurrent import futures
 from typing import Any, Callable, Mapping, Optional, Sequence
 from urllib import request
 
@@ -25,7 +25,11 @@ from absl import logging
 
 from alphafold.data import parsers
 from alphafold.data.tools import utils
+
 # Internal import (7716).
+
+# max nproc on the system
+NPROC: int = os.cpu_count()
 
 
 class Jackhmmer:
@@ -35,7 +39,7 @@ class Jackhmmer:
                *,
                binary_path: str,
                database_path: str,
-               n_cpu: int = 8,
+               n_cpu: int = NPROC,
                n_iter: int = 1,
                e_value: float = 0.0001,
                z_value: Optional[int] = None,
