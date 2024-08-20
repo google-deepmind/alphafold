@@ -21,8 +21,8 @@ ARG CUDA
 # Use bash to support string substitution.
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN apt-get update \
-    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+RUN apt-get update --quiet \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --yes --quiet \
         build-essential \
         cmake \
         cuda-command-line-tools-$(cut -f1,2 -d- <<< ${CUDA//./-}) \
@@ -32,7 +32,7 @@ RUN apt-get update \
         tzdata \
         wget \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get autoremove -y \
+    && apt-get autoremove --yes \
     && apt-get clean
 
 # Compile HHsuite from source.
