@@ -16,8 +16,9 @@ set -e
 IMAGE_NAME=${1:-"alphafold2.3.sif"}
 
 # Set variables
-BASE=$(realpath $(dirname $0))  # ~/alphafold/cmds/host
-WD=$(dirname $(dirname $BASE))  # /host/path/to/alphafold
+BASE=$(realpath $(dirname $0))             # ~/alphafold/chunan/src/host
+WD=$(dirname $(dirname $(dirname $BASE)))  # ~/alphafold
+defFile=$(dirname $(dirname $BASE))/container/apptainer.runtime.def
 
 pushd $WD
-apptainer build $IMAGE_NAME .devcontainer/apptainer.runtime.def
+apptainer build $IMAGE_NAME $defFile

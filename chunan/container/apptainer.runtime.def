@@ -1,0 +1,78 @@
+Bootstrap: docker
+From: nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
+
+%environment
+  export TZ=Europe/London
+  export PATH=/miniconda/bin:$PATH
+
+%post
+  # Set timezone
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update && apt-get install -y tzdata
+
+  # ------------------------------------------------------------------------------
+  # Create non-root user
+  # ------------------------------------------------------------------------------
+  export USERNAME=vscode
+  export USER_UID=1000
+  export USER_GID=$USER_UID
+
+  groupadd --gid $USER_GID $USERNAME
+  useradd --uid $USER_UID --gid $USER_GID -m $USERNAME
+
+  # Install sudo and configure user
+  apt-get update
+  apt-get install -y sudo zsh curl wget jq vim git-core gnupg locales
+  echo "$USERNAME ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME
+  chmod 0440 /etc/sudoers.d/$USERNAME
+
+  # Switch to zsh
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || true
+  chsh -s /bin/zsh $USERNAME
+
+  # ------------------------------------------------------------------------------
+  # Install miniconda
+  # ------------------------------------------------------------------------------
+  export CONDA_VER=latest
+  export PLATFORM=Linux
+  export OS_TYPE=x86_64
+
+  curl -LO "http://repo.continuum.io/miniconda/Miniconda3-${CONDA_VER}-${PLATFORM}-${OS_TYPE}.sh"
+  bash Miniconda3-${CONDA_VER}-${PLATFORM}-${OS_TYPE}.sh -p /miniconda -b
+  rm Miniconda3-${CONDA_VER}-${PLATFORM}-${OS_TYPE}.sh
+  export PATH=/miniconda/bin:$PATH
+
+  conda update -y conda
+
+  # cleanup
+  apt-get clean
+  conda clean -a -y && pip cache purge
+
+  # ------------------------------------------------------------------------------
+  # alphafold related files
+  # ------------------------------------------------------------------------------
+  mkdir -p /home/vscode/alphafold/
+  wget -q -P /home/vscode/alphafold/alphafold/common/ \
+    https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+
+  # ------------------------------------------------------------------------------
+  # Create conda environment
+  # ------------------------------------------------------------------------------
+  zsh /home/vscode/alphafold/.devcontainer/create-env-apptainer.sh
+
+%files
+  ./.devcontainer        /home/vscode/alphafold/.devcontainer
+  ./alphafold            /home/vscode/alphafold/alphafold
+  ./cmds                 /home/vscode/alphafold/cmds
+  ./docker               /home/vscode/alphafold/docker
+  ./docs                 /home/vscode/alphafold/docs
+  ./scripts              /home/vscode/alphafold/scripts
+  ./LICENSE              /home/vscode/alphafold/LICENSE
+  ./README.md            /home/vscode/alphafold/README.md
+  ./requirements.txt     /home/vscode/alphafold/requirements.txt
+  ./run_alphafold_msa.py /home/vscode/alphafold/run_alphafold_msa.py
+  ./run_alphafold.py     /home/vscode/alphafold/run_alphafold.py
+  ./setup.py             /home/vscode/alphafold/setup.py
+
+%runscript
+  exec zsh

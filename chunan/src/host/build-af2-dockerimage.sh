@@ -16,7 +16,9 @@ set -e
 DOCKER_IMAGE_NAME=${1:-"$USER/alphafold2.3:base"}
 
 # Set variables
-WD=$(dirname $(dirname $(dirname $(realpath $0))))  # /host/path/to/alphafold/
+BASE=$(realpath $(dirname $0))             # ~/alphafold/chunan/src/host
+WD=$(dirname $(dirname $(dirname $BASE)))  # ~/alphafold
+dockerFile=$(dirname $(dirname $BASE))/container/Dockerfile.runtime
 
 pushd $WD
-docker build --tag $DOCKER_IMAGE_NAME -f .devcontainer/Dockerfile.runtime .
+docker build --tag $DOCKER_IMAGE_NAME -f $dockerFile .

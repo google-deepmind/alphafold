@@ -1,0 +1,97 @@
+FROM nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
+
+ARG DEBIAN_FRONTEND=noninteractive
+# time zone london
+ENV TZ=Europe/London
+
+# Install tzdata and any other necessary packages
+RUN apt-get update && apt-get install -y tzdata
+
+# ------------------------------------------------------------------------------
+# Create a non-root user to use if preferred
+# - see https://aka.ms/vscode-remote/containers/non-root-user.
+# ------------------------------------------------------------------------------
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+# Create the user
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
+# ------------------------------------------------------------------------------
+# Install zsh and oh-my-zsh
+# ------------------------------------------------------------------------------
+RUN apt-get update && apt-get install -yq zsh sudo curl wget jq vim git-core gnupg locales && apt-get clean \
+    && sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || true \
+    && sudo chsh -s /bin/zsh
+
+# ------------------------------------------------------------------------------
+# Install miniconda
+# ------------------------------------------------------------------------------
+# credits: @pangyuteng
+# refer to: https://gist.github.com/pangyuteng/f5b00fe63ac31a27be00c56996197597
+# Use the above args during building https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
+# Choices
+# PLATFORM: Linux, MacOSX, or Windows
+# OS_TYPE : x86_64, arm64, ppc64le, s390x, or x86, armv7l
+ARG CONDA_VER=latest
+ARG PLATFORM=Linux
+ARG OS_TYPE=x86_64
+# Install miniconda to /miniconda
+RUN curl -LO "http://repo.continuum.io/miniconda/Miniconda3-${CONDA_VER}-Linux-${OS_TYPE}.sh" \
+    && bash Miniconda3-${CONDA_VER}-Linux-${OS_TYPE}.sh -p /miniconda -b \
+    && rm Miniconda3-${CONDA_VER}-Linux-${OS_TYPE}.sh
+ENV PATH=/miniconda/bin:${PATH}
+RUN conda update -y conda
+
+# Cleanup
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && conda clean -a -y && pip cache purge
+
+# ********************************************************
+# * Anything else you want to do like clean up goes here *
+# ********************************************************
+# [Optional] Set the default user. Omit if you want to keep the default as root.
+# If specified non-root user, add sudo when running e.g. apt-get
+USER $USERNAME
+RUN sudo usermod -aG sudo $USERNAME
+
+# ------------------------------------------------------------------------------
+# Install zsh and oh-my-zsh
+# ------------------------------------------------------------------------------
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || true \
+    && sudo chsh -s /bin/zsh
+
+# ------------------------------------------------------------------------------
+# Copy alphafold
+# ------------------------------------------------------------------------------
+RUN mkdir -p /home/vscode/alphafold/
+COPY --chown=vscode:vscode ./.devcontainer /home/vscode/alphafold/.devcontainer
+COPY --chown=vscode:vscode ./alphafold /home/vscode/alphafold/alphafold
+COPY --chown=vscode:vscode ./cmds /home/vscode/alphafold/cmds
+COPY --chown=vscode:vscode ./docker /home/vscode/alphafold/docker
+COPY --chown=vscode:vscode ./docs /home/vscode/alphafold/docs
+COPY --chown=vscode:vscode ./scripts /home/vscode/alphafold/scripts
+COPY --chown=vscode:vscode ./LICENSE ./README.md ./requirements.txt \
+    ./run_alphafold_msa.py ./run_alphafold.py ./setup.py \
+    /home/vscode/alphafold/
+
+RUN wget -q -P /home/vscode/alphafold/alphafold/common/ \
+  https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+
+# ------------------------------------------------------------------------------
+# Create conda environment
+# ------------------------------------------------------------------------------
+RUN /home/vscode/alphafold/.devcontainer/create-env-docker.sh
+
+# ------------------------------------------------------------------------------
+# End of base image
+# ------------------------------------------------------------------------------
+WORKDIR /home/vscode
+
+ENTRYPOINT [ "zsh" ]
