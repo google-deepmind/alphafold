@@ -65,6 +65,10 @@ Please follow these steps:
     package manager as the `aria2` package (on Debian-based distributions this
     can be installed by running `sudo apt install aria2`).
 
+    *   Make sure `rsync` is available. On most Linux distributions it should already be installed.
+    If not, it should be available via the package manager as the `rsync` package
+    (on Debian-based distributions this can bi installed by running `sudo apt install rsync`).
+
     *   Please use the script `scripts/download_all_data.sh` to download
     and set up full databases. This may take substantial time (download size is
     556 GB), so we recommend running this script in the background:
