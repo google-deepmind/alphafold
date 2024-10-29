@@ -1,13 +1,13 @@
 absl-py==1.0.0
 biopython==1.79
-chex==0.0.7
-dm-haiku==0.0.10
+chex==0.1.86
+dm-haiku==0.0.12
 dm-tree==0.1.8
 docker==5.0.0
 immutabledict==2.0.0
-jax==0.4.14
+jax==0.4.26
 ml-collections==0.1.0
 numpy==1.24.3
 pandas==2.0.3
 scipy==1.11.1
-tensorflow-cpu==2.13.0
+tensorflow-cpu==2.16.1

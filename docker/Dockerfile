@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG CUDA=11.1.1
-FROM nvidia/cuda:${CUDA}-cudnn8-runtime-ubuntu18.04
+ARG CUDA=12.2.2
+FROM nvidia/cuda:${CUDA}-cudnn8-runtime-ubuntu20.04
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
 ARG CUDA
@@ -54,14 +54,10 @@ RUN wget -q -P /tmp \
 # Install conda packages.
 ENV PATH="/opt/conda/bin:$PATH"
 ENV LD_LIBRARY_PATH="/opt/conda/lib:$LD_LIBRARY_PATH"
-RUN conda install -qy conda==23.5.2 \
-    && conda install -y -c conda-forge \
-      openmm=7.7.0 \
-      cudatoolkit==${CUDA_VERSION} \
-      pdbfixer \
-      pip \
-      python=3.10 \
-      && conda clean --all --force-pkgs-dirs --yes
+RUN conda install -qy conda==24.1.2 pip python=3.11 \
+    && conda install -y -c nvidia cuda=${CUDA_VERSION} \
+    && conda install -y -c conda-forge openmm=8.0.0 pdbfixer \
+    && conda clean --all --force-pkgs-dirs --yes
 
 COPY . /app/alphafold
 RUN wget -q -P /app/alphafold/alphafold/common/ \
@@ -71,12 +67,15 @@ RUN wget -q -P /app/alphafold/alphafold/common/ \
 RUN pip3 install --upgrade pip --no-cache-dir \
     && pip3 install -r /app/alphafold/requirements.txt --no-cache-dir \
     && pip3 install --upgrade --no-cache-dir \
-      jax==0.3.25 \
-      jaxlib==0.3.25+cuda11.cudnn805 \
+      jax==0.4.26 \
+      jaxlib==0.4.26+cuda12.cudnn89 \
       -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
 # Add SETUID bit to the ldconfig binary so that non-root users can run it.
 RUN chmod u+s /sbin/ldconfig.real
+
+# Currently needed to avoid undefined_symbol error.
+RUN ln -sf /usr/lib/x86_64-linux-gnu/libffi.so.7 /opt/conda/lib/libffi.so.7
 
 # We need to run `ldconfig` first to ensure GPUs are visible, due to some quirk
 # with Debian. See https://github.com/NVIDIA/nvidia-docker/issues/1399 for
