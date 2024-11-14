@@ -46,6 +46,7 @@ with more memory can predict larger protein structures).
 Please follow these steps:
 
 1.  Install [Docker](https://www.docker.com/).
+
     *   Install
         [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
         for GPU support.
@@ -62,25 +63,24 @@ Please follow these steps:
 1.  Download genetic databases and model parameters:
 
     *   Install `aria2c`. On most Linux distributions it is available via the
-    package manager as the `aria2` package (on Debian-based distributions this
-    can be installed by running `sudo apt install aria2`).
+        package manager as the `aria2` package (on Debian-based distributions
+        this can be installed by running `sudo apt install aria2`).
 
-    *   Please use the script `scripts/download_all_data.sh` to download
-    and set up full databases. This may take substantial time (download size is
-    556 GB), so we recommend running this script in the background:
+    *   Please use the script `scripts/download_all_data.sh` to download and set
+        up full databases. This may take substantial time (download size is 556
+        GB), so we recommend running this script in the background:
 
     ```bash
     scripts/download_all_data.sh <DOWNLOAD_DIR> > download.log 2> download_all.log &
     ```
 
     *   **Note: The download directory `<DOWNLOAD_DIR>` should *not* be a
-    subdirectory in the AlphaFold repository directory.** If it is, the Docker
-    build will be slow as the large databases will be copied into the docker
-    build context.
+        subdirectory in the AlphaFold repository directory.** If it is, the
+        Docker build will be slow as the large databases will be copied into the
+        docker build context.
 
     *   It is possible to run AlphaFold with reduced databases; please refer to
-    the [complete documentation](#genetic-databases).
-
+        the [complete documentation](#genetic-databases).
 
 1.  Check that AlphaFold will be able to use a GPU by running:
 
@@ -95,8 +95,9 @@ Please follow these steps:
     [NVIDIA Docker issue](https://github.com/NVIDIA/nvidia-docker/issues/1447#issuecomment-801479573).
 
     If you wish to run AlphaFold using Singularity (a common containerization
-    platform on HPC systems) we recommend using some of the third party Singularity
-    setups as linked in https://github.com/deepmind/alphafold/issues/10 or
+    platform on HPC systems) we recommend using some of the third party
+    Singularity setups as linked in
+    https://github.com/deepmind/alphafold/issues/10 or
     https://github.com/deepmind/alphafold/issues/24.
 
 1.  Build the Docker image:
@@ -312,7 +313,8 @@ To use the deprecated v2.1.0 AlphaFold-Multimer model weights:
 was tested on Google Cloud with a machine using the `nvidia-gpu-cloud-image`
 with 12 vCPUs, 85 GB of RAM, a 100 GB boot disk, the databases on an additional
 3 TB disk, and an A100 GPU. For your first run, please follow the instructions
-from [Installation and running your first prediction](#installation-and-running-your-first-prediction)
+from
+[Installation and running your first prediction](#installation-and-running-your-first-prediction)
 section.
 
 1.  By default, Alphafold will attempt to use all visible GPU devices. To use a
@@ -363,15 +365,15 @@ section.
       --output_dir=/home/user/absolute_path_to_the_output_dir
     ```
 
-1.  After generating the predicted model, AlphaFold runs a relaxation
-    step to improve local geometry. By default, only the best model (by
-    pLDDT) is relaxed (`--models_to_relax=best`), but also all of the models
+1.  After generating the predicted model, AlphaFold runs a relaxation step to
+    improve local geometry. By default, only the best model (by pLDDT) is
+    relaxed (`--models_to_relax=best`), but also all of the models
     (`--models_to_relax=all`) or none of the models (`--models_to_relax=none`)
     can be relaxed.
 
 1.  The relaxation step can be run on GPU (faster, but could be less stable) or
-    CPU (slow, but stable). This can be controlled with `--enable_gpu_relax=true`
-    (default) or `--enable_gpu_relax=false`.
+    CPU (slow, but stable). This can be controlled with
+    `--enable_gpu_relax=true` (default) or `--enable_gpu_relax=false`.
 
 1.  AlphaFold can re-use MSAs (multiple sequence alignments) for the same
     sequence via `--use_precomputed_msas=true` option; this can be useful for
@@ -405,12 +407,12 @@ can be done via the `--num_multimer_predictions_per_model` flag, e.g. set it to
 ### AlphaFold prediction speed
 
 The table below reports prediction runtimes for proteins of various lengths. We
-only measure unrelaxed structure prediction with three recycles while
-excluding runtimes from MSA and template search. When running
-`docker/run_docker.py` with `--benchmark=true`, this runtime is stored in
-`timings.json`. All runtimes are from a single A100 NVIDIA GPU. Prediction
-speed on A100 for smaller structures can be improved by increasing
-`global_config.subbatch_size` in `alphafold/model/config.py`.
+only measure unrelaxed structure prediction with three recycles while excluding
+runtimes from MSA and template search. When running `docker/run_docker.py` with
+`--benchmark=true`, this runtime is stored in `timings.json`. All runtimes are
+from a single A100 NVIDIA GPU. Prediction speed on A100 for smaller structures
+can be improved by increasing `global_config.subbatch_size` in
+`alphafold/model/config.py`.
 
 No. residues | Prediction time (s)
 -----------: | ------------------:
@@ -577,14 +579,14 @@ The contents of each output file are as follows:
     structure prediction (see Jumper et al. 2021, Suppl. Methods 1.8.6 for
     details).
 *   `ranked_*.pdb` – A PDB format text file containing the predicted structures,
-    after reordering by model confidence. Here `ranked_i.pdb` should contain
-    the prediction with the (`i + 1`)-th highest confidence (so that
-    `ranked_0.pdb` has the highest confidence). To rank model confidence, we use
-    predicted LDDT (pLDDT) scores (see Jumper et al. 2021, Suppl. Methods 1.9.6
-    for details). If `--models_to_relax=all` then all ranked structures are
-    relaxed. If `--models_to_relax=best` then only `ranked_0.pdb` is relaxed
-    (the rest are unrelaxed). If `--models_to_relax=none`, then the ranked
-    structures are all unrelaxed.
+    after reordering by model confidence. Here `ranked_i.pdb` should contain the
+    prediction with the (`i + 1`)-th highest confidence (so that `ranked_0.pdb`
+    has the highest confidence). To rank model confidence, we use predicted LDDT
+    (pLDDT) scores (see Jumper et al. 2021, Suppl. Methods 1.9.6 for details).
+    If `--models_to_relax=all` then all ranked structures are relaxed. If
+    `--models_to_relax=best` then only `ranked_0.pdb` is relaxed (the rest are
+    unrelaxed). If `--models_to_relax=none`, then the ranked structures are all
+    unrelaxed.
 *   `ranking_debug.json` – A JSON format text file containing the pLDDT values
     used to perform the model ranking, and a mapping back to the original model
     names.
@@ -693,7 +695,6 @@ If you use the code or data in this package, please cite:
 
 In addition, if you use the AlphaFold-Multimer mode, please cite:
 
-
 ```bibtex
 @article {AlphaFold-Multimer2021,
   author       = {Evans, Richard and O{\textquoteright}Neill, Michael and Pritzel, Alexander and Antropova, Natasha and Senior, Andrew and Green, Tim and {\v{Z}}{\'\i}dek, Augustin and Bates, Russ and Blackwell, Sam and Yim, Jason and Ronneberger, Olaf and Bodenstein, Sebastian and Zielinski, Michal and Bridgland, Alex and Potapenko, Anna and Cowie, Andrew and Tunyasuvunakool, Kathryn and Jain, Rishub and Clancy, Ellen and Kohli, Pushmeet and Jumper, John and Hassabis, Demis},
@@ -765,6 +766,17 @@ This is not an officially supported Google product.
 
 Copyright 2022 DeepMind Technologies Limited.
 
+AlphaFold 2 and its output are for theoretical modeling only. They are not
+intended, validated, or approved for clinical use. You should not use the
+AlphaFold 2 or its output for clinical purposes or rely on them for medical or
+other professional advice. Any content regarding those topics is provided for
+informational purposes only and is not a substitute for advice from a qualified
+professional.
+
+Output of AlphaFold 2 are predictions with varying levels of confidence and
+should be interpreted carefully. Use discretion before relying on, publishing,
+downloading or otherwise using AlphaFold 2 and its output.
+
 ### AlphaFold Code License
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
@@ -816,4 +828,3 @@ reference to the following:
     restrictions and made fully and freely available for both non-commercial and
     commercial use under
     [CC0 1.0 Universal (CC0 1.0) Public Domain Dedication](https://creativecommons.org/publicdomain/zero/1.0/).
-
