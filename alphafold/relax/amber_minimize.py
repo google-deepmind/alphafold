@@ -43,7 +43,7 @@ def will_restrain(atom: openmm_app.Atom, rset: str) -> bool:
   if rset == "non_hydrogen":
     return atom.element.name != "hydrogen"
   elif rset == "c_alpha":
-    return atom.name == "CA"
+    return atom.name == "CA"  # pytype: disable=bad-return-type
 
 
 def _add_restraints(
