@@ -21,8 +21,9 @@ ARG CUDA
 # Use bash to support string substitution.
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update --quiet \
-    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends --yes --quiet \
+    && apt-get install --no-install-recommends --yes --quiet \
         build-essential \
         cmake \
         cuda-command-line-tools-$(cut -f1,2 -d- <<< ${CUDA//./-}) \
@@ -36,11 +37,11 @@ RUN apt-get update --quiet \
     && apt-get clean
 
 # Compile HHsuite from source.
-RUN git clone --branch v3.3.0 https://github.com/soedinglab/hh-suite.git /tmp/hh-suite \
+RUN git clone --branch v3.3.0 --single-branch https://github.com/soedinglab/hh-suite.git /tmp/hh-suite \
     && mkdir /tmp/hh-suite/build \
     && pushd /tmp/hh-suite/build \
     && cmake -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
-    && make -j 4 && make install \
+    && make --jobs 4 && make install \
     && ln -s /opt/hhsuite/bin/* /usr/bin \
     && popd \
     && rm -rf /tmp/hh-suite
@@ -51,12 +52,12 @@ RUN wget -q -P /tmp \
     && bash /tmp/Miniconda3-latest-Linux-x86_64.sh -b -p /opt/conda \
     && rm /tmp/Miniconda3-latest-Linux-x86_64.sh
 
-# Install conda packages.
+# Install Conda packages.
 ENV PATH="/opt/conda/bin:$PATH"
 ENV LD_LIBRARY_PATH="/opt/conda/lib:$LD_LIBRARY_PATH"
-RUN conda install -qy conda==24.1.2 pip python=3.11 \
-    && conda install -y -c nvidia cuda=${CUDA_VERSION} \
-    && conda install -y -c conda-forge openmm=8.0.0 pdbfixer \
+RUN conda install --quiet --yes conda==24.11.1 pip python=3.11 \
+    && conda install --quiet --yes --channel nvidia cuda=${CUDA_VERSION} \
+    && conda install --quiet --yes --channel conda-forge openmm=8.0.0 pdbfixer \
     && conda clean --all --force-pkgs-dirs --yes
 
 COPY . /app/alphafold
