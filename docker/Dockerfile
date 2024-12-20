@@ -54,8 +54,8 @@ RUN wget -q -P /tmp \
 # Install conda packages.
 ENV PATH="/opt/conda/bin:$PATH"
 ENV LD_LIBRARY_PATH="/opt/conda/lib:$LD_LIBRARY_PATH"
-RUN conda install -qy conda==24.1.2 pip python=3.11 \
-    && conda install -y -c nvidia cuda=${CUDA_VERSION} \
+RUN conda install -qy conda==24.5.0 pip python=3.11 \
+    && conda install -y -c nvidia/label/cuda-${CUDA} cuda \
     && conda install -y -c conda-forge openmm=8.0.0 pdbfixer \
     && conda clean --all --force-pkgs-dirs --yes
 
