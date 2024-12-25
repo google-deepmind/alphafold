@@ -17,30 +17,31 @@ FROM nvidia/cuda:${CUDA}-cudnn8-runtime-ubuntu20.04
 # FROM directive resets ARGS, so we specify again (the value is retained if
 # previously set).
 ARG CUDA
+ARG CUDA_VERSION=12.2
 
 # Use bash to support string substitution.
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update --quiet \
-    && apt-get install --no-install-recommends --yes --quiet \
-        build-essential \
-        cmake \
-        cuda-command-line-tools-$(cut -f1,2 -d- <<< ${CUDA//./-}) \
-        git \
-        hmmer \
-        kalign \
-        tzdata \
-        wget \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get autoremove --yes \
-    && apt-get clean
+  && apt-get install --no-install-recommends --yes --quiet \
+  build-essential \
+  cmake \
+  cuda-command-line-tools-$(cut -f1,2 -d- <<< ${CUDA//./-}) \
+  git \
+  hmmer \
+  kalign \
+  tzdata \
+  wget \
+  && rm -rf /var/lib/apt/lists/* \
+  && apt-get autoremove --yes \
+  && apt-get clean
 
 # Compile HHsuite from source.
 RUN git clone --branch v3.3.0 --single-branch https://github.com/soedinglab/hh-suite.git /tmp/hh-suite \
     && mkdir /tmp/hh-suite/build \
     && pushd /tmp/hh-suite/build \
-    && cmake -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
+    && cmake -DHAVEX_AVX2=1 -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
     && make --jobs 4 && make install \
     && ln -s /opt/hhsuite/bin/* /usr/bin \
     && popd \
@@ -56,8 +57,9 @@ RUN wget -q -P /tmp \
 ENV PATH="/opt/conda/bin:$PATH"
 ENV LD_LIBRARY_PATH="/opt/conda/lib:$LD_LIBRARY_PATH"
 RUN conda install --quiet --yes conda==24.11.1 pip python=3.11 \
-    && conda install --quiet --yes --channel nvidia cuda=${CUDA_VERSION} \
-    && conda install --quiet --yes --channel conda-forge openmm=8.0.0 pdbfixer \
+    && conda install --quiet --yes --channel nvidia cuda=${CUDA} cuda-tools=${CUDA} cuda-toolkit=${CUDA} cuda-version=${CUDA_VERSION} cuda-command-line-tools=${CUDA} cuda-compiler=${CUDA} cuda-runtime=${CUDA}
+
+RUN conda install conda install --quiet --yes --channel conda-forge openmm=8.0.0 pdbfixer \
     && conda clean --all --force-pkgs-dirs --yes
 
 COPY . /app/alphafold
