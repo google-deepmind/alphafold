@@ -35,7 +35,20 @@ SOURCE_URL="https://storage.googleapis.com/alphafold/alphafold_params_2022-12-06
 BASENAME=$(basename "${SOURCE_URL}")
 
 mkdir --parents "${ROOT_DIR}"
-aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}"
-tar --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
-  --directory="${ROOT_DIR}" --preserve-permissions
-rm "${ROOT_DIR}/${BASENAME}"
+
+# Check if the file already exists
+if [[ -f "${ROOT_DIR}/${BASENAME}" ]]; then
+    echo "File ${ROOT_DIR}/${BASENAME} already exists. Skipping download."
+else
+    aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}" --max-connection-per-server=16 --split=16 --min-split-size=1M
+fi
+
+# Check if the extracted folder exists
+EXTRACTED_DIR="${ROOT_DIR}/params_directory" # Replace with actual expected directory name if known
+if [[ -d "${EXTRACTED_DIR}" ]]; then
+    echo "Folder ${EXTRACTED_DIR} already exists. Skipping extraction."
+else
+    tar --extract --verbose --file="${ROOT_DIR}/${BASENAME}" \
+      --directory="${ROOT_DIR}" --preserve-permissions
+    rm "${ROOT_DIR}/${BASENAME}"
+fi

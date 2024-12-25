@@ -35,8 +35,18 @@ SOURCE_URL="https://files.wwpdb.org/pub/pdb/derived_data/pdb_seqres.txt"
 BASENAME=$(basename "${SOURCE_URL}")
 
 mkdir --parents "${ROOT_DIR}"
-aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}"
 
-# Keep only protein sequences.
-grep --after-context=1 --no-group-separator '>.* mol:protein' "${ROOT_DIR}/pdb_seqres.txt" > "${ROOT_DIR}/pdb_seqres_filtered.txt"
-mv "${ROOT_DIR}/pdb_seqres_filtered.txt" "${ROOT_DIR}/pdb_seqres.txt"
+# Check if the file already exists
+if [[ -f "${ROOT_DIR}/${BASENAME}" ]]; then
+    echo "File ${ROOT_DIR}/${BASENAME} already exists. Skipping download."
+else
+    aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}" --max-connection-per-server=16 --split=16 --min-split-size=1M
+fi
+
+# Filter for protein sequences if not already filtered
+if [[ -f "${ROOT_DIR}/pdb_seqres_filtered.txt" ]]; then
+    echo "Filtered file ${ROOT_DIR}/pdb_seqres_filtered.txt already exists. Skipping filtering."
+else
+    grep --after-context=1 --no-group-separator '>.* mol:protein' "${ROOT_DIR}/pdb_seqres.txt" > "${ROOT_DIR}/pdb_seqres_filtered.txt"
+    mv "${ROOT_DIR}/pdb_seqres_filtered.txt" "${ROOT_DIR}/pdb_seqres.txt"
+fi

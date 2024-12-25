@@ -42,14 +42,42 @@ SPROT_BASENAME=$(basename "${SPROT_SOURCE_URL}")
 SPROT_UNZIPPED_BASENAME="${SPROT_BASENAME%.gz}"
 
 mkdir --parents "${ROOT_DIR}"
-aria2c "${TREMBL_SOURCE_URL}" --dir="${ROOT_DIR}"
-aria2c "${SPROT_SOURCE_URL}" --dir="${ROOT_DIR}"
+
+# Download files if they do not exist
+if [[ -f "${ROOT_DIR}/${TREMBL_BASENAME}" ]]; then
+    echo "File ${ROOT_DIR}/${TREMBL_BASENAME} already exists. Skipping download."
+else
+    aria2c "${TREMBL_SOURCE_URL}" --dir="${ROOT_DIR}" --max-connection-per-server=16 --split=16 --min-split-size=1M
+fi
+
+if [[ -f "${ROOT_DIR}/${SPROT_BASENAME}" ]]; then
+    echo "File ${ROOT_DIR}/${SPROT_BASENAME} already exists. Skipping download."
+else
+    aria2c "${SPROT_SOURCE_URL}" --dir="${ROOT_DIR}" --max-connection-per-server=16 --split=16 --min-split-size=1M
+fi
+
 pushd "${ROOT_DIR}"
-gunzip "${ROOT_DIR}/${TREMBL_BASENAME}"
-gunzip "${ROOT_DIR}/${SPROT_BASENAME}"
+
+# Decompress files if not already decompressed
+if [[ -f "${ROOT_DIR}/${TREMBL_UNZIPPED_BASENAME}" ]]; then
+    echo "File ${ROOT_DIR}/${TREMBL_UNZIPPED_BASENAME} already exists. Skipping decompression."
+else
+    gunzip "${ROOT_DIR}/${TREMBL_BASENAME}"
+fi
+
+if [[ -f "${ROOT_DIR}/${SPROT_UNZIPPED_BASENAME}" ]]; then
+    echo "File ${ROOT_DIR}/${SPROT_UNZIPPED_BASENAME} already exists. Skipping decompression."
+else
+    gunzip "${ROOT_DIR}/${SPROT_BASENAME}"
+fi
 
 # Concatenate TrEMBL and SwissProt, rename to uniprot and clean up.
-cat "${ROOT_DIR}/${SPROT_UNZIPPED_BASENAME}" >> "${ROOT_DIR}/${TREMBL_UNZIPPED_BASENAME}"
-mv "${ROOT_DIR}/${TREMBL_UNZIPPED_BASENAME}" "${ROOT_DIR}/uniprot.fasta"
-rm "${ROOT_DIR}/${SPROT_UNZIPPED_BASENAME}"
+if [[ -f "${ROOT_DIR}/uniprot.fasta" ]]; then
+    echo "File ${ROOT_DIR}/uniprot.fasta already exists. Skipping concatenation."
+else
+    cat "${ROOT_DIR}/${SPROT_UNZIPPED_BASENAME}" >> "${ROOT_DIR}/${TREMBL_UNZIPPED_BASENAME}"
+    mv "${ROOT_DIR}/${TREMBL_UNZIPPED_BASENAME}" "${ROOT_DIR}/uniprot.fasta"
+    rm "${ROOT_DIR}/${SPROT_UNZIPPED_BASENAME}"
+fi
+
 popd

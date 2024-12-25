@@ -35,7 +35,19 @@ SOURCE_URL="https://ftp.ebi.ac.uk/pub/databases/uniprot/uniref/uniref90/uniref90
 BASENAME=$(basename "${SOURCE_URL}")
 
 mkdir --parents "${ROOT_DIR}"
-aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}"
-pushd "${ROOT_DIR}"
-gunzip "${ROOT_DIR}/${BASENAME}"
-popd
+
+# Check if the file already exists
+if [[ -f "${ROOT_DIR}/${BASENAME}" ]]; then
+    echo "File ${ROOT_DIR}/${BASENAME} already exists. Skipping download."
+else
+    aria2c "${SOURCE_URL}" --dir="${ROOT_DIR}" --max-connection-per-server=16 --split=16 --min-split-size=1M
+fi
+
+# Check if the unzipped file exists
+if [[ -f "${ROOT_DIR}/${BASENAME%.gz}" ]]; then
+    echo "File ${ROOT_DIR}/${BASENAME%.gz} already exists. Skipping decompression."
+else
+    pushd "${ROOT_DIR}"
+    gunzip "${ROOT_DIR}/${BASENAME}"
+    popd
+fi
