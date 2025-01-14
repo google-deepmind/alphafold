@@ -564,7 +564,7 @@ class EmbeddingsAndEvoformer(hk.Module):
     dtype = jnp.bfloat16 if gc.bfloat16 else jnp.float32
 
     clipped_offset = jnp.clip(
-        offset + c.max_relative_idx, a_min=0, a_max=2 * c.max_relative_idx)
+        offset + c.max_relative_idx, min=0, max=2 * c.max_relative_idx)
 
     if c.use_chain_relative:
 
@@ -586,7 +586,7 @@ class EmbeddingsAndEvoformer(hk.Module):
       max_rel_chain = c.max_relative_chain
 
       clipped_rel_chain = jnp.clip(
-          rel_sym_id + max_rel_chain, a_min=0, a_max=2 * max_rel_chain)
+          rel_sym_id + max_rel_chain, min=0, max=2 * max_rel_chain)
 
       final_rel_chain = jnp.where(entity_id_same, clipped_rel_chain,
                                   (2 * max_rel_chain + 1) *
