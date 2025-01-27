@@ -39,7 +39,9 @@ Note that comments are not allowed in JSON files.
 {
   "name": "Test Fold Job Number One",
   "modelSeeds": [],
-  "sequences": [...]
+  "sequences": [...],
+  "dialect": "alphafoldserver",
+  "version": 1
 }
 ```
 
@@ -52,6 +54,20 @@ Valid entity types mirror those available in the AlphaFold Server web interface:
 *   `rnaSequence` – used for RNA (single strand)
 *   `ligand` – used for allowed ligands
 *   `ion` – used for allowed ions
+*   `dialect` – The dialect of the input JSON. It should be set to
+    `alphafoldserver`
+*   `version` – The version of the input JSON. It should be set to 1. See
+    [versions](#versions) below for more information.
+
+## Versions
+
+The top-level `version` field (for the `alphafoldserver` dialect) can be either
+`undefined` or `1`. The following features have been added in respective
+versions:
+
+*   Not set: the initial AlphaFold Server input format.
+*   `1`: added the option of specifying external templates using newly added
+    fields `maxTemplateDate` and `useStructureTemplate`.
 
 ### Protein chains
 
@@ -82,6 +98,13 @@ the post-translational modifications.
     `CCD_MCS`, `CCD_HYP`, `CCD_HY3`, `CCD_LYZ`, `CCD_AHB`, `CCD_P1L`, `CCD_SNN`,
     `CCD_SNC`, `CCD_TRF`, `CCD_KCR`, `CCD_CIR`, `CCD_YHA`
 
+`useStructureTemplate` is an optional boolean that determines whether the model
+should use PDB templates, with a default value of `true`.
+
+`maxTemplateDate` is an optional ISO 8601 date string (YYYY-MM-DD) specifying
+the upper date limit for considering PDB templates. Only templates released on
+or before this date will be used. The lower bound for the date is 1976-01-01.
+
 ```json
 {
   "proteinChain": {
@@ -109,13 +132,15 @@ the post-translational modifications.
       }
     ],
 
-    "count": 1
+    "count": 1,
+    "maxTemplateDate": "2018-01-20"
   }
 },
 {
   "proteinChain": {
     "sequence": "REACHER",
-    "count": 1
+    "count": 1,
+    "useStructureTemplate": false
   }
 }
 ```
@@ -281,6 +306,8 @@ sequence:
         "count": 2
       }
     }
-  ]
+  ],
+  "dialect": "alphafoldserver",
+  "version": 1
 }
 ```

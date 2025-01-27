@@ -26,13 +26,15 @@
               "ptmPosition": 5
             }
           ],
-          "count": 1
+          "count": 1,
+          "maxTemplateDate": "2018-01-20"
         }
       },
       {
         "proteinChain": {
           "sequence": "REACHER",
-          "count": 1
+          "count": 1,
+          "useStructureTemplate": false
         }
       },
       {
@@ -97,7 +99,9 @@
           "count": 3
         }
       }
-    ]
+    ],
+    "dialect": "alphafoldserver",
+    "version": 1
   },
   {
     "name": "Test Fold Job Number Two",
@@ -106,7 +110,8 @@
       {
         "proteinChain": {
           "sequence": "TEACHINGS",
-          "count": 1
+          "count": 1,
+          "maxTemplateDate": "2024-05-08"
         }
       },
       {
@@ -115,6 +120,8 @@
           "count": 1
         }
       }
-    ]
+    ],
+    "dialect": "alphafoldserver",
+    "version": 1
   }
 ]
