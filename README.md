@@ -28,8 +28,7 @@ Please also refer to the
 for a detailed description of the method.
 
 **You can use a slightly simplified version of AlphaFold with
-[this Colab notebook](https://colab.research.google.com/github/deepmind/alphafold/blob/main/notebooks/AlphaFold.ipynb)**
-or community-supported versions (see below).
+community-supported versions (see below).
 
 If you have any questions, please contact the AlphaFold team at
 [alphafold@deepmind.com](mailto:alphafold@deepmind.com).
