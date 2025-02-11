@@ -96,7 +96,12 @@ def pad_features(feature: np.ndarray, feature_name: str) -> np.ndarray:
   Returns:
     The feature with an additional padding row.
   """
-  assert feature.dtype != np.dtype(np.string_)
+  try:
+    forbidden_dtype = np.dtype(np.string_) # NumPy 1.x
+  except AttributeError:
+    forbidden_dtype = np.dtype(np.bytes_) # NumPy 2.x
+
+  assert feature.dtype != forbidden_dtype
   if feature_name in ('msa_all_seq', 'msa_mask_all_seq',
                       'deletion_matrix_all_seq', 'deletion_matrix_int_all_seq'):
     num_res = feature.shape[1]
