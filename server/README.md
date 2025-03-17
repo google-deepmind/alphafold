@@ -103,7 +103,10 @@ should use PDB templates, with a default value of `true`.
 
 `maxTemplateDate` is an optional ISO 8601 date string (YYYY-MM-DD) specifying
 the upper date limit for considering PDB templates. Only templates released on
-or before this date will be used. The lower bound for the date is 1976-01-01.
+or before this date will be used. The lower bound for the date is 1976-01-01
+(which effectively cuts off all templates) and the maximum date one can
+currently set is 2025-02-03 (date of last download from PDB used to generate the
+templates).
 
 ```json
 {
