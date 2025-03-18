@@ -40,13 +40,11 @@ _UNIPROT_PATTERN = re.compile(
     # A mnemonic species identification code.
     (?P<SpeciesIdentifier>([A-Za-z0-9]){1,5})
     # Small BFD uses a final value after an underscore, which we ignore.
-      (?:_\d+)?
-      $
+    (?:_\d+)?
+    $
     """,
     re.VERBOSE)
 
-# added a pattern to parse OX ID 
-_OX_ID_PATTERN = re.compile(r"""\sOX=(?P<OX_ID>[0-9]{1,20})\s""")
 
 @dataclasses.dataclass(frozen=True)
 class Identifiers:
@@ -67,11 +65,10 @@ def _parse_sequence_identifier(msa_sequence_identifier: str) -> Identifiers:
     An `Identifiers` instance with species_id. These
     can be empty in the case where no identifier was found.
   """
-  matches = re.search(_OX_ID_PATTERN, msa_sequence_identifier.strip())
+  matches = re.search(_UNIPROT_PATTERN, msa_sequence_identifier.strip())
   if matches:
     return Identifiers(
-        # species_id=matches.group('SpeciesIdentifier'))
-        species_id=matches.group('OX_ID')).rstrip()
+        species_id=matches.group('SpeciesIdentifier'))
   return Identifiers()
 
 
