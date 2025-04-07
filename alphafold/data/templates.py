@@ -981,13 +981,13 @@ class HmmsearchHitFeaturizer(TemplateHitFeaturizer):
                       hit.name, result.error, result.warning)
       else:
         already_seen_key = result.features['template_sequence']
-        if already_seen_key in already_seen:
-          logging.info("Found identical template sequence: %s", already_seen_key)
+        if already_seen_key in already_seen and not FLAGS.multimeric_template:
+          continue
+        logging.info(f"You are now in TrueMultimer mode, so all templates are kept, including identical ones: {already_seen_key}")
         # Increment the hit counter, since we got features out of this hit.
         already_seen.add(already_seen_key)
         for k in template_features:
           template_features[k].append(result.features[k])
-
     if already_seen:
       for name in template_features:
         template_features[name] = np.stack(
