@@ -90,7 +90,8 @@ flags.DEFINE_string('uniprot_database_path', None, 'Path to the Uniprot '
 flags.DEFINE_string('pdb70_database_path', None, 'Path to the PDB70 '
                     'database for use by HHsearch.')
 flags.DEFINE_string('pdb_seqres_database_path', None, 'Path to the PDB '
-                    'seqres database for use by hmmsearch.')
+                    'seqres database file for use by hmmsearch (provide the specific '
+                    'filename, not just the directory).')
 flags.DEFINE_string('template_mmcif_dir', None, 'Path to a directory with '
                     'template mmCIF structures, each named <pdb_id>.cif')
 flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
