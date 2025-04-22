@@ -22,13 +22,14 @@ import os
 import re
 from typing import Any, Dict, Mapping, Optional, Sequence, Tuple
 
-from absl import logging
+from absl import logging, flags
 from alphafold.common import residue_constants
 from alphafold.data import mmcif_parsing
 from alphafold.data import parsers
 from alphafold.data.tools import kalign
 import numpy as np
 
+FLAGS = flags.FLAGS
 # Internal import (7716).
 
 
@@ -176,8 +177,8 @@ def _assess_hhsearch_hit(
     query_sequence: str,
     release_dates: Mapping[str, datetime.datetime],
     release_date_cutoff: datetime.datetime,
-    max_subsequence_ratio: float = 1.05,
-    min_align_ratio: float = 0.01) -> bool:
+    max_subsequence_ratio: float = 0.95,
+    min_align_ratio: float = 0.1) -> bool:
   """Determines if template is valid (without parsing the template mmcif file).
 
   Args:
@@ -201,6 +202,11 @@ def _assess_hhsearch_hit(
     DuplicateError: If the hit was an exact subsequence of the query.
     LengthError: If the hit was too short.
   """
+  if FLAGS.path_to_mmt is not None:
+      logging.info("Running in TrueMultimer mode, skipping prefiltering")
+      max_subsequence_ratio = 1.05
+      min_align_ratio = 0.01
+
   aligned_cols = hit.aligned_cols
   align_ratio = aligned_cols / len(query_sequence)
 
@@ -931,81 +937,100 @@ class HhsearchHitFeaturizer(TemplateHitFeaturizer):
 
 
 class HmmsearchHitFeaturizer(TemplateHitFeaturizer):
-  """A class for turning a3m hits from hmmsearch to template features."""
+    """A class for turning a3m hits from hmmsearch to template features."""
 
-  def get_templates(
-      self,
-      query_sequence: str,
-      hits: Sequence[parsers.TemplateHit]) -> TemplateSearchResult:
-    """Computes the templates for given query sequence (more details above)."""
-    logging.info('Searching for template for: %s', query_sequence)
+    def get_templates(
+        self,
+        query_sequence: str,
+        hits: Sequence[parsers.TemplateHit]
+    ) -> 'TemplateSearchResult':
+        """Convert `hits` for `query_sequence` to a `TemplateSearchResult`."""
+        logging.info('Searching for templates for: %s', query_sequence)
 
-    template_features = {}
-    for template_feature_name in TEMPLATE_FEATURES:
-      template_features[template_feature_name] = []
+        template_features = {k: [] for k in TEMPLATE_FEATURES}
+        errors: Sequence[str] = []
+        warnings: Sequence[str] = []
 
-    already_seen = set()
-    errors = []
-    warnings = []
+        # Sort hits by HMMER posterior probability if available
+        sorted_hits = (
+            sorted(hits, key=lambda x: x.sum_probs, reverse=True)
+            if hits and hits[0].sum_probs is not None
+            else hits
+        )
 
-    if not hits or hits[0].sum_probs is None:
-      sorted_hits = hits
-    else:
-      sorted_hits = sorted(hits, key=lambda x: x.sum_probs, reverse=True)
+        already_seen: set[str] = set()     # sequences seen so far
+        kept = 0                           # number of templates kept
 
-    for hit in sorted_hits:
-      # We got all the templates we wanted, stop processing hits.
-      if len(already_seen) >= self._max_hits:
-        break
+        for hit in sorted_hits:
+            if kept >= self._max_hits:
+                break
 
-      result = _process_single_hit(
-          query_sequence=query_sequence,
-          hit=hit,
-          mmcif_dir=self._mmcif_dir,
-          max_template_date=self._max_template_date,
-          release_dates=self._release_dates,
-          obsolete_pdbs=self._obsolete_pdbs,
-          strict_error_check=self._strict_error_check,
-          kalign_binary_path=self._kalign_binary_path)
+            result = _process_single_hit(
+                query_sequence=query_sequence,
+                hit=hit,
+                mmcif_dir=self._mmcif_dir,
+                max_template_date=self._max_template_date,
+                release_dates=self._release_dates,
+                obsolete_pdbs=self._obsolete_pdbs,
+                strict_error_check=self._strict_error_check,
+                kalign_binary_path=self._kalign_binary_path,
+            )
 
-      if result.error:
-        errors.append(result.error)
+            if result.error:
+                errors.append(result.error)
+            if result.warning:
+                warnings.append(result.warning)
+            if result.features is None:     # parsing failed
+                logging.debug('Skipped invalid hit %s, error: %s, warning: %s',
+                              hit.name, result.error, result.warning)
+                continue
 
-      # There could be an error even if there are some results, e.g. thrown by
-      # other unparsable chains in the same mmCIF file.
-      if result.warning:
-        warnings.append(result.warning)
+            seq_key = result.features['template_sequence']
 
-      if result.features is None:
-        logging.debug('Skipped invalid hit %s, error: %s, warning: %s',
-                      hit.name, result.error, result.warning)
-      else:
-        already_seen_key = result.features['template_sequence']
-        if already_seen_key in already_seen and not FLAGS.multimeric_template:
-          continue
-        logging.info(f"You are now in TrueMultimer mode, so all templates are kept, including identical ones: {already_seen_key}")
-        # Increment the hit counter, since we got features out of this hit.
-        already_seen.add(already_seen_key)
-        for k in template_features:
-          template_features[k].append(result.features[k])
-    if already_seen:
-      for name in template_features:
-        template_features[name] = np.stack(
-            template_features[name], axis=0).astype(TEMPLATE_FEATURES[name])
-    else:
-      num_res = len(query_sequence)
-      # Construct a default template with all zeros.
-      template_features = {
-          'template_aatype': np.zeros(
-              (1, num_res, len(residue_constants.restypes_with_x_and_gap)),
-              np.float32),
-          'template_all_atom_masks': np.zeros(
-              (1, num_res, residue_constants.atom_type_num), np.float32),
-          'template_all_atom_positions': np.zeros(
-              (1, num_res, residue_constants.atom_type_num, 3), np.float32),
-          'template_domain_names': np.array([''.encode()], dtype=object),
-          'template_sequence': np.array([''.encode()], dtype=object),
-          'template_sum_probs': np.array([0], dtype=np.float32)
-      }
-    return TemplateSearchResult(
-        features=template_features, errors=errors, warnings=warnings)
+            # ------------------------------------------------------------------
+            # Keep / skip decision
+            # ------------------------------------------------------------------
+            if FLAGS.path_to_mmt is None and seq_key in already_seen:
+                # Not TrueMultimer mode → reject duplicates
+                logging.debug('Skipping duplicate template %s (not TrueMultimer mode)',
+                              seq_key)
+                continue
+
+            # Either TrueMultimer mode or a novel sequence: keep it
+            already_seen.add(seq_key)
+            kept += 1
+
+            for k in TEMPLATE_FEATURES:
+                template_features[k].append(result.features[k])
+
+        # ------------------------------------------------------------------
+        # Finalise return value
+        # ------------------------------------------------------------------
+        if kept:
+            for name in template_features:
+                template_features[name] = np.stack(
+                    template_features[name], axis=0
+                ).astype(TEMPLATE_FEATURES[name])
+        else:
+            # Fallback: a single zeroed‑out template
+            num_res = len(query_sequence)
+            template_features = {
+                'template_aatype': np.zeros(
+                    (1, num_res, len(residue_constants.restypes_with_x_and_gap)),
+                    np.float32,
+                ),
+                'template_all_atom_masks': np.zeros(
+                    (1, num_res, residue_constants.atom_type_num), np.float32
+                ),
+                'template_all_atom_positions': np.zeros(
+                    (1, num_res, residue_constants.atom_type_num, 3), np.float32
+                ),
+                'template_domain_names': np.array([''.encode()], dtype=object),
+                'template_sequence': np.array([''.encode()], dtype=object),
+                'template_sum_probs': np.array([0], dtype=np.float32),
+            }
+
+        return TemplateSearchResult(
+            features=template_features, errors=errors, warnings=warnings
+        )
+
