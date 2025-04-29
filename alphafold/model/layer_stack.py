@@ -109,7 +109,7 @@ class _LayerStack(hk.Module):
           args0 = (None,)
         else:
           args0 = [
-              jax.lax.dynamic_index_in_dim(ys, 0, keepdims=False)
+              jax.lax.dynamic_index_in_dim(ys, 0, keepdims=False)  # pytype: disable=wrong-arg-types
               for ys in args_ys
           ]
         x, z = self._call_wrapped(x, *args0)
