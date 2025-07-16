@@ -41,7 +41,7 @@ RUN git clone --branch v3.3.0 --single-branch https://github.com/soedinglab/hh-s
     && mkdir /tmp/hh-suite/build \
     && pushd /tmp/hh-suite/build \
     && cmake -DCMAKE_INSTALL_PREFIX=/opt/hhsuite .. \
-    && make --jobs 4 && make install \
+    && make -j && make install \
     && ln -s /opt/hhsuite/bin/* /usr/bin \
     && popd \
     && rm -rf /tmp/hh-suite
@@ -55,6 +55,7 @@ RUN wget -q -P /tmp \
 # Install Conda packages.
 ENV PATH="/opt/conda/bin:$PATH"
 ENV LD_LIBRARY_PATH="/opt/conda/lib:$LD_LIBRARY_PATH"
+ENV CONDA_PLUGINS_AUTO_ACCEPT_TOS="yes"
 RUN conda install --quiet --yes conda==24.11.1 pip python=3.11 \
     && conda install --quiet --yes --channel nvidia cuda=${CUDA_VERSION} \
     && conda install --quiet --yes --channel conda-forge openmm=8.0.0 pdbfixer \
