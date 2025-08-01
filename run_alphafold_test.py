@@ -12,15 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for run_alphafold."""
-
 import json
 import os
+from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
 import run_alphafold
-import mock
 import numpy as np
 # Internal import (7716).
 

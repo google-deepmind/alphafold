@@ -6,9 +6,11 @@ dm-tree==0.1.8
 docker==5.0.0
 immutabledict==2.0.0
 jax==0.4.26
+matplotlib==3.8.0
 ml-collections==0.1.0
 numpy==1.24.3
 pandas==2.0.3
-setuptools<72.0.0
+pytest<8.5.0
 scipy==1.11.1
+setuptools<72.0.0
 tensorflow-cpu==2.16.1

@@ -39,15 +39,13 @@ setup(
         'docker',
         'immutabledict',
         'jax',
+        'matplotlib',
         'ml-collections',
         'numpy',
         'pandas',
+        'pytest',
         'scipy',
         'tensorflow-cpu',
-    ],
-    tests_require=[
-        'matplotlib',  # For notebook_utils_test.
-        'mock',
     ],
     classifiers=[
         'Development Status :: 5 - Production/Stable',

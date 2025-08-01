@@ -14,6 +14,7 @@
 
 """Tests for notebook_utils."""
 import io
+from unittest import mock
 
 from absl.testing import absltest
 from absl.testing import parameterized
@@ -21,7 +22,6 @@ from alphafold.data import parsers
 from alphafold.data import templates
 from alphafold.notebooks import notebook_utils
 
-import mock
 import numpy as np
 
 
