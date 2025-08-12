@@ -33,11 +33,9 @@ setup(
     install_requires=[
         'absl-py',
         'biopython',
-        'chex',
         'dm-haiku',
         'dm-tree',
         'docker',
-        'immutabledict',
         'jax',
         'matplotlib',
         'ml-collections',

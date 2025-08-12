@@ -726,13 +726,11 @@ and packages:
 
 *   [Abseil](https://github.com/abseil/abseil-py)
 *   [Biopython](https://biopython.org)
-*   [Chex](https://github.com/deepmind/chex)
 *   [Colab](https://research.google.com/colaboratory/)
 *   [Docker](https://www.docker.com)
 *   [HH Suite](https://github.com/soedinglab/hh-suite)
 *   [HMMER Suite](http://eddylab.org/software/hmmer)
 *   [Haiku](https://github.com/deepmind/dm-haiku)
-*   [Immutabledict](https://github.com/corenting/immutabledict)
 *   [JAX](https://github.com/google/jax/)
 *   [Kalign](https://msa.sbc.su.se/cgi-bin/msa.cgi)
 *   [matplotlib](https://matplotlib.org/)
