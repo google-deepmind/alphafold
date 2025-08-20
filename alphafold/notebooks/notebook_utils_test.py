@@ -159,10 +159,10 @@ class NotebookUtilsTest(parameterized.TestCase):
   def test_show_msa_info(self, mocked_stdout):
     single_chain_msas = [
         parsers.Msa(sequences=['A', 'B', 'C', 'C'],
-                    deletion_matrix=[None] * 4,
+                    deletion_matrix=[[0]] * 4,
                     descriptions=[''] * 4),
         parsers.Msa(sequences=['A', 'A', 'A', 'D'],
-                    deletion_matrix=[None] * 4,
+                    deletion_matrix=[[0]] * 4,
                     descriptions=[''] * 4)
     ]
     notebook_utils.show_msa_info(
