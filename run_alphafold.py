@@ -89,8 +89,9 @@ flags.DEFINE_string('uniprot_database_path', None, 'Path to the Uniprot '
                     'database for use by JackHMMer.')
 flags.DEFINE_string('pdb70_database_path', None, 'Path to the PDB70 '
                     'database for use by HHsearch.')
-flags.DEFINE_string('pdb_seqres_database_path', None, 'Path to the PDB '
-                    'seqres database for use by hmmsearch.')
+flags.DEFINE_string('pdb_seqres_database_path', None, 'Full filepath to the '
+                    'PDB seqres database file (not just the directory) for use '
+                    'by hmmsearch.')
 flags.DEFINE_string('template_mmcif_dir', None, 'Path to a directory with '
                     'template mmCIF structures, each named <pdb_id>.cif')
 flags.DEFINE_string('max_template_date', None, 'Maximum template release date '
