@@ -34,7 +34,7 @@ class Vec3Array:
 
   This is done in order to improve performance and precision.
   On TPU small matrix multiplications are very suboptimal and will waste large
-  compute ressources, furthermore any matrix multiplication on tpu happen in
+  compute resources, furthermore any matrix multiplication on tpu happen in
   mixed bfloat16/float32 precision, which is often undesirable when handling
   physical coordinates.
   In most cases this will also be faster on cpu's/gpu's since it allows for
