@@ -16,6 +16,7 @@
 from alphafold import version
 from setuptools import find_packages
 from setuptools import setup
+from glob import glob
 
 setup(
     name='alphafold',
@@ -30,6 +31,7 @@ setup(
     license='Apache License, Version 2.0',
     url='https://github.com/deepmind/alphafold',
     packages=find_packages(),
+    scripts=['run_alphafold.py'] + glob('scripts/*.sh'),
     install_requires=[
         'absl-py',
         'biopython',
