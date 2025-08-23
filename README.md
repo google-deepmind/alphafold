@@ -35,6 +35,38 @@ If you have any questions, please contact the AlphaFold team at
 
 ![CASP14 predictions](imgs/casp14_predictions.gif)
 
+## 🪟 Windows Installation Instructions (Fix for `tree` and `pdbfixer` Errors)
+
+Some users on **Windows** may encounter the following error when running the AlphaFold test script:
+
+ModuleNotFoundError: No module named 'tree'
+
+This is due to the `dm-tree` package not being properly installed by default. Additionally, the package `pdbfixer`, which is required during relaxation steps, is not available via PyPI for Windows and must be installed from source.
+
+### ✅ Full Windows Setup Steps
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/deepmind/alphafold.git
+   cd alphafold
+Create and activate a virtual environment:
+
+python -m venv venv
+.\venv\Scripts\activate
+Install the AlphaFold package:
+
+pip install -e .
+Manually install the dm-tree and pdbfixer dependencies:
+
+pip install --force-reinstall --no-cache-dir dm-tree
+pip install git+https://github.com/openmm/pdbfixer.git
+Run the test script to verify the setup:
+
+python run_alphafold_test.py
+If everything is set up correctly, you should see both tests pass successfully:
+
+[       OK ] RunAlphafoldTest.test_end_to_end_no_relax
+[       OK ] RunAlphafoldTest.test_end_to_end_relax
+
 ## Installation and running your first prediction
 
 You will need a machine running Linux, AlphaFold does not support other
