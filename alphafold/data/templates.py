@@ -365,7 +365,7 @@ def _realign_pdb_template_to_query(
     raise QueryToTemplateAlignError(
         'Could not align old template %s to template %s (%s_%s). Error: %s' %
         (old_template_sequence, new_template_sequence, mmcif_object.file_id,
-         template_chain_id, str(e)))
+         template_chain_id, str(e))) from e
 
   logging.info('Old aligned template: %s\nNew aligned template: %s',
                old_aligned_template, new_aligned_template)
@@ -841,9 +841,9 @@ class TemplateHitFeaturizer(abc.ABC):
     try:
       self._max_template_date = datetime.datetime.strptime(
           max_template_date, '%Y-%m-%d')
-    except ValueError:
+    except ValueError as e:
       raise ValueError(
-          'max_template_date must be set and have format YYYY-MM-DD.')
+          'max_template_date must be set and have format YYYY-MM-DD.') from e
     self._max_hits = max_hits
     self._kalign_binary_path = kalign_binary_path
     self._strict_error_check = strict_error_check
