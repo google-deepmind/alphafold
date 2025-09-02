@@ -374,21 +374,22 @@ def _run_one_iteration(
     restraint_set: str,
     max_attempts: int,
     use_gpu: bool,
-    exclude_residues: Optional[Collection[int]] = None):
+    exclude_residues: Optional[Collection[int]] = None,
+):
   """Runs the minimization pipeline.
 
   Args:
     pdb_string: A pdb string.
     max_iterations: An `int` specifying the maximum number of L-BFGS iterations.
-    A value of 0 specifies no limit.
-    tolerance: kcal/mol, the energy tolerance of L-BFGS.
+      A value of 0 specifies no limit.
+    tolerance: kcal/(mol * nm), the force tolerance of L-BFGS.
     stiffness: kcal/mol A**2, spring constant of heavy atom restraining
       potential.
     restraint_set: The set of atoms to restrain.
     max_attempts: The maximum number of minimization attempts.
     use_gpu: Whether to run on GPU.
     exclude_residues: An optional list of zero-indexed residues to exclude from
-        restraints.
+      restraints.
 
   Returns:
     A `dict` of minimization info.
@@ -396,7 +397,7 @@ def _run_one_iteration(
   exclude_residues = exclude_residues or []
 
   # Assign physical dimensions.
-  tolerance = tolerance * ENERGY
+  tolerance = tolerance * ENERGY / unit.nanometer
   stiffness = stiffness * ENERGY / (LENGTH**2)
 
   start = time.time()
@@ -434,7 +435,8 @@ def run_pipeline(
     restraint_set: str = "non_hydrogen",
     max_attempts: int = 100,
     checks: bool = True,
-    exclude_residues: Optional[Sequence[int]] = None):
+    exclude_residues: Optional[Sequence[int]] = None,
+):
   """Run iterative amber relax.
 
   Successive relax iterations are performed until all violations have been
@@ -446,17 +448,17 @@ def run_pipeline(
     stiffness: kcal/mol A**2, the restraint stiffness.
     use_gpu: Whether to run on GPU.
     max_outer_iterations: The maximum number of iterative minimization.
-    place_hydrogens_every_iteration: Whether hydrogens are re-initialized
-        prior to every minimization.
-    max_iterations: An `int` specifying the maximum number of L-BFGS steps
-        per relax iteration. A value of 0 specifies no limit.
-    tolerance: kcal/mol, the energy tolerance of L-BFGS.
-        The default value is the OpenMM default.
+    place_hydrogens_every_iteration: Whether hydrogens are re-initialized prior
+      to every minimization.
+    max_iterations: An `int` specifying the maximum number of L-BFGS steps per
+      relax iteration. A value of 0 specifies no limit.
+    tolerance: kcal/(mol * nm), the force tolerance of L-BFGS. The default value
+      is the OpenMM default.
     restraint_set: The set of atoms to restrain.
     max_attempts: The maximum number of minimization attempts per iteration.
     checks: Whether to perform cleaning checks.
     exclude_residues: An optional list of zero-indexed residues to exclude from
-        restraints.
+      restraints.
 
   Returns:
     out: A dictionary of output values.
