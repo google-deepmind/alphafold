@@ -149,7 +149,7 @@ def main(argv):
 
   # Path to the Uniref30 database for use by HHblits.
   uniref30_database_path = os.path.join(
-      FLAGS.data_dir, 'uniref30', 'UniRef30_2021_03')
+      FLAGS.data_dir, 'uniref30', 'UniRef30_2023_02')
 
   # Path to the PDB70 database for use by HHsearch.
   pdb70_database_path = os.path.join(FLAGS.data_dir, 'pdb70', 'pdb70')
