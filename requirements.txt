@@ -1,7 +1,6 @@
 absl-py==1.0.0
 biopython==1.79
 dm-haiku==0.0.12
-dm-tree==0.1.8
 docker==5.0.0
 jax==0.4.26
 matplotlib==3.8.0

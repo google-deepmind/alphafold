@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Code for constructing the model."""
+
 from typing import Any, Mapping, Optional, Union
 
 from absl import logging
@@ -22,10 +23,10 @@ from alphafold.model import modules
 from alphafold.model import modules_multimer
 import haiku as hk
 import jax
+from jax import tree
 import ml_collections
 import numpy as np
 import tensorflow.compat.v1 as tf
-import tree
 
 
 def get_confidence_metrics(
@@ -141,7 +142,7 @@ class RunModel:
   def eval_shape(self, feat: features.FeatureDict) -> jax.ShapeDtypeStruct:
     self.init_params(feat)
     logging.info('Running eval_shape with shape(feat) = %s',
-                 tree.map_structure(lambda x: x.shape, feat))
+                 tree.map(lambda x: x.shape, feat))
     shape = jax.eval_shape(self.apply, self.params, jax.random.PRNGKey(0), feat)
     logging.info('Output shape was %s', shape)
     return shape
@@ -163,15 +164,15 @@ class RunModel:
     """
     self.init_params(feat)
     logging.info('Running predict with shape(feat) = %s',
-                 tree.map_structure(lambda x: x.shape, feat))
+                 tree.map(lambda x: x.shape, feat))
     result = self.apply(self.params, jax.random.PRNGKey(random_seed), feat)
 
     # This block is to ensure benchmark timings are accurate. Some blocking is
     # already happening when computing get_confidence_metrics, and this ensures
     # all outputs are blocked on.
-    jax.tree.map(lambda x: x.block_until_ready(), result)
+    tree.map(lambda x: x.block_until_ready(), result)
     result.update(
         get_confidence_metrics(result, multimer_mode=self.multimer_mode))
     logging.info('Output shape was %s',
-                 tree.map_structure(lambda x: x.shape, result))
+                 tree.map(lambda x: x.shape, result))
     return result

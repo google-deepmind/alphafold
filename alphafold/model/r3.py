@@ -33,9 +33,11 @@ unintended use of these cores on both GPUs and TPUs.
 
 import collections
 from typing import List
+
 from alphafold.model import quat_affine
+from jax import tree
 import jax.numpy as jnp
-import tree
+
 
 # Array of 3-component vectors, stored as individual array for
 # each component.
@@ -104,8 +106,7 @@ def rigids_from_list(l: List[jnp.ndarray]) -> Rigids:
 
 def rigids_from_quataffine(a: quat_affine.QuatAffine) -> Rigids:
   """Converts QuatAffine object to the corresponding Rigids object."""
-  return Rigids(Rots(*tree.flatten(a.rotation)),
-                Vecs(*a.translation))
+  return Rigids(Rots(*tree.flatten(a.rotation)[0]), Vecs(*a.translation))
 
 
 def rigids_from_tensor4x4(

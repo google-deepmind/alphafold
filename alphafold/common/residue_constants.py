@@ -19,8 +19,8 @@ import functools
 import os
 from typing import Final, List, Mapping, Tuple
 
+from jax import tree
 import numpy as np
-import tree
 
 # Internal import (35fd).
 
@@ -766,7 +766,7 @@ chi_atom_2_one_hot = chi_angle_atom(2)
 
 # An array like chi_angles_atoms but using indices rather than names.
 chi_angles_atom_indices = [chi_angles_atoms[restype_1to3[r]] for r in restypes]
-chi_angles_atom_indices = tree.map_structure(
+chi_angles_atom_indices = tree.map(
     lambda atom_name: atom_order[atom_name], chi_angles_atom_indices)
 chi_angles_atom_indices = np.array([
     chi_atoms + ([[0, 0, 0, 0]] * (4 - len(chi_atoms)))

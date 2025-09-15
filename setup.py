@@ -34,7 +34,6 @@ setup(
         'absl-py',
         'biopython',
         'dm-haiku',
-        'dm-tree',
         'docker',
         'jax',
         'matplotlib',
