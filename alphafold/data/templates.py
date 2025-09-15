@@ -340,42 +340,57 @@ def _realign_pdb_template_to_query(
   """
   aligner = kalign.Kalign(binary_path=kalign_binary_path)
   new_template_sequence = mmcif_object.chain_to_seqres.get(
-      template_chain_id, '')
+      template_chain_id, ''
+  )
 
   # Sometimes the template chain id is unknown. But if there is only a single
   # sequence within the mmcif_object, it is safe to assume it is that one.
   if not new_template_sequence:
     if len(mmcif_object.chain_to_seqres) == 1:
-      logging.info('Could not find %s in %s, but there is only 1 sequence, so '
-                   'using that one.',
-                   template_chain_id,
-                   mmcif_object.file_id)
+      logging.info(
+          'Could not find %s in %s, but there is only 1 sequence, so '
+          'using that one.',
+          template_chain_id,
+          mmcif_object.file_id,
+      )
       new_template_sequence = list(mmcif_object.chain_to_seqres.values())[0]
     else:
       raise QueryToTemplateAlignError(
-          f'Could not find chain {template_chain_id} in {mmcif_object.file_id}. '
-          'If there are no mmCIF parsing errors, it is possible it was not a '
-          'protein chain.')
+          f'Could not find chain {template_chain_id} in {mmcif_object.file_id}.'
+          ' If there are no mmCIF parsing errors, it is possible it was not a'
+          ' protein chain.'
+      )
 
   try:
     parsed_a3m = parsers.parse_a3m(
-        aligner.align([old_template_sequence, new_template_sequence]))
+        aligner.align([old_template_sequence, new_template_sequence])
+    )
     old_aligned_template, new_aligned_template = parsed_a3m.sequences
   except Exception as e:
     raise QueryToTemplateAlignError(
-        'Could not align old template %s to template %s (%s_%s). Error: %s' %
-        (old_template_sequence, new_template_sequence, mmcif_object.file_id,
-         template_chain_id, str(e)))
+        'Could not align old template %s to template %s (%s_%s). Error: %s'
+        % (
+            old_template_sequence,
+            new_template_sequence,
+            mmcif_object.file_id,
+            template_chain_id,
+            str(e),
+        )
+    ) from e
 
-  logging.info('Old aligned template: %s\nNew aligned template: %s',
-               old_aligned_template, new_aligned_template)
+  logging.info(
+      'Old aligned template: %s\nNew aligned template: %s',
+      old_aligned_template,
+      new_aligned_template,
+  )
 
   old_to_new_template_mapping = {}
   old_template_index = -1
   new_template_index = -1
   num_same = 0
   for old_template_aa, new_template_aa in zip(
-      old_aligned_template, new_aligned_template):
+      old_aligned_template, new_aligned_template
+  ):
     if old_template_aa != '-':
       old_template_index += 1
     if new_template_aa != '-':
@@ -534,10 +549,11 @@ def _extract_template_features(
 
   warning = None
   try:
-    seqres, chain_id, mapping_offset = _find_template_in_pdb(
+    _, chain_id, mapping_offset = _find_template_in_pdb(
         template_chain_id=template_chain_id,
         template_sequence=template_sequence,
-        mmcif_object=mmcif_object)
+        mmcif_object=mmcif_object,
+    )
   except SequenceNotInTemplateError:
     # If PDB70 contains a different version of the template, we use the sequence
     # from the mmcif_object.
@@ -841,9 +857,10 @@ class TemplateHitFeaturizer(abc.ABC):
     try:
       self._max_template_date = datetime.datetime.strptime(
           max_template_date, '%Y-%m-%d')
-    except ValueError:
+    except ValueError as e:
       raise ValueError(
-          'max_template_date must be set and have format YYYY-MM-DD.')
+          'max_template_date must be set and have format YYYY-MM-DD.'
+      ) from e
     self._max_hits = max_hits
     self._kalign_binary_path = kalign_binary_path
     self._strict_error_check = strict_error_check
