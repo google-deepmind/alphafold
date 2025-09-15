@@ -189,7 +189,7 @@ def _match_rows_by_sequence_similarity(
   take_num_seqs = np.min(num_seqs)
 
   sort_by_similarity = lambda x: x.sort_values(
-      'msa_similarity', axis=0, ascending=False
+      'msa_similarity', axis=0, ascending=False, kind='stable',
   )
 
   for species_df in this_species_msa_dfs:
@@ -282,7 +282,7 @@ def reorder_paired_rows(
   for num_pairings in sorted(all_paired_msa_rows_dict, reverse=True):
     paired_rows = all_paired_msa_rows_dict[num_pairings]
     paired_rows_product = abs(np.array([np.prod(rows) for rows in paired_rows]))
-    paired_rows_sort_index = np.argsort(paired_rows_product)
+    paired_rows_sort_index = np.argsort(paired_rows_product, kind='stable')
     all_paired_msa_rows.extend(paired_rows[paired_rows_sort_index])
 
   return np.array(all_paired_msa_rows)
