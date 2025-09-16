@@ -14,10 +14,10 @@
 """Install script for setuptools."""
 
 from alphafold import version
-from setuptools import find_packages
-from setuptools import setup
+import setuptools
 
-setup(
+
+setuptools.setup(
     name='alphafold',
     version=version.__version__,
     description=(
@@ -29,7 +29,8 @@ setup(
     author_email='alphafold@deepmind.com',
     license='Apache License, Version 2.0',
     url='https://github.com/deepmind/alphafold',
-    packages=find_packages(),
+    packages=setuptools.find_packages(),
+    scripts=['run_alphafold.py'],
     install_requires=[
         'absl-py',
         'biopython',
