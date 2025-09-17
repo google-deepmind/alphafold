@@ -40,7 +40,6 @@ setuptools.setup(
         'matplotlib',
         'ml-collections',
         'numpy',
-        'pandas',
         'pytest',
         'scipy',
         'tensorflow-cpu',

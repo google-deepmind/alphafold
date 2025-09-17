@@ -738,7 +738,6 @@ and packages:
 *   [NumPy](https://numpy.org)
 *   [OpenMM](https://github.com/openmm/openmm)
 *   [OpenStructure](https://openstructure.org)
-*   [pandas](https://pandas.pydata.org/)
 *   [pymol3d](https://github.com/avirshup/py3dmol)
 *   [SciPy](https://scipy.org)
 *   [Sonnet](https://github.com/deepmind/sonnet)

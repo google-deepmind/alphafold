@@ -15,13 +15,14 @@
 """Pairing logic for multimer data pipeline."""
 
 import collections
-from typing import Dict, Iterable, List, Sequence, cast
+import dataclasses
+from typing import Iterable, List, Mapping, Sequence
 
 from alphafold.common import residue_constants
 from alphafold.data import pipeline
 import numpy as np
-import pandas as pd
 import scipy.linalg
+
 
 MSA_GAP_IDX = residue_constants.restypes_with_x_and_gap.index('-')
 SEQUENCE_GAP_CUTOFF = 0.5
@@ -66,13 +67,97 @@ TEMPLATE_FEATURES = (
 CHAIN_FEATURES = ('num_alignments', 'seq_length')
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True, slots=True)
+class MSAStatistics:
+  """Statistics about an MSA.
+
+  Attributes:
+    species_identifiers: An array of species identifiers for each row in the
+      MSA.
+    row: An array of row indices for each row in the MSA.
+    similarity: An array of sequence similarity values for each row in the
+      MSA.
+    gap: An array of gap percentages for each row in the MSA.
+  """
+
+  species_identifiers: np.ndarray
+  row: np.ndarray
+  similarity: np.ndarray
+  gap: np.ndarray
+
+  @classmethod
+  def from_chain_features(
+      cls, chain_features: pipeline.FeatureDict
+  ) -> 'MSAStatistics':
+    """Creates MSAStatistics object from chain features.
+
+    Args:
+      chain_features: A feature dictionary for a single chain. Expected keys:
+          - msa_all_seq: A 2D array where each row corresponds to a sequence in
+            the MSA and each column corresponds to a residue position in the
+            target sequence. The target sequence is the first row in this array.
+          - msa_species_identifiers_all_seq: An array of species identifiers for
+            each sequence in the MSA.
+
+    Returns:
+      An MSAStatistics object.
+    """
+    chain_msa = chain_features['msa_all_seq']
+    target_seq = chain_msa[0]
+    return cls(
+        species_identifiers=chain_features[
+            'msa_species_identifiers_all_seq'
+        ],
+        row=np.arange(
+            len(chain_features['msa_species_identifiers_all_seq']),
+            dtype=np.int32,
+        ),
+        similarity=np.mean(
+            target_seq[None] == chain_msa, axis=-1,
+            dtype=np.float32,
+        ),
+        gap=np.mean(
+            chain_msa == MSA_GAP_IDX, axis=-1,
+            dtype=np.float32,
+        ),
+    )
+
+  def __len__(self) -> int:
+    return len(self.row)
+
+  def get_top_msa_rows(self, num_rows: int) -> np.ndarray:
+    """Returns the top num_rows MSA rows, sorted in descending order of sequence similarity."""
+    sort_indices = np.argsort(-self.similarity, kind='stable')
+    return self.row[sort_indices][:num_rows]
+
+  def to_species_dict(self) -> Mapping[bytes, 'MSAStatistics']:
+    """Creates mapping from species to MSAStatistics of that species."""
+    if not self.species_identifiers.size:
+      return {}
+    species_lookup = {}
+    sort_indices = np.argsort(self.species_identifiers, kind='stable')
+    sorted_species = self.species_identifiers[sort_indices]
+    unique_species, split_points = np.unique(sorted_species, return_index=True)
+    index_groups = np.split(sort_indices, split_points[1:])
+
+    for species, indices in zip(unique_species, index_groups, strict=True):
+      species_stats = self.__class__(
+          species_identifiers=self.species_identifiers[indices],
+          row=self.row[indices],
+          similarity=self.similarity[indices],
+          gap=self.gap[indices],
+      )
+      species_lookup[species] = species_stats
+    return species_lookup
+
+
 def create_paired_features(
     chains: Iterable[pipeline.FeatureDict],
 ) -> List[pipeline.FeatureDict]:
   """Returns the original chains with paired NUM_SEQ features.
 
   Args:
-    chains:  A list of feature dictionaries for each chain.
+    chains:  An iterable of feature dictionaries for each chain.
 
   Returns:
     A list of feature dictionaries with sequence features including only
@@ -133,38 +218,9 @@ def pad_features(feature: np.ndarray, feature_name: str) -> np.ndarray:
   return feats_padded
 
 
-def _make_msa_df(chain_features: pipeline.FeatureDict) -> pd.DataFrame:
-  """Makes dataframe with msa features needed for msa pairing."""
-  chain_msa = chain_features['msa_all_seq']
-  query_seq = chain_msa[0]
-  per_seq_similarity = np.sum(query_seq[None] == chain_msa, axis=-1) / float(
-      len(query_seq)
-  )
-  per_seq_gap = np.sum(chain_msa == 21, axis=-1) / float(len(query_seq))
-  msa_df = pd.DataFrame({
-      'msa_species_identifiers': chain_features[
-          'msa_species_identifiers_all_seq'
-      ],
-      'msa_row': np.arange(
-          len(chain_features['msa_species_identifiers_all_seq'])
-      ),
-      'msa_similarity': per_seq_similarity,
-      'gap': per_seq_gap,
-  })
-  return msa_df
-
-
-def _create_species_dict(msa_df: pd.DataFrame) -> Dict[bytes, pd.DataFrame]:
-  """Creates mapping from species to msa dataframe of that species."""
-  species_lookup = {}
-  for species, species_df in msa_df.groupby('msa_species_identifiers'):
-    species_lookup[cast(bytes, species)] = species_df
-  return species_lookup
-
-
 def _match_rows_by_sequence_similarity(
-    this_species_msa_dfs: List[pd.DataFrame],
-) -> List[List[int]]:
+    this_species_msa_stats: Sequence[MSAStatistics],
+) -> Sequence[Sequence[int]]:
   """Finds MSA sequence pairings across chains based on sequence similarity.
 
   Each chain's MSA sequences are first sorted by their sequence similarity to
@@ -172,7 +228,7 @@ def _match_rows_by_sequence_similarity(
   from the sequences most similar to their target sequence.
 
   Args:
-    this_species_msa_dfs: a list of dataframes containing MSA features for
+    this_species_msa_stats: a list of MSAStatistics containing MSA features for
       sequences for a specific species.
 
   Returns:
@@ -183,19 +239,14 @@ def _match_rows_by_sequence_similarity(
 
   num_seqs = [
       len(species_df)
-      for species_df in this_species_msa_dfs
+      for species_df in this_species_msa_stats
       if species_df is not None
   ]
   take_num_seqs = np.min(num_seqs)
 
-  sort_by_similarity = lambda x: x.sort_values(
-      'msa_similarity', axis=0, ascending=False, kind='stable',
-  )
-
-  for species_df in this_species_msa_dfs:
-    if species_df is not None:
-      species_df_sorted = sort_by_similarity(species_df)
-      msa_rows = species_df_sorted.msa_row.iloc[:take_num_seqs].values
+  for species_stats in this_species_msa_stats:
+    if species_stats is not None:
+      msa_rows = species_stats.get_top_msa_rows(take_num_seqs)
     else:
       msa_rows = [-1] * take_num_seqs  # take the last 'padding' row
     all_paired_msa_rows.append(msa_rows)
@@ -204,56 +255,64 @@ def _match_rows_by_sequence_similarity(
 
 
 def pair_sequences(
-    examples: List[pipeline.FeatureDict],
-) -> Dict[int, np.ndarray]:
-  """Returns indices for paired MSA sequences across chains."""
+    examples: Sequence[pipeline.FeatureDict],
+) -> Mapping[int, np.ndarray]:
+  """Returns indices for paired MSA sequences across chains.
 
+  Args:
+    examples: A list of feature dictionaries for each chain.
+
+  Returns:
+    A dictionary mapping the number of paired chains to the paired indices.
+    The first key is the number of examples, i.e. the number of chains.
+  """
   num_examples = len(examples)
 
   all_chain_species_dict = []
   common_species = set()
   for chain_features in examples:
-    msa_df = _make_msa_df(chain_features)
-    species_dict = _create_species_dict(msa_df)
+    msa_stats = MSAStatistics.from_chain_features(chain_features)
+    species_dict = msa_stats.to_species_dict()
     all_chain_species_dict.append(species_dict)
     common_species.update(set(species_dict))
 
   common_species = sorted(common_species)
   common_species.remove(b'')  # Remove target sequence species.
 
-  all_paired_msa_rows = [np.zeros(len(examples), int)]
   all_paired_msa_rows_dict = {k: [] for k in range(num_examples)}
-  all_paired_msa_rows_dict[num_examples] = [np.zeros(len(examples), int)]
+  # The first row of the MSA is the target sequence.
+  # We start by adding a pairing of all target sequences.
+  all_paired_msa_rows_dict[num_examples] = [np.zeros(num_examples, int)]
 
   for species in common_species:
     if not species:
       continue
-    this_species_msa_dfs = []
-    species_dfs_present = 0
+    this_species_msa_stats = []
+    species_stats_present = 0
     for species_dict in all_chain_species_dict:
       if species in species_dict:
-        this_species_msa_dfs.append(species_dict[species])
-        species_dfs_present += 1
+        this_species_msa_stats.append(species_dict[species])
+        species_stats_present += 1
       else:
-        this_species_msa_dfs.append(None)
+        this_species_msa_stats.append(None)
 
     # Skip species that are present in only one chain.
-    if species_dfs_present <= 1:
+    if species_stats_present <= 1:
       continue
 
     if np.any(
         np.array([
-            len(species_df)
-            for species_df in this_species_msa_dfs
-            if isinstance(species_df, pd.DataFrame)
+            len(species_stats.row)
+            for species_stats in this_species_msa_stats
+            if isinstance(species_stats, MSAStatistics)
         ])
         > 600
     ):
       continue
 
-    paired_msa_rows = _match_rows_by_sequence_similarity(this_species_msa_dfs)
-    all_paired_msa_rows.extend(paired_msa_rows)
-    all_paired_msa_rows_dict[species_dfs_present].extend(paired_msa_rows)
+    paired_msa_rows = _match_rows_by_sequence_similarity(this_species_msa_stats)
+    all_paired_msa_rows_dict[species_stats_present].extend(paired_msa_rows)
+
   all_paired_msa_rows_dict = {
       num_examples: np.array(paired_msa_rows)
       for num_examples, paired_msa_rows in all_paired_msa_rows_dict.items()
@@ -262,7 +321,7 @@ def pair_sequences(
 
 
 def reorder_paired_rows(
-    all_paired_msa_rows_dict: Dict[int, np.ndarray],
+    all_paired_msa_rows_dict: Mapping[int, np.ndarray],
 ) -> np.ndarray:
   """Creates a list of indices of paired MSA rows across chains.
 
