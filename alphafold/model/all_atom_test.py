@@ -35,6 +35,18 @@ def _relu(x):
   return np.maximum(0, x)
 
 
+def _get_positions_for_ca_c_n_violation_mask():
+  p = np.zeros((2, 37, 3), dtype=np.float32)
+  p[1, 0, 0] = BL_C_N[0]
+  return p
+
+
+def _get_mask_for_ca_c_n_violation_mask():
+  m = np.ones((2, 37), dtype=np.float32)
+  m[1, 1] = 0.0
+  return m
+
+
 def get_identity_rigid(shape):
   """Returns identity rigid transform."""
 
@@ -174,7 +186,7 @@ class AllAtomTest(parameterized.TestCase):
           expected_val=np.sum(
               _relu(
                   np.sqrt(1e-6 + np.square(-COS_CA_C_N[0]))
-                  - 12.0 * BL_STD_DEV_C_N[0]
+                  - 12.0 * COS_CA_C_N[1]
               )
           ).astype(np.float32),
       ),
@@ -199,7 +211,7 @@ class AllAtomTest(parameterized.TestCase):
           pred_atom_mask=np.ones((2, 37), dtype=np.float32),
           residue_index=np.arange(2, dtype=np.int32),
           aatype=np.zeros(2, dtype=np.int32),
-          expected_val=np.array([0.768001, 0.768001], dtype=np.float32),
+          expected_val=np.array([0.665401, 0.665401], dtype=np.float32),
       ),
       dict(
           testcase_name='per_residue_violation_mask',
@@ -210,6 +222,18 @@ class AllAtomTest(parameterized.TestCase):
           aatype=np.zeros(2, dtype=np.int32),
           expected_val=np.array([1.0, 1.0], dtype=np.float32),
       ),
+      dict(
+          # This test verifies that the violation mask is correctly computed
+          # for CA, C, N violations.
+          testcase_name='ca_c_n_violation_mask',
+          key='per_residue_violation_mask',
+          pred_atom_positions=_get_positions_for_ca_c_n_violation_mask(),
+          pred_atom_mask=_get_mask_for_ca_c_n_violation_mask(),
+          residue_index=np.arange(2, dtype=np.int32),
+          aatype=np.zeros(2, dtype=np.int32),
+          expected_val=np.array([0.0, 0.0], dtype=np.float32),
+          tolerance_factor_hard=15.0,
+      ),
   )
   def test_between_residue_bond_loss(
       self,
@@ -219,12 +243,14 @@ class AllAtomTest(parameterized.TestCase):
       residue_index,
       aatype,
       expected_val,
+      tolerance_factor_hard=12.0,
   ):
     got = all_atom.between_residue_bond_loss(
         pred_atom_positions=jnp.array(pred_atom_positions),
         pred_atom_mask=jnp.array(pred_atom_mask),
         residue_index=jnp.array(residue_index),
         aatype=jnp.array(aatype),
+        tolerance_factor_hard=tolerance_factor_hard,
     )
     self.assertIn(key, got)
     self.assertEqual(

@@ -73,7 +73,7 @@ class AmberMinimizeTest(absltest.TestCase):
     viols, _ = amber_minimize.find_violations(prot)
 
     expected_between_residues_connection_mask = np.zeros((191,), np.float32)
-    for residue in (42, 43, 59, 60, 135, 136):
+    for residue in (135, 136):
       expected_between_residues_connection_mask[residue] = 1.0
 
     expected_clash_indices = np.array([

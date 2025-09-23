@@ -712,7 +712,7 @@ def between_residue_bond_loss(
       _loss_and_violation_mask(
           metric=jnp.sum(c_ca_unit_vec * c_n_unit_vec, axis=-1),
           gt_metric=residue_constants.between_res_cos_angles_ca_c_n[0],
-          gt_stddev=residue_constants.between_res_bond_length_stddev_c_n[0],
+          gt_stddev=residue_constants.between_res_cos_angles_ca_c_n[1],
           mask=this_ca_mask * this_c_mask * next_n_mask * has_no_gap_mask,
           tolerance_factor_soft=tolerance_factor_soft,
           tolerance_factor_hard=tolerance_factor_hard,
