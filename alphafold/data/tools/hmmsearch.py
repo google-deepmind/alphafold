@@ -33,7 +33,8 @@ class Hmmsearch(object):
                binary_path: str,
                hmmbuild_binary_path: str,
                database_path: str,
-               flags: Optional[Sequence[str]] = None):
+               flags: Optional[Sequence[str]] = None,
+               cpu: int = 8):
     """Initializes the Python hmmsearch wrapper.
 
     Args:
@@ -42,6 +43,7 @@ class Hmmsearch(object):
         an hmm from an input a3m.
       database_path: The path to the hmmsearch database (FASTA format).
       flags: List of flags to be used by hmmsearch.
+      cpu: The number of CPUs to use for the hmmsearch query.
 
     Raises:
       RuntimeError: If hmmsearch binary not found within the path.
@@ -49,6 +51,7 @@ class Hmmsearch(object):
     self.binary_path = binary_path
     self.hmmbuild_runner = hmmbuild.Hmmbuild(binary_path=hmmbuild_binary_path)
     self.database_path = database_path
+    self.cpu = cpu
     if flags is None:
       # Default hmmsearch run settings.
       flags = ['--F1', '0.1',
@@ -89,7 +92,7 @@ class Hmmsearch(object):
       cmd = [
           self.binary_path,
           '--noali',  # Don't include the alignment in stdout.
-          '--cpu', '8'
+          '--cpu', str(self.cpu),
       ]
       # If adding flags, we have to do so before the output and input:
       if self.flags:

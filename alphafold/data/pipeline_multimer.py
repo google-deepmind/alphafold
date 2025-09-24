@@ -134,7 +134,7 @@ def add_assembly_features(
   # Group the chains by sequence
   seq_to_entity_id = {}
   grouped_chains = collections.defaultdict(list)
-  for chain_id, chain_features in all_chain_features.items():
+  for _, chain_features in all_chain_features.items():
     seq = str(chain_features['sequence'])
     if seq not in seq_to_entity_id:
       seq_to_entity_id[seq] = len(seq_to_entity_id) + 1
@@ -172,10 +172,12 @@ class DataPipeline:
 
   def __init__(self,
                monomer_data_pipeline: pipeline.DataPipeline,
+               *,
                jackhmmer_binary_path: str,
                uniprot_database_path: str,
                max_uniprot_hits: int = 50000,
-               use_precomputed_msas: bool = False):
+               use_precomputed_msas: bool = False,
+               jackhmmer_n_cpu: int = 8):
     """Initializes the data pipeline.
 
     Args:
@@ -186,11 +188,13 @@ class DataPipeline:
         will be searched with jackhmmer and used for MSA pairing.
       max_uniprot_hits: The maximum number of hits to return from uniprot.
       use_precomputed_msas: Whether to use pre-existing MSAs; see run_alphafold.
+      jackhmmer_n_cpu: Number of CPUs to use for Jackhmmer.
     """
     self._monomer_data_pipeline = monomer_data_pipeline
     self._uniprot_msa_runner = jackhmmer.Jackhmmer(
         binary_path=jackhmmer_binary_path,
-        database_path=uniprot_database_path)
+        database_path=uniprot_database_path,
+        n_cpu=jackhmmer_n_cpu)
     self._max_uniprot_hits = max_uniprot_hits
     self.use_precomputed_msas = use_precomputed_msas
 

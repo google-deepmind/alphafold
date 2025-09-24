@@ -143,6 +143,30 @@ flags.DEFINE_boolean('use_gpu_relax', None, 'Whether to relax on GPU. '
                      'Relax on GPU can be much faster than CPU, so it is '
                      'recommended to enable if possible. GPUs must be available'
                      ' if this setting is enabled.')
+flags.DEFINE_integer(
+    'jackhmmer_n_cpu',
+    # Unfortunately, os.process_cpu_count() is only available in Python 3.13+.
+    min(len(os.sched_getaffinity(0)), 8),
+    'Number of CPUs to use for Jackhmmer. Defaults to min(cpu_count, 8). Going'
+    ' above 8 CPUs provides very little additional speedup.',
+    lower_bound=0,
+)
+flags.DEFINE_integer(
+    'hmmsearch_n_cpu',
+    # Unfortunately, os.process_cpu_count() is only available in Python 3.13+.
+    min(len(os.sched_getaffinity(0)), 8),
+    'Number of CPUs to use for HMMsearch. Defaults to min(cpu_count, 8). Going'
+    ' above 8 CPUs provides very little additional speedup.',
+    lower_bound=0,
+)
+flags.DEFINE_integer(
+    'hhsearch_n_cpu',
+    # Unfortunately, os.process_cpu_count() is only available in Python 3.13+.
+    min(len(os.sched_getaffinity(0)), 8),
+    'Number of CPUs to use for HHsearch. Defaults to min(cpu_count, 8). Going'
+    ' above 8 CPUs provides very little additional speedup.',
+    lower_bound=0,
+)
 
 FLAGS = flags.FLAGS
 
@@ -464,7 +488,8 @@ def main(argv):
     template_searcher = hmmsearch.Hmmsearch(
         binary_path=FLAGS.hmmsearch_binary_path,
         hmmbuild_binary_path=FLAGS.hmmbuild_binary_path,
-        database_path=FLAGS.pdb_seqres_database_path)
+        database_path=FLAGS.pdb_seqres_database_path,
+        cpu=FLAGS.hmmsearch_n_cpu)
     template_featurizer = templates.HmmsearchHitFeaturizer(
         mmcif_dir=FLAGS.template_mmcif_dir,
         max_template_date=FLAGS.max_template_date,
@@ -475,7 +500,8 @@ def main(argv):
   else:
     template_searcher = hhsearch.HHSearch(
         binary_path=FLAGS.hhsearch_binary_path,
-        databases=[FLAGS.pdb70_database_path])
+        databases=[FLAGS.pdb70_database_path],
+        cpu=FLAGS.hhsearch_n_cpu)
     template_featurizer = templates.HhsearchHitFeaturizer(
         mmcif_dir=FLAGS.template_mmcif_dir,
         max_template_date=FLAGS.max_template_date,
@@ -495,7 +521,8 @@ def main(argv):
       template_searcher=template_searcher,
       template_featurizer=template_featurizer,
       use_small_bfd=use_small_bfd,
-      use_precomputed_msas=FLAGS.use_precomputed_msas)
+      use_precomputed_msas=FLAGS.use_precomputed_msas,
+      msa_tools_n_cpu=FLAGS.jackhmmer_n_cpu)
 
   if run_multimer_system:
     num_predictions_per_model = FLAGS.num_multimer_predictions_per_model
@@ -503,7 +530,8 @@ def main(argv):
         monomer_data_pipeline=monomer_data_pipeline,
         jackhmmer_binary_path=FLAGS.jackhmmer_binary_path,
         uniprot_database_path=FLAGS.uniprot_database_path,
-        use_precomputed_msas=FLAGS.use_precomputed_msas)
+        use_precomputed_msas=FLAGS.use_precomputed_msas,
+        jackhmmer_n_cpu=FLAGS.jackhmmer_n_cpu)
   else:
     num_predictions_per_model = 1
     data_pipeline = monomer_data_pipeline

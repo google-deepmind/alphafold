@@ -33,7 +33,8 @@ class HHSearch:
                *,
                binary_path: str,
                databases: Sequence[str],
-               maxseq: int = 1_000_000):
+               maxseq: int = 1_000_000,
+               cpu: int = 8):
     """Initializes the Python HHsearch wrapper.
 
     Args:
@@ -43,6 +44,7 @@ class HHSearch:
         _hhm.ffindex etc.)
       maxseq: The maximum number of rows in an input alignment. Note that this
         parameter is only supported in HHBlits version 3.1 and higher.
+      cpu: The number of CPUs to use.
 
     Raises:
       RuntimeError: If HHsearch binary not found within the path.
@@ -50,6 +52,7 @@ class HHSearch:
     self.binary_path = binary_path
     self.databases = databases
     self.maxseq = maxseq
+    self.cpu = cpu
 
     for database_path in self.databases:
       if not glob.glob(database_path + '_*'):
@@ -79,7 +82,8 @@ class HHSearch:
       cmd = [self.binary_path,
              '-i', input_path,
              '-o', hhr_path,
-             '-maxseq', str(self.maxseq)
+             '-maxseq', str(self.maxseq),
+             '-cpu', str(self.cpu),
              ] + db_cmd
 
       logging.info('Launching subprocess "%s"', ' '.join(cmd))
