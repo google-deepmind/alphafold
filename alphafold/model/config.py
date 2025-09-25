@@ -991,6 +991,15 @@ class AlphaFoldConfig(base_config.BaseConfig):
   data: Optional[Data] = None
 
 
+def _set_num_ensembles(cfg: Any, name: str):
+  """Sets the number of ensembles based on the model name."""
+  num_ensembles = 8 if name in MODEL_PRESETS['monomer_casp14'] else 1
+  if 'multimer' in name:
+    cfg.model.num_ensemble_eval = num_ensembles
+  else:
+    cfg.data.eval.num_ensemble = num_ensembles
+
+
 def model_config(name: str) -> ml_collections.ConfigDict:
   """Get the ConfigDict of a CASP14 model."""
 
@@ -1001,6 +1010,7 @@ def model_config(name: str) -> ml_collections.ConfigDict:
   else:
     cfg = copy.deepcopy(CONFIG)
   cfg.update_from_flattened_dict(CONFIG_DIFFS[name])
+  _set_num_ensembles(cfg, name)
   return cfg
 
 
@@ -1016,6 +1026,7 @@ def get_model_config(name: str, frozen: bool = True) -> AlphaFoldConfig:
   )
   apply_diff_op = CONFIG_DIFF_OPS[name]
   apply_diff_op(cfg)
+  _set_num_ensembles(cfg, name)
   if frozen:
     cfg.freeze()
   return cfg
