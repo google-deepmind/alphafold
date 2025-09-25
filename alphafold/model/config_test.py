@@ -24,11 +24,11 @@ class ConfigTest(parameterized.TestCase):
   @parameterized.parameters(config.CONFIG_DIFFS.keys())
   def test_config_dict_and_dataclass_agree(self, model_name):
     """Ensures model_config() and get_model_config() return same values."""
-    config_dict = json.dumps(config.model_config(model_name).to_dict())
-    dataclass_config = json.dumps(
+    config_dict_json = json.dumps(config.model_config(model_name).to_dict())
+    config_dataclass_json = json.dumps(
         config.get_model_config(model_name).as_dict(include_none=False)
     )
-    self.assertJsonEqual(config_dict, dataclass_config)
+    self.assertJsonEqual(config_dict_json, config_dataclass_json)
 
 
 if __name__ == '__main__':
