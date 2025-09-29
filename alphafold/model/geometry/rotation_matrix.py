@@ -14,6 +14,7 @@
 """Rot3Array Matrix Class."""
 
 from __future__ import annotations
+
 import dataclasses
 
 from alphafold.model.geometry import struct_of_array
@@ -46,16 +47,19 @@ class Rot3Array:
 
   def inverse(self) -> Rot3Array:
     """Returns inverse of Rot3Array."""
-    return Rot3Array(self.xx, self.yx, self.zx,
-                     self.xy, self.yy, self.zy,
-                     self.xz, self.yz, self.zz)
+    return Rot3Array(
+        *(self.xx, self.yx, self.zx),
+        *(self.xy, self.yy, self.zy),
+        *(self.xz, self.yz, self.zz),
+    )
 
   def apply_to_point(self, point: vector.Vec3Array) -> vector.Vec3Array:
     """Applies Rot3Array to point."""
     return vector.Vec3Array(
         self.xx * point.x + self.xy * point.y + self.xz * point.z,
         self.yx * point.x + self.yy * point.y + self.yz * point.z,
-        self.zx * point.x + self.zy * point.y + self.zz * point.z)
+        self.zx * point.x + self.zy * point.y + self.zz * point.z,
+    )
 
   def apply_inverse_to_point(self, point: vector.Vec3Array) -> vector.Vec3Array:
     """Applies inverse Rot3Array to point."""
@@ -76,8 +80,9 @@ class Rot3Array:
     return cls(ones, zeros, zeros, zeros, ones, zeros, zeros, zeros, ones)  # pytype: disable=wrong-arg-count  # trace-all-classes
 
   @classmethod
-  def from_two_vectors(cls, e0: vector.Vec3Array,
-                       e1: vector.Vec3Array) -> Rot3Array:
+  def from_two_vectors(
+      cls, e0: vector.Vec3Array, e1: vector.Vec3Array
+  ) -> Rot3Array:
     """Construct Rot3Array from two Vectors.
 
     Rot3Array is constructed such that in the corresponding frame 'e0' lies on
@@ -86,6 +91,7 @@ class Rot3Array:
     Args:
       e0: Vector
       e1: Vector
+
     Returns:
       Rot3Array
     """
@@ -108,19 +114,24 @@ class Rot3Array:
   def to_array(self) -> jnp.ndarray:
     """Convert Rot3Array to array of shape [..., 3, 3]."""
     return jnp.stack(
-        [jnp.stack([self.xx, self.xy, self.xz], axis=-1),
-         jnp.stack([self.yx, self.yy, self.yz], axis=-1),
-         jnp.stack([self.zx, self.zy, self.zz], axis=-1)],
-        axis=-2)
+        [
+            jnp.stack([self.xx, self.xy, self.xz], axis=-1),
+            jnp.stack([self.yx, self.yy, self.yz], axis=-1),
+            jnp.stack([self.zx, self.zy, self.zz], axis=-1),
+        ],
+        axis=-2,
+    )
 
   @classmethod
-  def from_quaternion(cls,
-                      w: jnp.ndarray,
-                      x: jnp.ndarray,
-                      y: jnp.ndarray,
-                      z: jnp.ndarray,
-                      normalize: bool = True,
-                      epsilon: float = 1e-6) -> Rot3Array:
+  def from_quaternion(
+      cls,
+      w: jnp.ndarray,
+      x: jnp.ndarray,
+      y: jnp.ndarray,
+      z: jnp.ndarray,
+      normalize: bool = True,
+      epsilon: float = 1e-6,
+  ) -> Rot3Array:
     """Construct Rot3Array from components of quaternion."""
     if normalize:
       inv_norm = jax.lax.rsqrt(jnp.maximum(epsilon, w**2 + x**2 + y**2 + z**2))
@@ -147,8 +158,7 @@ class Rot3Array:
     return cls.from_quaternion(*quats)
 
   def __getstate__(self):
-    return (VERSION,
-            [np.asarray(getattr(self, field)) for field in COMPONENTS])
+    return (VERSION, [np.asarray(getattr(self, field)) for field in COMPONENTS])
 
   def __setstate__(self, state):
     version, state = state

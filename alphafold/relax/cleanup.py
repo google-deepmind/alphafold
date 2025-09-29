@@ -19,9 +19,9 @@ cases like removing chains of length one (see clean_structure).
 """
 import io
 
-import pdbfixer
 from openmm import app
 from openmm.app import element
+import pdbfixer
 
 
 def fix_pdb(pdbfile, alterations_info):
@@ -55,8 +55,9 @@ def fix_pdb(pdbfile, alterations_info):
   fixer.addMissingAtoms(seed=0)
   fixer.addMissingHydrogens()
   out_handle = io.StringIO()
-  app.PDBFile.writeFile(fixer.topology, fixer.positions, out_handle,
-                        keepIds=True)
+  app.PDBFile.writeFile(
+      fixer.topology, fixer.positions, out_handle, keepIds=True
+  )
   return out_handle.getvalue()
 
 
@@ -88,8 +89,9 @@ def _remove_heterogens(fixer, alterations_info, keep_water):
   for chain in fixer.topology.chains():
     for residue in chain.residues():
       final_resnames.add(residue.name)
-  alterations_info['removed_heterogens'] = (
-      initial_resnames.difference(final_resnames))
+  alterations_info['removed_heterogens'] = initial_resnames.difference(
+      final_resnames
+  )
 
 
 def _replace_met_se(pdb_structure, alterations_info):

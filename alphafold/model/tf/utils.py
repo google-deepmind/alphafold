@@ -35,13 +35,11 @@ class SeedMaker(object):
     self.next_seed += 1
     return i
 
+
 seed_maker = SeedMaker()
 
 
 def make_random_seed():
-  return tf.random.uniform([2],
-                           tf.int32.min,
-                           tf.int32.max,
-                           tf.int32,
-                           seed=seed_maker())
-
+  return tf.random.uniform(
+      [2], tf.int32.min, tf.int32.max, tf.int32, seed=seed_maker()
+  )

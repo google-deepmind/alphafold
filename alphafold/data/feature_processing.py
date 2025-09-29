@@ -14,7 +14,7 @@
 
 """Feature processing logic for multimer data pipeline."""
 
-from typing import Iterable, MutableMapping, List
+from typing import Iterable, List, MutableMapping
 
 from alphafold.common import residue_constants
 from alphafold.data import msa_pairing
@@ -22,14 +22,35 @@ from alphafold.data import pipeline
 import numpy as np
 
 REQUIRED_FEATURES = frozenset({
-    'aatype', 'all_atom_mask', 'all_atom_positions', 'all_chains_entity_ids',
-    'all_crops_all_chains_mask', 'all_crops_all_chains_positions',
-    'all_crops_all_chains_residue_ids', 'assembly_num_chains', 'asym_id',
-    'bert_mask', 'cluster_bias_mask', 'deletion_matrix', 'deletion_mean',
-    'entity_id', 'entity_mask', 'mem_peak', 'msa', 'msa_mask', 'num_alignments',
-    'num_templates', 'queue_size', 'residue_index', 'resolution',
-    'seq_length', 'seq_mask', 'sym_id', 'template_aatype',
-    'template_all_atom_mask', 'template_all_atom_positions'
+    'aatype',
+    'all_atom_mask',
+    'all_atom_positions',
+    'all_chains_entity_ids',
+    'all_crops_all_chains_mask',
+    'all_crops_all_chains_positions',
+    'all_crops_all_chains_residue_ids',
+    'assembly_num_chains',
+    'asym_id',
+    'bert_mask',
+    'cluster_bias_mask',
+    'deletion_matrix',
+    'deletion_mean',
+    'entity_id',
+    'entity_mask',
+    'mem_peak',
+    'msa',
+    'msa_mask',
+    'num_alignments',
+    'num_templates',
+    'queue_size',
+    'residue_index',
+    'resolution',
+    'seq_length',
+    'seq_mask',
+    'sym_id',
+    'template_aatype',
+    'template_all_atom_mask',
+    'template_all_atom_positions',
 })
 
 MAX_TEMPLATES = 4
@@ -39,15 +60,20 @@ MSA_CROP_SIZE = 2048
 def _is_homomer_or_monomer(chains: Iterable[pipeline.FeatureDict]) -> bool:
   """Checks if a list of chains represents a homomer/monomer example."""
   # Note that an entity_id of 0 indicates padding.
-  num_unique_chains = len(np.unique(np.concatenate(
-      [np.unique(chain['entity_id'][chain['entity_id'] > 0]) for
-       chain in chains])))
+  num_unique_chains = len(
+      np.unique(
+          np.concatenate([
+              np.unique(chain['entity_id'][chain['entity_id'] > 0])
+              for chain in chains
+          ])
+      )
+  )
   return num_unique_chains == 1
 
 
 def pair_and_merge(
-    all_chain_features: MutableMapping[str, pipeline.FeatureDict]
-    ) -> pipeline.FeatureDict:
+    all_chain_features: MutableMapping[str, pipeline.FeatureDict],
+) -> pipeline.FeatureDict:
   """Runs processing on features to augment, pair and merge.
 
   Args:
@@ -64,17 +90,19 @@ def pair_and_merge(
   pair_msa_sequences = not _is_homomer_or_monomer(np_chains_list)
 
   if pair_msa_sequences:
-    np_chains_list = msa_pairing.create_paired_features(
-        chains=np_chains_list)
+    np_chains_list = msa_pairing.create_paired_features(chains=np_chains_list)
     np_chains_list = msa_pairing.deduplicate_unpaired_sequences(np_chains_list)
   np_chains_list = crop_chains(
       np_chains_list,
       msa_crop_size=MSA_CROP_SIZE,
       pair_msa_sequences=pair_msa_sequences,
-      max_templates=MAX_TEMPLATES)
+      max_templates=MAX_TEMPLATES,
+  )
   np_example = msa_pairing.merge_chain_features(
-      np_chains_list=np_chains_list, pair_msa_sequences=pair_msa_sequences,
-      max_templates=MAX_TEMPLATES)
+      np_chains_list=np_chains_list,
+      pair_msa_sequences=pair_msa_sequences,
+      max_templates=MAX_TEMPLATES,
+  )
   np_example = process_final(np_example)
   return np_example
 
@@ -83,7 +111,8 @@ def crop_chains(
     chains_list: List[pipeline.FeatureDict],
     msa_crop_size: int,
     pair_msa_sequences: bool,
-    max_templates: int) -> List[pipeline.FeatureDict]:
+    max_templates: int,
+) -> List[pipeline.FeatureDict]:
   """Crops the MSAs for a set of chains.
 
   Args:
@@ -103,16 +132,19 @@ def crop_chains(
         chain,
         msa_crop_size=msa_crop_size,
         pair_msa_sequences=pair_msa_sequences,
-        max_templates=max_templates)
+        max_templates=max_templates,
+    )
     cropped_chains.append(cropped_chain)
 
   return cropped_chains
 
 
-def _crop_single_chain(chain: pipeline.FeatureDict,
-                       msa_crop_size: int,
-                       pair_msa_sequences: bool,
-                       max_templates: int) -> pipeline.FeatureDict:
+def _crop_single_chain(
+    chain: pipeline.FeatureDict,
+    msa_crop_size: int,
+    pair_msa_sequences: bool,
+    max_templates: int,
+) -> pipeline.FeatureDict:
   """Crops msa sequences to `msa_crop_size`."""
   msa_size = chain['num_alignments']
 
@@ -125,9 +157,11 @@ def _crop_single_chain(chain: pipeline.FeatureDict,
     # the MSA size for each chain roughly constant.
     msa_all_seq = chain['msa_all_seq'][:msa_crop_size_all_seq, :]
     num_non_gapped_pairs = np.sum(
-        np.any(msa_all_seq != msa_pairing.MSA_GAP_IDX, axis=1))
-    num_non_gapped_pairs = np.minimum(num_non_gapped_pairs,
-                                      msa_crop_size_all_seq)
+        np.any(msa_all_seq != msa_pairing.MSA_GAP_IDX, axis=1)
+    )
+    num_non_gapped_pairs = np.minimum(
+        num_non_gapped_pairs, msa_crop_size_all_seq
+    )
 
     # Restrict the unpaired crop size so that paired+unpaired sequences do not
     # exceed msa_seqs_per_chain for each chain.
@@ -156,7 +190,8 @@ def _crop_single_chain(chain: pipeline.FeatureDict,
     chain['num_templates'] = np.asarray(templates_crop_size, dtype=np.int32)
   if pair_msa_sequences:
     chain['num_alignments_all_seq'] = np.asarray(
-        msa_crop_size_all_seq, dtype=np.int32)
+        msa_crop_size_all_seq, dtype=np.int32
+    )
   return chain
 
 
@@ -199,31 +234,38 @@ def _filter_features(np_example: pipeline.FeatureDict) -> pipeline.FeatureDict:
 
 
 def process_unmerged_features(
-    all_chain_features: MutableMapping[str, pipeline.FeatureDict]):
+    all_chain_features: MutableMapping[str, pipeline.FeatureDict],
+):
   """Postprocessing stage for per-chain features before merging."""
   num_chains = len(all_chain_features)
   for chain_features in all_chain_features.values():
     # Convert deletion matrices to float.
     chain_features['deletion_matrix'] = np.asarray(
-        chain_features.pop('deletion_matrix_int'), dtype=np.float32)
+        chain_features.pop('deletion_matrix_int'), dtype=np.float32
+    )
     if 'deletion_matrix_int_all_seq' in chain_features:
       chain_features['deletion_matrix_all_seq'] = np.asarray(
-          chain_features.pop('deletion_matrix_int_all_seq'), dtype=np.float32)
+          chain_features.pop('deletion_matrix_int_all_seq'), dtype=np.float32
+      )
 
     chain_features['deletion_mean'] = np.mean(
-        chain_features['deletion_matrix'], axis=0)
+        chain_features['deletion_matrix'], axis=0
+    )
 
     # Add all_atom_mask and dummy all_atom_positions based on aatype.
     all_atom_mask = residue_constants.STANDARD_ATOM_MASK[
-        chain_features['aatype']]
+        chain_features['aatype']
+    ]
     chain_features['all_atom_mask'] = all_atom_mask
     chain_features['all_atom_positions'] = np.zeros(
-        list(all_atom_mask.shape) + [3])
+        list(all_atom_mask.shape) + [3]
+    )
 
     # Add assembly_num_chains.
     chain_features['assembly_num_chains'] = np.asarray(num_chains)
 
   # Add entity_mask.
   for chain_features in all_chain_features.values():
-    chain_features['entity_mask'] = (
-        chain_features['entity_id'] != 0).astype(np.int32)
+    chain_features['entity_mask'] = (chain_features['entity_id'] != 0).astype(
+        np.int32
+    )

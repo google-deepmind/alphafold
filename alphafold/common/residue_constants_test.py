@@ -42,13 +42,30 @@ class ResidueConstantsTest(parameterized.TestCase):
       for chi_group_i, atom_i in chi_groups:
         self.assertEqual(
             atom_name,
-            residue_constants.chi_angles_atoms[res_name][chi_group_i][atom_i])
+            residue_constants.chi_angles_atoms[res_name][chi_group_i][atom_i],
+        )
 
   @parameterized.parameters(
-      ('ALA', 5), ('ARG', 11), ('ASN', 8), ('ASP', 8), ('CYS', 6), ('GLN', 9),
-      ('GLU', 9), ('GLY', 4), ('HIS', 10), ('ILE', 8), ('LEU', 8), ('LYS', 9),
-      ('MET', 8), ('PHE', 11), ('PRO', 7), ('SER', 6), ('THR', 7), ('TRP', 14),
-      ('TYR', 12), ('VAL', 7)
+      ('ALA', 5),
+      ('ARG', 11),
+      ('ASN', 8),
+      ('ASP', 8),
+      ('CYS', 6),
+      ('GLN', 9),
+      ('GLU', 9),
+      ('GLY', 4),
+      ('HIS', 10),
+      ('ILE', 8),
+      ('LEU', 8),
+      ('LYS', 9),
+      ('MET', 8),
+      ('PHE', 11),
+      ('PRO', 7),
+      ('SER', 6),
+      ('THR', 7),
+      ('TRP', 14),
+      ('TYR', 12),
+      ('VAL', 7),
   )
   def testResidueAtoms(self, atom_name, num_residue_atoms):
     residue_atoms = residue_constants.residue_atoms[atom_name]
@@ -56,7 +73,13 @@ class ResidueConstantsTest(parameterized.TestCase):
 
   def testStandardAtomMask(self):
     with self.subTest('Check shape'):
-      self.assertEqual(residue_constants.STANDARD_ATOM_MASK.shape, (21, 37,))
+      self.assertEqual(
+          residue_constants.STANDARD_ATOM_MASK.shape,
+          (
+              21,
+              37,
+          ),
+      )
 
     with self.subTest('Check values'):
       str_to_row = lambda s: [c == '1' for c in s]  # More clear/concise.
@@ -85,17 +108,21 @@ class ResidueConstantsTest(parameterized.TestCase):
               str_to_row('111111      11      11         11    '),  # TYR
               str_to_row('11111 11                             '),  # VAL
               str_to_row('                                     '),  # UNK
-          ]))
+          ]),
+      )
 
     with self.subTest('Check row totals'):
       # Check each row has the right number of atoms.
       for row, restype in enumerate(residue_constants.restypes):  # A, R, ...
         long_restype = residue_constants.restype_1to3[restype]  # ALA, ARG, ...
         atoms_names = residue_constants.residue_atoms[
-            long_restype]  # ['C', 'CA', 'CB', 'N', 'O'], ...
-        self.assertLen(atoms_names,
-                       residue_constants.STANDARD_ATOM_MASK[row, :].sum(),
-                       long_restype)
+            long_restype
+        ]  # ['C', 'CA', 'CB', 'N', 'O'], ...
+        self.assertLen(
+            atoms_names,
+            residue_constants.STANDARD_ATOM_MASK[row, :].sum(),
+            long_restype,
+        )
 
   def testAtomTypes(self):
     self.assertEqual(residue_constants.atom_type_num, 37)
@@ -115,61 +142,70 @@ class ResidueConstantsTest(parameterized.TestCase):
 
   def testRestypes(self):
     three_letter_restypes = [
-        residue_constants.restype_1to3[r] for r  in residue_constants.restypes]
+        residue_constants.restype_1to3[r] for r in residue_constants.restypes
+    ]
     for restype, exp_restype in zip(
-        three_letter_restypes, sorted(residue_constants.restype_1to3.values())):
+        three_letter_restypes, sorted(residue_constants.restype_1to3.values())
+    ):
       self.assertEqual(restype, exp_restype)
     self.assertEqual(residue_constants.restype_num, 20)
 
   def testSequenceToOneHotHHBlits(self):
     one_hot = residue_constants.sequence_to_onehot(
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ-', residue_constants.HHBLITS_AA_TO_ID)
-    exp_one_hot = np.array(
-        [[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-         [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]])
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ-', residue_constants.HHBLITS_AA_TO_ID
+    )
+    exp_one_hot = np.array([
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    ])
     np.testing.assert_array_equal(one_hot, exp_one_hot)
 
   def testSequenceToOneHotStandard(self):
     one_hot = residue_constants.sequence_to_onehot(
-        'ARNDCQEGHILKMFPSTWYV', residue_constants.restype_order)
+        'ARNDCQEGHILKMFPSTWYV', residue_constants.restype_order
+    )
     np.testing.assert_array_equal(one_hot, np.eye(20))
 
   def testSequenceToOneHotUnknownMapping(self):
     seq = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     expected_out = np.zeros([26, 21])
-    for row, position in enumerate(
-        [0, 20, 4, 3, 6, 13, 7, 8, 9, 20, 11, 10, 12, 2, 20, 14, 5, 1, 15, 16,
-         20, 19, 17, 20, 18, 20]):
+    # pyformat: disable
+    for row, position in enumerate([
+        0, 20, 4, 3, 6, 13, 7, 8, 9, 20, 11, 10, 12, 2, 20, 14, 5, 1, 15, 16,
+        20, 19, 17, 20, 18, 20
+    ]):
       expected_out[row, position] = 1
+    # pyformat: enable
     aa_types = residue_constants.sequence_to_onehot(
         sequence=seq,
         mapping=residue_constants.restype_order_with_x,
-        map_unknown_to_x=True)
+        map_unknown_to_x=True,
+    )
     self.assertTrue((aa_types == expected_out).all())
 
   @parameterized.named_parameters(
@@ -183,7 +219,8 @@ class ResidueConstantsTest(parameterized.TestCase):
       residue_constants.sequence_to_onehot(
           sequence=seq,
           mapping=residue_constants.restype_order_with_x,
-          map_unknown_to_x=True)
+          map_unknown_to_x=True,
+      )
 
 
 if __name__ == '__main__':

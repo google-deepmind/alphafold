@@ -34,7 +34,6 @@ the network to facilitate easier conversion to existing protein datastructures.
 """
 from typing import Dict, Optional, Union
 from alphafold.common import residue_constants
-
 from alphafold.model import r3
 from alphafold.model import utils
 import jax
@@ -62,7 +61,8 @@ def get_chi_atom_indices():
     atom_indices = []
     for chi_angle in residue_chi_angles:
       atom_indices.append(
-          [residue_constants.atom_order[atom] for atom in chi_angle])
+          [residue_constants.atom_order[atom] for atom in chi_angle]
+      )
     for _ in range(4 - len(atom_indices)):
       atom_indices.append([0, 0, 0, 0])  # For chi angles not defined on the AA.
     chi_atom_indices.append(atom_indices)
@@ -72,41 +72,43 @@ def get_chi_atom_indices():
   return jnp.asarray(chi_atom_indices)
 
 
-def atom14_to_atom37(atom14_data: jnp.ndarray,  # (N, 14, ...)
-                     batch: Dict[str, jnp.ndarray]
-                    ) -> jnp.ndarray:  # (N, 37, ...)
+def atom14_to_atom37(
+    atom14_data: jnp.ndarray, batch: Dict[str, jnp.ndarray]  # (N, 14, ...)
+) -> jnp.ndarray:  # (N, 37, ...)
   """Convert atom14 to atom37 representation."""
   assert len(atom14_data.shape) in [2, 3]
   assert 'residx_atom37_to_atom14' in batch
   assert 'atom37_atom_exists' in batch
 
-  atom37_data = utils.batched_gather(atom14_data,
-                                     batch['residx_atom37_to_atom14'],
-                                     batch_dims=1)
+  atom37_data = utils.batched_gather(
+      atom14_data, batch['residx_atom37_to_atom14'], batch_dims=1
+  )
   if len(atom14_data.shape) == 2:
     atom37_data *= batch['atom37_atom_exists']
   elif len(atom14_data.shape) == 3:
-    atom37_data *= batch['atom37_atom_exists'][:, :,
-                                               None].astype(atom37_data.dtype)
+    atom37_data *= batch['atom37_atom_exists'][:, :, None].astype(
+        atom37_data.dtype
+    )
   return atom37_data
 
 
 def atom37_to_atom14(
-    atom37_data: jnp.ndarray,  # (N, 37, ...)
-    batch: Dict[str, jnp.ndarray]) -> jnp.ndarray:  # (N, 14, ...)
+    atom37_data: jnp.ndarray, batch: Dict[str, jnp.ndarray]  # (N, 37, ...)
+) -> jnp.ndarray:  # (N, 14, ...)
   """Convert atom14 to atom37 representation."""
   assert len(atom37_data.shape) in [2, 3]
   assert 'residx_atom14_to_atom37' in batch
   assert 'atom14_atom_exists' in batch
 
-  atom14_data = utils.batched_gather(atom37_data,
-                                     batch['residx_atom14_to_atom37'],
-                                     batch_dims=1)
+  atom14_data = utils.batched_gather(
+      atom37_data, batch['residx_atom14_to_atom37'], batch_dims=1
+  )
   if len(atom37_data.shape) == 2:
     atom14_data *= batch['atom14_atom_exists'].astype(atom14_data.dtype)
   elif len(atom37_data.shape) == 3:
-    atom14_data *= batch['atom14_atom_exists'][:, :,
-                                               None].astype(atom14_data.dtype)
+    atom14_data *= batch['atom14_atom_exists'][:, :, None].astype(
+        atom14_data.dtype
+    )
   return atom14_data
 
 
@@ -127,6 +129,7 @@ def atom37_to_frames(
     aatype: Amino acid type, given as array with integers.
     all_atom_positions: atom37 representation of all atom coordinates.
     all_atom_mask: atom37 representation of mask on all atom coordinates.
+
   Returns:
     Dictionary containing:
       * 'rigidgroups_gt_frames': 8 Frames corresponding to 'all_atom_positions'
@@ -171,8 +174,9 @@ def atom37_to_frames(
     for chi_idx in range(4):
       if residue_constants.chi_angles_mask[restype][chi_idx]:
         atom_names = residue_constants.chi_angles_atoms[resname][chi_idx]
-        restype_rigidgroup_base_atom_names[
-            restype, chi_idx + 4, :] = atom_names[1:]
+        restype_rigidgroup_base_atom_names[restype, chi_idx + 4, :] = (
+            atom_names[1:]
+        )
 
   # Create mask for existing rigid groups.
   restype_rigidgroup_mask = np.zeros([21, 8], dtype=np.float32)
@@ -184,24 +188,25 @@ def atom37_to_frames(
   lookuptable = residue_constants.atom_order.copy()
   lookuptable[''] = 0
   restype_rigidgroup_base_atom37_idx = np.vectorize(lambda x: lookuptable[x])(
-      restype_rigidgroup_base_atom_names)
+      restype_rigidgroup_base_atom_names
+  )
 
   # Compute the gather indices for all residues in the chain.
   # shape (N, 8, 3)
   residx_rigidgroup_base_atom37_idx = utils.batched_gather(
-      restype_rigidgroup_base_atom37_idx, aatype)
+      restype_rigidgroup_base_atom37_idx, aatype
+  )
 
   # Gather the base atom positions for each rigid group.
   base_atom_pos = utils.batched_gather(
-      all_atom_positions,
-      residx_rigidgroup_base_atom37_idx,
-      batch_dims=1)
+      all_atom_positions, residx_rigidgroup_base_atom37_idx, batch_dims=1
+  )
 
   # Compute the Rigids.
   gt_frames = r3.rigids_from_3_points(
       point_on_neg_x_axis=r3.vecs_from_tensor(base_atom_pos[:, :, 0, :]),
       origin=r3.vecs_from_tensor(base_atom_pos[:, :, 1, :]),
-      point_on_xy_plane=r3.vecs_from_tensor(base_atom_pos[:, :, 2, :])
+      point_on_xy_plane=r3.vecs_from_tensor(base_atom_pos[:, :, 2, :]),
   )
 
   # Compute a mask whether the group exists.
@@ -212,7 +217,8 @@ def atom37_to_frames(
   gt_atoms_exist = utils.batched_gather(  # shape (N, 8, 3)
       all_atom_mask.astype(jnp.float32),
       residx_rigidgroup_base_atom37_idx,
-      batch_dims=1)
+      batch_dims=1,
+  )
   gt_exists = jnp.min(gt_atoms_exist, axis=-1) * group_exists  # (N, 8)
 
   # Adapt backbone frame to old convention (mirror x-axis and z-axis).
@@ -228,7 +234,8 @@ def atom37_to_frames(
 
   for resname, _ in residue_constants.residue_atom_renaming_swaps.items():
     restype = residue_constants.restype_order[
-        residue_constants.restype_3to1[resname]]
+        residue_constants.restype_3to1[resname]
+    ]
     chi_idx = int(sum(residue_constants.chi_angles_mask[restype]) - 1)
     restype_rigidgroup_is_ambiguous[restype, chi_idx + 4] = 1
     restype_rigidgroup_rots[restype, chi_idx + 4, 1, 1] = -1
@@ -236,13 +243,16 @@ def atom37_to_frames(
 
   # Gather the ambiguity information for each residue.
   residx_rigidgroup_is_ambiguous = utils.batched_gather(
-      restype_rigidgroup_is_ambiguous, aatype)
+      restype_rigidgroup_is_ambiguous, aatype
+  )
   residx_rigidgroup_ambiguity_rot = utils.batched_gather(
-      restype_rigidgroup_rots, aatype)
+      restype_rigidgroup_rots, aatype
+  )
 
   # Create the alternative ground truth frames.
   alt_gt_frames = r3.rigids_mul_rots(
-      gt_frames, r3.rots_from_tensor3x3(residx_rigidgroup_ambiguity_rot))
+      gt_frames, r3.rots_from_tensor3x3(residx_rigidgroup_ambiguity_rot)
+  )
 
   gt_frames_flat12 = r3.rigids_to_tensor_flat12(gt_frames)
   alt_gt_frames_flat12 = r3.rigids_to_tensor_flat12(alt_gt_frames)
@@ -252,17 +262,25 @@ def atom37_to_frames(
   gt_exists = jnp.reshape(gt_exists, aatype_in_shape + (8,))
   group_exists = jnp.reshape(group_exists, aatype_in_shape + (8,))
   gt_frames_flat12 = jnp.reshape(gt_frames_flat12, aatype_in_shape + (8, 12))
-  residx_rigidgroup_is_ambiguous = jnp.reshape(residx_rigidgroup_is_ambiguous,
-                                               aatype_in_shape + (8,))
-  alt_gt_frames_flat12 = jnp.reshape(alt_gt_frames_flat12,
-                                     aatype_in_shape + (8, 12,))
+  residx_rigidgroup_is_ambiguous = jnp.reshape(
+      residx_rigidgroup_is_ambiguous, aatype_in_shape + (8,)
+  )
+  alt_gt_frames_flat12 = jnp.reshape(
+      alt_gt_frames_flat12,
+      aatype_in_shape
+      + (
+          8,
+          12,
+      ),
+  )
 
   return {
       'rigidgroups_gt_frames': gt_frames_flat12,  # (..., 8, 12)
       'rigidgroups_gt_exists': gt_exists,  # (..., 8)
       'rigidgroups_group_exists': group_exists,  # (..., 8)
-      'rigidgroups_group_is_ambiguous':
-          residx_rigidgroup_is_ambiguous,  # (..., 8)
+      'rigidgroups_group_is_ambiguous': (
+          residx_rigidgroup_is_ambiguous
+      ),  # (..., 8)
       'rigidgroups_alt_gt_frames': alt_gt_frames_flat12,  # (..., 8, 12)
   }
 
@@ -286,6 +304,7 @@ def atom37_to_torsion_angles(
     all_atom_mask: atom37 representation of mask on all atom coordinates.
     placeholder_for_undefined: flag denoting whether to set masked torsion
       angles to zero.
+
   Returns:
     Dict containing:
       * 'torsion_angles_sin_cos': Array with shape (B, N, 7, 2) where the final
@@ -311,40 +330,53 @@ def atom37_to_torsion_angles(
   # For each torsion angle collect the 4 atom positions that define this angle.
   # shape (B, N, atoms=4, xyz=3)
   pre_omega_atom_pos = jnp.concatenate(
-      [prev_all_atom_pos[:, :, 1:3, :],  # prev CA, C
-       all_atom_pos[:, :, 0:2, :]  # this N, CA
-      ], axis=-2)
+      [
+          prev_all_atom_pos[:, :, 1:3, :],  # prev CA, C
+          all_atom_pos[:, :, 0:2, :],  # this N, CA
+      ],
+      axis=-2,
+  )
   phi_atom_pos = jnp.concatenate(
-      [prev_all_atom_pos[:, :, 2:3, :],  # prev C
-       all_atom_pos[:, :, 0:3, :]  # this N, CA, C
-      ], axis=-2)
+      [
+          prev_all_atom_pos[:, :, 2:3, :],  # prev C
+          all_atom_pos[:, :, 0:3, :],  # this N, CA, C
+      ],
+      axis=-2,
+  )
   psi_atom_pos = jnp.concatenate(
-      [all_atom_pos[:, :, 0:3, :],  # this N, CA, C
-       all_atom_pos[:, :, 4:5, :]  # this O
-      ], axis=-2)
+      [
+          all_atom_pos[:, :, 0:3, :],  # this N, CA, C
+          all_atom_pos[:, :, 4:5, :],  # this O
+      ],
+      axis=-2,
+  )
 
   # Collect the masks from these atoms.
   # Shape [batch, num_res]
-  pre_omega_mask = (
-      jnp.prod(prev_all_atom_mask[:, :, 1:3], axis=-1)  # prev CA, C
-      * jnp.prod(all_atom_mask[:, :, 0:2], axis=-1))  # this N, CA
-  phi_mask = (
-      prev_all_atom_mask[:, :, 2]  # prev C
-      * jnp.prod(all_atom_mask[:, :, 0:3], axis=-1))  # this N, CA, C
+  pre_omega_mask = jnp.prod(
+      prev_all_atom_mask[:, :, 1:3], axis=-1
+  ) * jnp.prod(  # prev CA, C
+      all_atom_mask[:, :, 0:2], axis=-1
+  )  # this N, CA
+  phi_mask = prev_all_atom_mask[:, :, 2] * jnp.prod(  # prev C
+      all_atom_mask[:, :, 0:3], axis=-1
+  )  # this N, CA, C
   psi_mask = (
-      jnp.prod(all_atom_mask[:, :, 0:3], axis=-1) *  # this N, CA, C
-      all_atom_mask[:, :, 4])  # this O
+      jnp.prod(all_atom_mask[:, :, 0:3], axis=-1)  # this N, CA, C
+      * all_atom_mask[:, :, 4]
+  )  # this O
 
   # Collect the atoms for the chi-angles.
   # Compute the table of chi angle indices. Shape: [restypes, chis=4, atoms=4].
   chi_atom_indices = get_chi_atom_indices()
   # Select atoms to compute chis. Shape: [batch, num_res, chis=4, atoms=4].
   atom_indices = utils.batched_gather(
-      params=chi_atom_indices, indices=aatype, axis=0, batch_dims=0)
+      params=chi_atom_indices, indices=aatype, axis=0, batch_dims=0
+  )
   # Gather atom positions. Shape: [batch, num_res, chis=4, atoms=4, xyz=3].
   chis_atom_pos = utils.batched_gather(
-      params=all_atom_pos, indices=atom_indices, axis=-2,
-      batch_dims=2)
+      params=all_atom_pos, indices=atom_indices, axis=-2, batch_dims=2
+  )
 
   # Copy the chi angle mask, add the UNKNOWN residue. Shape: [restypes, 4].
   chi_angles_mask = list(residue_constants.chi_angles_mask)
@@ -353,15 +385,16 @@ def atom37_to_torsion_angles(
 
   # Compute the chi angle mask. I.e. which chis angles exist according to the
   # aatype. Shape [batch, num_res, chis=4].
-  chis_mask = utils.batched_gather(params=chi_angles_mask, indices=aatype,
-                                   axis=0, batch_dims=0)
+  chis_mask = utils.batched_gather(
+      params=chi_angles_mask, indices=aatype, axis=0, batch_dims=0
+  )
 
   # Constrain the chis_mask to those chis, where the ground truth coordinates of
   # all defining four atoms are available.
   # Gather the chi angle atoms mask. Shape: [batch, num_res, chis=4, atoms=4].
   chi_angle_atoms_mask = utils.batched_gather(
-      params=all_atom_mask, indices=atom_indices, axis=-1,
-      batch_dims=2)
+      params=all_atom_mask, indices=atom_indices, axis=-1, batch_dims=2
+  )
   # Check if all 4 chi angle atoms were set. Shape: [batch, num_res, chis=4].
   chi_angle_atoms_mask = jnp.prod(chi_angle_atoms_mask, axis=[-1])
   chis_mask = chis_mask * (chi_angle_atoms_mask).astype(jnp.float32)
@@ -369,20 +402,26 @@ def atom37_to_torsion_angles(
   # Stack all torsion angle atom positions.
   # Shape (B, N, torsions=7, atoms=4, xyz=3)
   torsions_atom_pos = jnp.concatenate(
-      [pre_omega_atom_pos[:, :, None, :, :],
-       phi_atom_pos[:, :, None, :, :],
-       psi_atom_pos[:, :, None, :, :],
-       chis_atom_pos
-      ], axis=2)
+      [
+          pre_omega_atom_pos[:, :, None, :, :],
+          phi_atom_pos[:, :, None, :, :],
+          psi_atom_pos[:, :, None, :, :],
+          chis_atom_pos,
+      ],
+      axis=2,
+  )
 
   # Stack up masks for all torsion angles.
   # shape (B, N, torsions=7)
   torsion_angles_mask = jnp.concatenate(
-      [pre_omega_mask[:, :, None],
-       phi_mask[:, :, None],
-       psi_mask[:, :, None],
-       chis_mask
-      ], axis=2)
+      [
+          pre_omega_mask[:, :, None],
+          phi_mask[:, :, None],
+          psi_mask[:, :, None],
+          chis_mask,
+      ],
+      axis=2,
+  )
 
   # Create a frame from the first three atoms:
   # First atom: point on x-y-plane
@@ -468,6 +507,7 @@ def torsion_angles_to_frames(
     backb_to_global: Rigid transformations describing transformation from
       backbone frame to global frame.
     torsion_angles_sin_cos: sin and cosine of the 7 torsion angles
+
   Returns:
     Frames corresponding to all the Sidechain Rigid Transforms
   """
@@ -479,8 +519,9 @@ def torsion_angles_to_frames(
 
   # Gather the default frames for all rigid groups.
   # r3.Rigids with shape (N, 8)
-  m = utils.batched_gather(residue_constants.restype_rigid_group_default_frame,
-                           aatype)
+  m = utils.batched_gather(
+      residue_constants.restype_rigid_group_default_frame, aatype
+  )
   default_frames = r3.rigids_from_tensor4x4(m)
 
   # Create the rotation matrices according to the given angles (each frame is
@@ -489,18 +530,28 @@ def torsion_angles_to_frames(
   cos_angles = torsion_angles_sin_cos[..., 1]
 
   # insert zero rotation for backbone group.
-  num_residues, = aatype.shape
-  sin_angles = jnp.concatenate([jnp.zeros([num_residues, 1]), sin_angles],
-                               axis=-1)
-  cos_angles = jnp.concatenate([jnp.ones([num_residues, 1]), cos_angles],
-                               axis=-1)
+  (num_residues,) = aatype.shape
+  sin_angles = jnp.concatenate(
+      [jnp.zeros([num_residues, 1]), sin_angles], axis=-1
+  )
+  cos_angles = jnp.concatenate(
+      [jnp.ones([num_residues, 1]), cos_angles], axis=-1
+  )
   zeros = jnp.zeros_like(sin_angles)
   ones = jnp.ones_like(sin_angles)
 
   # all_rots are r3.Rots with shape (N, 8)
-  all_rots = r3.Rots(ones, zeros, zeros,
-                     zeros, cos_angles, -sin_angles,
-                     zeros, sin_angles, cos_angles)
+  all_rots = r3.Rots(
+      ones,
+      zeros,
+      zeros,
+      zeros,
+      cos_angles,
+      -sin_angles,
+      zeros,
+      sin_angles,
+      cos_angles,
+  )
 
   # Apply rotations to the frames.
   all_frames = r3.rigids_mul_rots(default_frames, all_rots)
@@ -512,37 +563,41 @@ def torsion_angles_to_frames(
   chi4_frame_to_frame = jax.tree.map(lambda x: x[:, 7], all_frames)
 
   chi1_frame_to_backb = jax.tree.map(lambda x: x[:, 4], all_frames)
-  chi2_frame_to_backb = r3.rigids_mul_rigids(chi1_frame_to_backb,
-                                             chi2_frame_to_frame)
-  chi3_frame_to_backb = r3.rigids_mul_rigids(chi2_frame_to_backb,
-                                             chi3_frame_to_frame)
-  chi4_frame_to_backb = r3.rigids_mul_rigids(chi3_frame_to_backb,
-                                             chi4_frame_to_frame)
+  chi2_frame_to_backb = r3.rigids_mul_rigids(
+      chi1_frame_to_backb, chi2_frame_to_frame
+  )
+  chi3_frame_to_backb = r3.rigids_mul_rigids(
+      chi2_frame_to_backb, chi3_frame_to_frame
+  )
+  chi4_frame_to_backb = r3.rigids_mul_rigids(
+      chi3_frame_to_backb, chi4_frame_to_frame
+  )
 
   # Recombine them to a r3.Rigids with shape (N, 8).
   def _concat_frames(xall, x5, x6, x7):
     return jnp.concatenate(
-        [xall[:, 0:5], x5[:, None], x6[:, None], x7[:, None]], axis=-1)
+        [xall[:, 0:5], x5[:, None], x6[:, None], x7[:, None]], axis=-1
+    )
 
   all_frames_to_backb = jax.tree.map(
       _concat_frames,
       all_frames,
       chi2_frame_to_backb,
       chi3_frame_to_backb,
-      chi4_frame_to_backb)
+      chi4_frame_to_backb,
+  )
 
   # Create the global frames.
   # shape (N, 8)
   all_frames_to_global = r3.rigids_mul_rigids(
-      jax.tree.map(lambda x: x[:, None], backb_to_global),
-      all_frames_to_backb)
+      jax.tree.map(lambda x: x[:, None], backb_to_global), all_frames_to_backb
+  )
 
   return all_frames_to_global
 
 
 def frames_and_literature_positions_to_atom14_pos(
-    aatype: jnp.ndarray,  # (N)
-    all_frames_to_global: r3.Rigids  # (N, 8)
+    aatype: jnp.ndarray, all_frames_to_global: r3.Rigids  # (N)  # (N, 8)
 ) -> r3.Vecs:  # (N, 14)
   """Put atom literature positions (atom14 encoding) in each rigid group.
 
@@ -551,26 +606,32 @@ def frames_and_literature_positions_to_atom14_pos(
   Args:
     aatype: aatype for each residue.
     all_frames_to_global: All per residue coordinate frames.
+
   Returns:
     Positions of all atom coordinates in global frame.
   """
 
   # Pick the appropriate transform for every atom.
   residx_to_group_idx = utils.batched_gather(
-      residue_constants.restype_atom14_to_rigid_group, aatype)
+      residue_constants.restype_atom14_to_rigid_group, aatype
+  )
   group_mask = jax.nn.one_hot(
-      residx_to_group_idx, num_classes=8)  # shape (N, 14, 8)
+      residx_to_group_idx, num_classes=8
+  )  # shape (N, 14, 8)
 
   # r3.Rigids with shape (N, 14)
   map_atoms_to_global = jax.tree.map(
       lambda x: jnp.sum(x[:, None, :] * group_mask, axis=-1),
-      all_frames_to_global)
+      all_frames_to_global,
+  )
 
   # Gather the literature atom positions for each residue.
   # r3.Vecs with shape (N, 14)
   lit_positions = r3.vecs_from_tensor(
       utils.batched_gather(
-          residue_constants.restype_atom14_rigid_group_positions, aatype))
+          residue_constants.restype_atom14_rigid_group_positions, aatype
+      )
+  )
 
   # Transform each atom from its local frame to the global frame.
   # r3.Vecs with shape (N, 14)
@@ -587,8 +648,8 @@ def extreme_ca_ca_distance_violations(
     pred_atom_positions: jnp.ndarray,  # (N, 37(14), 3)
     pred_atom_mask: jnp.ndarray,  # (N, 37(14))
     residue_index: jnp.ndarray,  # (N)
-    max_angstrom_tolerance=1.5
-    ) -> jnp.ndarray:
+    max_angstrom_tolerance=1.5,
+) -> jnp.ndarray:
   """Counts residues whose Ca is a large distance from its neighbour.
 
   Measures the fraction of CA-CA pairs between consecutive amino acids that are
@@ -600,19 +661,23 @@ def extreme_ca_ca_distance_violations(
     residue_index: Residue index for given amino acid, this is assumed to be
       monotonically increasing.
     max_angstrom_tolerance: Maximum distance allowed to not count as violation.
+
   Returns:
     Fraction of consecutive CA-CA pairs with violation.
   """
   this_ca_pos = pred_atom_positions[:-1, 1, :]  # (N - 1, 3)
-  this_ca_mask = pred_atom_mask[:-1, 1]         # (N - 1)
+  this_ca_mask = pred_atom_mask[:-1, 1]  # (N - 1)
   next_ca_pos = pred_atom_positions[1:, 1, :]  # (N - 1, 3)
   next_ca_mask = pred_atom_mask[1:, 1]  # (N - 1)
   has_no_gap_mask = ((residue_index[1:] - residue_index[:-1]) == 1.0).astype(
-      jnp.float32)
+      jnp.float32
+  )
   ca_ca_distance = jnp.sqrt(
-      1e-6 + jnp.sum(squared_difference(this_ca_pos, next_ca_pos), axis=-1))
-  violations = (ca_ca_distance -
-                residue_constants.ca_ca) > max_angstrom_tolerance
+      1e-6 + jnp.sum(squared_difference(this_ca_pos, next_ca_pos), axis=-1)
+  )
+  violations = (
+      ca_ca_distance - residue_constants.ca_ca
+  ) > max_angstrom_tolerance
   mask = this_ca_mask * next_ca_mask * has_no_gap_mask
   return utils.mask_mean(mask=mask, value=violations)
 
@@ -623,7 +688,7 @@ def between_residue_bond_loss(
     residue_index: jnp.ndarray,  # (N)
     aatype: jnp.ndarray,  # (N)
     tolerance_factor_soft=12.0,
-    tolerance_factor_hard=12.0
+    tolerance_factor_hard=12.0,
 ) -> Dict[str, jnp.ndarray]:
   """Flat-bottom loss to penalize structural violations between residues.
 
@@ -660,49 +725,51 @@ def between_residue_bond_loss(
 
   # Get the positions of the relevant backbone atoms.
   this_ca_pos = pred_atom_positions[:-1, 1, :]  # (N - 1, 3)
-  this_ca_mask = pred_atom_mask[:-1, 1]         # (N - 1)
-  this_c_pos = pred_atom_positions[:-1, 2, :]   # (N - 1, 3)
-  this_c_mask = pred_atom_mask[:-1, 2]          # (N - 1)
-  next_n_pos = pred_atom_positions[1:, 0, :]    # (N - 1, 3)
-  next_n_mask = pred_atom_mask[1:, 0]           # (N - 1)
-  next_ca_pos = pred_atom_positions[1:, 1, :]   # (N - 1, 3)
-  next_ca_mask = pred_atom_mask[1:, 1]          # (N - 1)
+  this_ca_mask = pred_atom_mask[:-1, 1]  # (N - 1)
+  this_c_pos = pred_atom_positions[:-1, 2, :]  # (N - 1, 3)
+  this_c_mask = pred_atom_mask[:-1, 2]  # (N - 1)
+  next_n_pos = pred_atom_positions[1:, 0, :]  # (N - 1, 3)
+  next_n_mask = pred_atom_mask[1:, 0]  # (N - 1)
+  next_ca_pos = pred_atom_positions[1:, 1, :]  # (N - 1, 3)
+  next_ca_mask = pred_atom_mask[1:, 1]  # (N - 1)
   has_no_gap_mask = ((residue_index[1:] - residue_index[:-1]) == 1.0).astype(
-      jnp.float32)
+      jnp.float32
+  )
 
   # Compute loss for the C--N bond.
   c_n_bond_length = jnp.sqrt(
-      1e-6 + jnp.sum(squared_difference(this_c_pos, next_n_pos), axis=-1))
+      1e-6 + jnp.sum(squared_difference(this_c_pos, next_n_pos), axis=-1)
+  )
 
   # The C-N bond to proline has slightly different length because of the ring.
   next_is_proline = (
-      aatype[1:] == residue_constants.resname_to_idx['PRO']).astype(jnp.float32)
-  c_n_loss_per_residue, c_n_loss, c_n_violation_mask = (
-      _loss_and_violation_mask(
-          metric=c_n_bond_length,
-          gt_metric=(
-              (1.0 - next_is_proline)
-              * residue_constants.between_res_bond_length_c_n[0]
-              + next_is_proline
-              * residue_constants.between_res_bond_length_c_n[1]
-          ),
-          gt_stddev=(
-              (1.0 - next_is_proline)
-              * residue_constants.between_res_bond_length_stddev_c_n[0]
-              + next_is_proline
-              * residue_constants.between_res_bond_length_stddev_c_n[1]
-          ),
-          mask=this_c_mask * next_n_mask * has_no_gap_mask,
-          tolerance_factor_soft=tolerance_factor_soft,
-          tolerance_factor_hard=tolerance_factor_hard,
-      )
+      aatype[1:] == residue_constants.resname_to_idx['PRO']
+  ).astype(jnp.float32)
+  c_n_loss_per_residue, c_n_loss, c_n_violation_mask = _loss_and_violation_mask(
+      metric=c_n_bond_length,
+      gt_metric=(
+          (1.0 - next_is_proline)
+          * residue_constants.between_res_bond_length_c_n[0]
+          + next_is_proline * residue_constants.between_res_bond_length_c_n[1]
+      ),
+      gt_stddev=(
+          (1.0 - next_is_proline)
+          * residue_constants.between_res_bond_length_stddev_c_n[0]
+          + next_is_proline
+          * residue_constants.between_res_bond_length_stddev_c_n[1]
+      ),
+      mask=this_c_mask * next_n_mask * has_no_gap_mask,
+      tolerance_factor_soft=tolerance_factor_soft,
+      tolerance_factor_hard=tolerance_factor_hard,
   )
 
   # Compute loss for the angles.
-  ca_c_bond_length = jnp.sqrt(1e-6 + jnp.sum(
-      squared_difference(this_ca_pos, this_c_pos), axis=-1))
-  n_ca_bond_length = jnp.sqrt(1e-6 + jnp.sum(
-      squared_difference(next_n_pos, next_ca_pos), axis=-1))
+  ca_c_bond_length = jnp.sqrt(
+      1e-6 + jnp.sum(squared_difference(this_ca_pos, this_c_pos), axis=-1)
+  )
+  n_ca_bond_length = jnp.sqrt(
+      1e-6 + jnp.sum(squared_difference(next_n_pos, next_ca_pos), axis=-1)
+  )
 
   c_ca_unit_vec = (this_ca_pos - this_c_pos) / ca_c_bond_length[:, None]
   c_n_unit_vec = (next_n_pos - this_c_pos) / c_n_bond_length[:, None]
@@ -771,13 +838,9 @@ def _loss_and_violation_mask(
 ):
   """Compute loss and violation mask for a given metric."""
   error = jnp.sqrt(1e-6 + jnp.square(metric - gt_metric))
-  loss_per_residue = jax.nn.relu(
-      error - tolerance_factor_soft * gt_stddev
-  )
+  loss_per_residue = jax.nn.relu(error - tolerance_factor_soft * gt_stddev)
   loss = jnp.sum(mask * loss_per_residue) / (jnp.sum(mask) + 1e-6)
-  violation_mask = mask * (
-      error > (tolerance_factor_hard * gt_stddev)
-  )
+  violation_mask = mask * (error > (tolerance_factor_hard * gt_stddev))
   return loss_per_residue, loss, violation_mask
 
 
@@ -787,7 +850,7 @@ def between_residue_clash_loss(
     atom14_atom_radius: jnp.ndarray,  # (N, 14)
     residue_index: jnp.ndarray,  # (N)
     overlap_tolerance_soft=1.5,
-    overlap_tolerance_hard=1.5
+    overlap_tolerance_hard=1.5,
 ) -> Dict[str, jnp.ndarray]:
   """Loss to penalize steric clashes between residues.
 
@@ -797,8 +860,8 @@ def between_residue_clash_loss(
   Jumper et al. (2021) Suppl. Sec. 1.9.11, eq 46.
 
   Args:
-    atom14_pred_positions: Predicted positions of atoms in
-      global prediction frame
+    atom14_pred_positions: Predicted positions of atoms in global prediction
+      frame
     atom14_atom_exists: Mask denoting whether atom at positions exists for given
       amino acid type
     atom14_atom_radius: Van der Waals radius for each atom.
@@ -820,74 +883,92 @@ def between_residue_clash_loss(
 
   # Create the distance matrix.
   # (N, N, 14, 14)
-  dists = jnp.sqrt(1e-10 + jnp.sum(
-      squared_difference(
-          atom14_pred_positions[:, None, :, None, :],
-          atom14_pred_positions[None, :, None, :, :]),
-      axis=-1))
+  dists = jnp.sqrt(
+      1e-10
+      + jnp.sum(
+          squared_difference(
+              atom14_pred_positions[:, None, :, None, :],
+              atom14_pred_positions[None, :, None, :, :],
+          ),
+          axis=-1,
+      )
+  )
 
   # Create the mask for valid distances.
   # shape (N, N, 14, 14)
-  dists_mask = (atom14_atom_exists[:, None, :, None] *
-                atom14_atom_exists[None, :, None, :])
+  dists_mask = (
+      atom14_atom_exists[:, None, :, None]
+      * atom14_atom_exists[None, :, None, :]
+  )
 
   # Mask out all the duplicate entries in the lower triangular matrix.
   # Also mask out the diagonal (atom-pairs from the same residue) -- these atoms
   # are handled separately.
   dists_mask *= (
-      residue_index[:, None, None, None] < residue_index[None, :, None, None])
+      residue_index[:, None, None, None] < residue_index[None, :, None, None]
+  )
 
   # Backbone C--N bond between subsequent residues is no clash.
   c_one_hot = jax.nn.one_hot(2, num_classes=14)
   n_one_hot = jax.nn.one_hot(0, num_classes=14)
-  neighbour_mask = ((residue_index[:, None, None, None] +
-                     1) == residue_index[None, :, None, None])
-  c_n_bonds = neighbour_mask * c_one_hot[None, None, :,
-                                         None] * n_one_hot[None, None, None, :]
-  dists_mask *= (1. - c_n_bonds)
+  neighbour_mask = (residue_index[:, None, None, None] + 1) == residue_index[
+      None, :, None, None
+  ]
+  c_n_bonds = (
+      neighbour_mask
+      * c_one_hot[None, None, :, None]
+      * n_one_hot[None, None, None, :]
+  )
+  dists_mask *= 1.0 - c_n_bonds
 
   # Disulfide bridge between two cysteines is no clash.
   cys_sg_idx = residue_constants.restype_name_to_atom14_names['CYS'].index('SG')
   cys_sg_one_hot = jax.nn.one_hot(cys_sg_idx, num_classes=14)
-  disulfide_bonds = (cys_sg_one_hot[None, None, :, None] *
-                     cys_sg_one_hot[None, None, None, :])
-  dists_mask *= (1. - disulfide_bonds)
+  disulfide_bonds = (
+      cys_sg_one_hot[None, None, :, None] * cys_sg_one_hot[None, None, None, :]
+  )
+  dists_mask *= 1.0 - disulfide_bonds
 
   # Compute the lower bound for the allowed distances.
   # shape (N, N, 14, 14)
-  dists_lower_bound = dists_mask * (atom14_atom_radius[:, None, :, None] +
-                                    atom14_atom_radius[None, :, None, :])
+  dists_lower_bound = dists_mask * (
+      atom14_atom_radius[:, None, :, None]
+      + atom14_atom_radius[None, :, None, :]
+  )
 
   # Compute the error.
   # shape (N, N, 14, 14)
   dists_to_low_error = dists_mask * jax.nn.relu(
-      dists_lower_bound - overlap_tolerance_soft - dists)
+      dists_lower_bound - overlap_tolerance_soft - dists
+  )
 
   # Compute the mean loss.
   # shape ()
-  mean_loss = (jnp.sum(dists_to_low_error)
-               / (1e-6 + jnp.sum(dists_mask)))
+  mean_loss = jnp.sum(dists_to_low_error) / (1e-6 + jnp.sum(dists_mask))
 
   # Compute the per atom loss sum.
   # shape (N, 14)
-  per_atom_loss_sum = (jnp.sum(dists_to_low_error, axis=[0, 2]) +
-                       jnp.sum(dists_to_low_error, axis=[1, 3]))
+  per_atom_loss_sum = jnp.sum(dists_to_low_error, axis=[0, 2]) + jnp.sum(
+      dists_to_low_error, axis=[1, 3]
+  )
 
   # Compute the hard clash mask.
   # shape (N, N, 14, 14)
   clash_mask = dists_mask * (
-      dists < (dists_lower_bound - overlap_tolerance_hard))
+      dists < (dists_lower_bound - overlap_tolerance_hard)
+  )
 
   # Compute the per atom clash.
   # shape (N, 14)
   per_atom_clash_mask = jnp.maximum(
-      jnp.max(clash_mask, axis=[0, 2]),
-      jnp.max(clash_mask, axis=[1, 3]))
+      jnp.max(clash_mask, axis=[0, 2]), jnp.max(clash_mask, axis=[1, 3])
+  )
 
-  return {'mean_loss': mean_loss,  # shape ()
-          'per_atom_loss_sum': per_atom_loss_sum,  # shape (N, 14)
-          'per_atom_clash_mask': per_atom_clash_mask  # shape (N, 14)
-         }
+  return {
+      'mean_loss': mean_loss,  # shape ()
+      'per_atom_loss_sum': per_atom_loss_sum,  # shape (N, 14)
+      'per_atom_clash_mask': per_atom_clash_mask,  # shape (N, 14)
+  }
 
 
 def within_residue_violations(
@@ -905,8 +986,8 @@ def within_residue_violations(
   Jumper et al. (2021) Suppl. Sec. 1.9.11, eq 46.
 
   Args:
-    atom14_pred_positions: Predicted positions of atoms in
-      global prediction frame
+    atom14_pred_positions: Predicted positions of atoms in global prediction
+      frame
     atom14_atom_exists: Mask denoting whether atom at positions exists for given
       amino acid type
     atom14_dists_lower_bound: Lower bound on allowed distances.
@@ -926,44 +1007,52 @@ def within_residue_violations(
 
   # Compute the mask for each residue.
   # shape (N, 14, 14)
-  dists_masks = (1. - jnp.eye(14, 14)[None])
-  dists_masks *= (atom14_atom_exists[:, :, None] *
-                  atom14_atom_exists[:, None, :])
+  dists_masks = 1.0 - jnp.eye(14, 14)[None]
+  dists_masks *= atom14_atom_exists[:, :, None] * atom14_atom_exists[:, None, :]
 
   # Distance matrix
   # shape (N, 14, 14)
-  dists = jnp.sqrt(1e-10 + jnp.sum(
-      squared_difference(
-          atom14_pred_positions[:, :, None, :],
-          atom14_pred_positions[:, None, :, :]),
-      axis=-1))
+  dists = jnp.sqrt(
+      1e-10
+      + jnp.sum(
+          squared_difference(
+              atom14_pred_positions[:, :, None, :],
+              atom14_pred_positions[:, None, :, :],
+          ),
+          axis=-1,
+      )
+  )
 
   # Compute the loss.
   # shape (N, 14, 14)
   dists_to_low_error = jax.nn.relu(
-      atom14_dists_lower_bound + tighten_bounds_for_loss - dists)
+      atom14_dists_lower_bound + tighten_bounds_for_loss - dists
+  )
   dists_to_high_error = jax.nn.relu(
-      dists - (atom14_dists_upper_bound - tighten_bounds_for_loss))
+      dists - (atom14_dists_upper_bound - tighten_bounds_for_loss)
+  )
   loss = dists_masks * (dists_to_low_error + dists_to_high_error)
 
   # Compute the per atom loss sum.
   # shape (N, 14)
-  per_atom_loss_sum = (jnp.sum(loss, axis=1) +
-                       jnp.sum(loss, axis=2))
+  per_atom_loss_sum = jnp.sum(loss, axis=1) + jnp.sum(loss, axis=2)
 
   # Compute the violations mask.
   # shape (N, 14, 14)
-  violations = dists_masks * ((dists < atom14_dists_lower_bound) |
-                              (dists > atom14_dists_upper_bound))
+  violations = dists_masks * (
+      (dists < atom14_dists_lower_bound) | (dists > atom14_dists_upper_bound)
+  )
 
   # Compute the per atom violations.
   # shape (N, 14)
   per_atom_violations = jnp.maximum(
-      jnp.max(violations, axis=1), jnp.max(violations, axis=2))
+      jnp.max(violations, axis=1), jnp.max(violations, axis=2)
+  )
 
-  return {'per_atom_loss_sum': per_atom_loss_sum,  # shape (N, 14)
-          'per_atom_violations': per_atom_violations  # shape (N, 14)
-         }
+  return {
+      'per_atom_loss_sum': per_atom_loss_sum,  # shape (N, 14)
+      'per_atom_violations': per_atom_violations,  # shape (N, 14)
+  }
 
 
 def find_optimal_renaming(
@@ -988,8 +1077,8 @@ def find_optimal_renaming(
       atoms, see Jumper et al. (2021) Suppl. Table 3
     atom14_gt_exists: Mask denoting whether atom at positions exists in ground
       truth.
-    atom14_pred_positions: Predicted positions of atoms in
-      global prediction frame
+    atom14_pred_positions: Predicted positions of atoms in global prediction
+      frame
     atom14_atom_exists: Mask denoting whether atom at positions exists for given
       amino acid type
 
@@ -1006,24 +1095,39 @@ def find_optimal_renaming(
 
   # Create the pred distance matrix.
   # shape (N, N, 14, 14)
-  pred_dists = jnp.sqrt(1e-10 + jnp.sum(
-      squared_difference(
-          atom14_pred_positions[:, None, :, None, :],
-          atom14_pred_positions[None, :, None, :, :]),
-      axis=-1))
+  pred_dists = jnp.sqrt(
+      1e-10
+      + jnp.sum(
+          squared_difference(
+              atom14_pred_positions[:, None, :, None, :],
+              atom14_pred_positions[None, :, None, :, :],
+          ),
+          axis=-1,
+      )
+  )
 
   # Compute distances for ground truth with original and alternative names.
   # shape (N, N, 14, 14)
-  gt_dists = jnp.sqrt(1e-10 + jnp.sum(
-      squared_difference(
-          atom14_gt_positions[:, None, :, None, :],
-          atom14_gt_positions[None, :, None, :, :]),
-      axis=-1))
-  alt_gt_dists = jnp.sqrt(1e-10 + jnp.sum(
-      squared_difference(
-          atom14_alt_gt_positions[:, None, :, None, :],
-          atom14_alt_gt_positions[None, :, None, :, :]),
-      axis=-1))
+  gt_dists = jnp.sqrt(
+      1e-10
+      + jnp.sum(
+          squared_difference(
+              atom14_gt_positions[:, None, :, None, :],
+              atom14_gt_positions[None, :, None, :, :],
+          ),
+          axis=-1,
+      )
+  )
+  alt_gt_dists = jnp.sqrt(
+      1e-10
+      + jnp.sum(
+          squared_difference(
+              atom14_alt_gt_positions[:, None, :, None, :],
+              atom14_alt_gt_positions[None, :, None, :, :],
+          ),
+          axis=-1,
+      )
+  )
 
   # Compute LDDT's.
   # shape (N, N, 14, 14)
@@ -1033,10 +1137,12 @@ def find_optimal_renaming(
   # Create a mask for ambiguous atoms in rows vs. non-ambiguous atoms
   # in cols.
   # shape (N ,N, 14, 14)
-  mask = (atom14_gt_exists[:, None, :, None] *  # rows
-          atom14_atom_is_ambiguous[:, None, :, None] *  # rows
-          atom14_gt_exists[None, :, None, :] *  # cols
-          (1. - atom14_atom_is_ambiguous[None, :, None, :]))  # cols
+  mask = (
+      atom14_gt_exists[:, None, :, None]  # rows
+      * atom14_atom_is_ambiguous[:, None, :, None]  # rows
+      * atom14_gt_exists[None, :, None, :]  # cols
+      * (1.0 - atom14_atom_is_ambiguous[None, :, None, :])
+  )  # cols
 
   # Aggregate distances for each residue to the non-amibuguous atoms.
   # shape (N)
@@ -1059,7 +1165,8 @@ def frame_aligned_point_error(
     positions_mask: jnp.ndarray,  # shape (num_positions)
     length_scale: float,
     l1_clamp_distance: Optional[float] = None,
-    epsilon=1e-4) -> jnp.ndarray:  # shape ()
+    epsilon=1e-4,
+) -> jnp.ndarray:  # shape ()
   """Measure point error under different alignments.
 
   Jumper et al. (2021) Suppl. Alg. 28 "computeFAPE"
@@ -1074,9 +1181,10 @@ def frame_aligned_point_error(
     target_positions: num_positions target positions of the structure.
     positions_mask: Mask on which positions to score.
     length_scale: length scale to divide loss by.
-    l1_clamp_distance: Distance cutoff on error beyond which gradients will
-      be zero.
+    l1_clamp_distance: Distance cutoff on error beyond which gradients will be
+      zero.
     epsilon: small value used to regularize denominator for masked average.
+
   Returns:
     Masked Frame Aligned Point Error.
   """
@@ -1091,19 +1199,21 @@ def frame_aligned_point_error(
   # r3.Vecs (num_frames, num_positions)
   local_pred_pos = r3.rigids_mul_vecs(
       jax.tree.map(lambda r: r[:, None], r3.invert_rigids(pred_frames)),
-      jax.tree.map(lambda x: x[None, :], pred_positions))
+      jax.tree.map(lambda x: x[None, :], pred_positions),
+  )
 
   # Compute array of target positions in the target frames.
   # r3.Vecs (num_frames, num_positions)
   local_target_pos = r3.rigids_mul_vecs(
       jax.tree.map(lambda r: r[:, None], r3.invert_rigids(target_frames)),
-      jax.tree.map(lambda x: x[None, :], target_positions))
+      jax.tree.map(lambda x: x[None, :], target_positions),
+  )
 
   # Compute errors between the structures.
   # jnp.ndarray (num_frames, num_positions)
   error_dist = jnp.sqrt(
-      r3.vecs_squared_distance(local_pred_pos, local_target_pos)
-      + epsilon)
+      r3.vecs_squared_distance(local_pred_pos, local_target_pos) + epsilon
+  )
 
   if l1_clamp_distance:
     error_dist = jnp.clip(error_dist, 0, l1_clamp_distance)
@@ -1112,11 +1222,10 @@ def frame_aligned_point_error(
   normed_error *= jnp.expand_dims(frames_mask, axis=-1)
   normed_error *= jnp.expand_dims(positions_mask, axis=-2)
 
-  normalization_factor = (
-      jnp.sum(frames_mask, axis=-1) *
-      jnp.sum(positions_mask, axis=-1))
-  return (jnp.sum(normed_error, axis=(-2, -1)) /
-          (epsilon + normalization_factor))
+  normalization_factor = jnp.sum(frames_mask, axis=-1) * jnp.sum(
+      positions_mask, axis=-1
+  )
+  return jnp.sum(normed_error, axis=(-2, -1)) / (epsilon + normalization_factor)
 
 
 def _make_renaming_matrices():
@@ -1133,15 +1242,17 @@ def _make_renaming_matrices():
     correspondences = np.arange(14)
     for source_atom_swap, target_atom_swap in swap.items():
       source_index = residue_constants.restype_name_to_atom14_names[
-          resname].index(source_atom_swap)
+          resname
+      ].index(source_atom_swap)
       target_index = residue_constants.restype_name_to_atom14_names[
-          resname].index(target_atom_swap)
+          resname
+      ].index(target_atom_swap)
       correspondences[source_index] = target_index
       correspondences[target_index] = source_index
 
     renaming_matrix = np.zeros((14, 14), dtype=np.float32)
     for index, correspondence in enumerate(correspondences):
-      renaming_matrix[index, correspondence] = 1.
+      renaming_matrix[index, correspondence] = 1.0
     all_matrices[resname] = renaming_matrix.astype(np.float32)
   renaming_matrices = np.stack([all_matrices[restype] for restype in restype_3])
   return renaming_matrices
@@ -1162,17 +1273,20 @@ def get_alt_atom14(aatype, positions, mask):
     aatype: Amino acid at given position
     positions: Atom positions as r3.Vecs in atom14 representation, (N, 14)
     mask: Atom masks in atom14 representation, (N, 14)
+
   Returns:
     renamed atom positions, renamed atom mask
   """
   # pick the transformation matrices for the given residue sequence
   # shape (num_res, 14, 14)
   renaming_transform = utils.batched_gather(
-      jnp.asarray(RENAMING_MATRICES), aatype)
+      jnp.asarray(RENAMING_MATRICES), aatype
+  )
 
   positions = jax.tree.map(lambda x: x[:, :, None], positions)
   alternative_positions = jax.tree.map(
-      lambda x: jnp.sum(x, axis=1), positions * renaming_transform)
+      lambda x: jnp.sum(x, axis=1), positions * renaming_transform
+  )
 
   # Create the mask for the alternative ground truth (differs from the
   # ground truth mask, if only one of the atoms in an ambiguous pair has a

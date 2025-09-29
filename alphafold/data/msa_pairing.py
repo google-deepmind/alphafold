@@ -75,8 +75,7 @@ class MSAStatistics:
     species_identifiers: An array of species identifiers for each row in the
       MSA.
     row: An array of row indices for each row in the MSA.
-    similarity: An array of sequence similarity values for each row in the
-      MSA.
+    similarity: An array of sequence similarity values for each row in the MSA.
     gap: An array of gap percentages for each row in the MSA.
   """
 
@@ -92,12 +91,12 @@ class MSAStatistics:
     """Creates MSAStatistics object from chain features.
 
     Args:
-      chain_features: A feature dictionary for a single chain. Expected keys:
-          - msa_all_seq: A 2D array where each row corresponds to a sequence in
-            the MSA and each column corresponds to a residue position in the
-            target sequence. The target sequence is the first row in this array.
-          - msa_species_identifiers_all_seq: An array of species identifiers for
-            each sequence in the MSA.
+      chain_features: A feature dictionary for a single chain. Expected keys: -
+        msa_all_seq: A 2D array where each row corresponds to a sequence in the
+          MSA and each column corresponds to a residue position in the target
+          sequence. The target sequence is the first row in this array. -
+        msa_species_identifiers_all_seq: An array of species identifiers for
+          each sequence in the MSA.
 
     Returns:
       An MSAStatistics object.
@@ -105,19 +104,19 @@ class MSAStatistics:
     chain_msa = chain_features['msa_all_seq']
     target_seq = chain_msa[0]
     return cls(
-        species_identifiers=chain_features[
-            'msa_species_identifiers_all_seq'
-        ],
+        species_identifiers=chain_features['msa_species_identifiers_all_seq'],
         row=np.arange(
             len(chain_features['msa_species_identifiers_all_seq']),
             dtype=np.int32,
         ),
         similarity=np.mean(
-            target_seq[None] == chain_msa, axis=-1,
+            target_seq[None] == chain_msa,
+            axis=-1,
             dtype=np.float32,
         ),
         gap=np.mean(
-            chain_msa == MSA_GAP_IDX, axis=-1,
+            chain_msa == MSA_GAP_IDX,
+            axis=-1,
             dtype=np.float32,
         ),
     )

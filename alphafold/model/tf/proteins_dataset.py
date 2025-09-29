@@ -24,7 +24,8 @@ TensorDict = Dict[str, tf.Tensor]
 def parse_tfexample(
     raw_data: bytes,
     features: protein_features.FeaturesMetadata,
-    key: Optional[str] = None) -> Dict[str, tf.train.Feature]:
+    key: Optional[str] = None,
+) -> Dict[str, tf.train.Feature]:
   """Read a single TF Example proto and return a subset of its features.
 
   Args:
@@ -57,7 +58,8 @@ def _first(tensor: tf.Tensor) -> tf.Tensor:
 def parse_reshape_logic(
     parsed_features: TensorDict,
     features: protein_features.FeaturesMetadata,
-    key: Optional[str] = None) -> TensorDict:
+    key: Optional[str] = None,
+) -> TensorDict:
   """Transforms parsed serial features to the correct shape."""
   # Find out what is the number of sequences and the number of alignments.
   num_residues = tf.cast(_first(parsed_features["seq_length"]), dtype=tf.int32)
@@ -69,7 +71,8 @@ def parse_reshape_logic(
 
   if "template_domain_names" in parsed_features:
     num_templates = tf.cast(
-        tf.shape(parsed_features["template_domain_names"])[0], dtype=tf.int32)
+        tf.shape(parsed_features["template_domain_names"])[0], dtype=tf.int32
+    )
   else:
     num_templates = 0
 
@@ -83,23 +86,32 @@ def parse_reshape_logic(
         num_residues=num_residues,
         msa_length=num_msa,
         num_templates=num_templates,
-        features=features)
+        features=features,
+    )
     new_shape_size = tf.constant(1, dtype=tf.int32)
     for dim in new_shape:
       new_shape_size *= tf.cast(dim, tf.int32)
 
     assert_equal = tf.assert_equal(
-        tf.size(v), new_shape_size,
+        tf.size(v),
+        new_shape_size,
         name="assert_%s_shape_correct" % k,
-        message="The size of feature %s (%s) could not be reshaped "
-        "into %s" % (k, tf.size(v), new_shape))
+        message="The size of feature %s (%s) could not be reshaped into %s"
+        % (k, tf.size(v), new_shape),
+    )
     if "template" not in k:
       # Make sure the feature we are reshaping is not empty.
       assert_non_empty = tf.assert_greater(
-          tf.size(v), 0, name="assert_%s_non_empty" % k,
-          message="The feature %s is not set in the tf.Example. Either do not "
-          "request the feature or use a tf.Example that has the "
-          "feature set." % k)
+          tf.size(v),
+          0,
+          name="assert_%s_non_empty" % k,
+          message=(
+              "The feature %s is not set in the tf.Example. Either do not "
+              "request the feature or use a tf.Example that has the "
+              "feature set."
+          )
+          % k,
+      )
       with tf.control_dependencies([assert_non_empty, assert_equal]):
         parsed_features[k] = tf.reshape(v, new_shape, name="reshape_%s" % k)
     else:
@@ -110,14 +122,16 @@ def parse_reshape_logic(
 
 
 def _make_features_metadata(
-    feature_names: Sequence[str]) -> protein_features.FeaturesMetadata:
+    feature_names: Sequence[str],
+) -> protein_features.FeaturesMetadata:
   """Makes a feature name to type and shape mapping from a list of names."""
   # Make sure these features are always read.
   required_features = ["aatype", "sequence", "seq_length"]
   feature_names = list(set(feature_names) | set(required_features))
 
-  features_metadata = {name: protein_features.FEATURES[name]
-                       for name in feature_names}
+  features_metadata = {
+      name: protein_features.FEATURES[name] for name in feature_names
+  }
   return features_metadata
 
 
@@ -125,7 +139,7 @@ def create_tensor_dict(
     raw_data: bytes,
     features: Sequence[str],
     key: Optional[str] = None,
-    ) -> TensorDict:
+) -> TensorDict:
   """Creates a dictionary of tensor features.
 
   Args:
@@ -145,7 +159,7 @@ def create_tensor_dict(
 def np_to_tensor_dict(
     np_example: Mapping[str, np.ndarray],
     features: Sequence[str],
-    ) -> TensorDict:
+) -> TensorDict:
   """Creates dict of tensors from a dict of NumPy arrays.
 
   Args:
@@ -157,8 +171,9 @@ def np_to_tensor_dict(
     features are returned, all other ones are filtered out.
   """
   features_metadata = _make_features_metadata(features)
-  tensor_dict = {k: tf.constant(v) for k, v in np_example.items()
-                 if k in features_metadata}
+  tensor_dict = {
+      k: tf.constant(v) for k, v in np_example.items() if k in features_metadata
+  }
 
   # Ensures shapes are as expected. Needed for setting size of empty features
   # e.g. when no template hits were found.

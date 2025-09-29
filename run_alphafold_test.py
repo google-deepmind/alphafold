@@ -20,6 +20,7 @@ from absl.testing import absltest
 from absl.testing import parameterized
 import run_alphafold
 import numpy as np
+
 # Internal import (7716).
 
 TEST_DATA_DIR = 'alphafold/common/testdata/'
@@ -52,10 +53,10 @@ class RunAlphafoldTest(parameterized.TestCase):
         },
         'plddt': np.ones(10) * 42,
         'ranking_confidence': 90,
-        'ptm': np.array(0.),
+        'ptm': np.array(0.0),
         'aligned_confidence_probs': np.zeros((10, 10, 50)),
         'predicted_aligned_error': np.zeros((10, 10)),
-        'max_predicted_aligned_error': np.array(0.),
+        'max_predicted_aligned_error': np.array(0.0),
     }
     model_runner_mock.multimer_mode = False
 
@@ -114,9 +115,15 @@ class RunAlphafoldTest(parameterized.TestCase):
       )
       with open(os.path.join(out_dir, 'test', 'relax_metrics.json')) as f:
         relax_metrics = json.loads(f.read())
-      self.assertDictEqual({'model1': {'remaining_violations': [1.0, 0.0, 0.0],
-                                       'remaining_violations_count': 1.0}},
-                           relax_metrics)
+      self.assertDictEqual(
+          {
+              'model1': {
+                  'remaining_violations': [1.0, 0.0, 0.0],
+                  'remaining_violations_count': 1.0,
+              }
+          },
+          relax_metrics,
+      )
     self.assertCountEqual(expected_files, target_output_files)
 
     # Check that pLDDT is set in the B-factor column.

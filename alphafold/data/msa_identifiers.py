@@ -43,7 +43,8 @@ _UNIPROT_PATTERN = re.compile(
     (?:_\d+)?
     $
     """,
-    re.VERBOSE)
+    re.VERBOSE,
+)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -67,8 +68,7 @@ def _parse_sequence_identifier(msa_sequence_identifier: str) -> Identifiers:
   """
   matches = re.search(_UNIPROT_PATTERN, msa_sequence_identifier.strip())
   if matches:
-    return Identifiers(
-        species_id=matches.group('SpeciesIdentifier'))
+    return Identifiers(species_id=matches.group('SpeciesIdentifier'))
   return Identifiers()
 
 

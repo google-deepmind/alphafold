@@ -21,6 +21,7 @@ from typing import Any, List, Mapping, Optional, Sequence
 
 from absl import logging
 from alphafold.data.tools import utils
+
 # Internal import (7716).
 
 
@@ -31,45 +32,47 @@ _HHBLITS_DEFAULT_Z = 500
 class HHBlits:
   """Python wrapper of the HHblits binary."""
 
-  def __init__(self,
-               *,
-               binary_path: str,
-               databases: Sequence[str],
-               n_cpu: int = 4,
-               n_iter: int = 3,
-               e_value: float = 0.001,
-               maxseq: int = 1_000_000,
-               realign_max: int = 100_000,
-               maxfilt: int = 100_000,
-               min_prefilter_hits: int = 1000,
-               all_seqs: bool = False,
-               alt: Optional[int] = None,
-               p: int = _HHBLITS_DEFAULT_P,
-               z: int = _HHBLITS_DEFAULT_Z):
+  def __init__(
+      self,
+      *,
+      binary_path: str,
+      databases: Sequence[str],
+      n_cpu: int = 4,
+      n_iter: int = 3,
+      e_value: float = 0.001,
+      maxseq: int = 1_000_000,
+      realign_max: int = 100_000,
+      maxfilt: int = 100_000,
+      min_prefilter_hits: int = 1000,
+      all_seqs: bool = False,
+      alt: Optional[int] = None,
+      p: int = _HHBLITS_DEFAULT_P,
+      z: int = _HHBLITS_DEFAULT_Z,
+  ):
     """Initializes the Python HHblits wrapper.
 
     Args:
       binary_path: The path to the HHblits executable.
-      databases: A sequence of HHblits database paths. This should be the
-        common prefix for the database files (i.e. up to but not including
-        _hhm.ffindex etc.)
+      databases: A sequence of HHblits database paths. This should be the common
+        prefix for the database files (i.e. up to but not including _hhm.ffindex
+        etc.)
       n_cpu: The number of CPUs to give HHblits.
       n_iter: The number of HHblits iterations.
       e_value: The E-value, see HHblits docs for more details.
       maxseq: The maximum number of rows in an input alignment. Note that this
         parameter is only supported in HHBlits version 3.1 and higher.
       realign_max: Max number of HMM-HMM hits to realign. HHblits default: 500.
-      maxfilt: Max number of hits allowed to pass the 2nd prefilter.
-        HHblits default: 20000.
-      min_prefilter_hits: Min number of hits to pass prefilter.
-        HHblits default: 100.
+      maxfilt: Max number of hits allowed to pass the 2nd prefilter. HHblits
+        default is 20000.
+      min_prefilter_hits: Min number of hits to pass prefilter. HHblits default:
+        100.
       all_seqs: Return all sequences in the MSA / Do not filter the result MSA.
-        HHblits default: False.
+        HHblits default is False.
       alt: Show up to this many alternative alignments.
-      p: Minimum Prob for a hit to be included in the output hhr file.
-        HHblits default: 20.
-      z: Hard cap on number of hits reported in the hhr file.
-        HHblits default: 500. NB: The relevant HHblits flag is -Z not -z.
+      p: Minimum Prob for a hit to be included in the output hhr file. HHblits
+        default is 20.
+      z: Hard cap on number of hits reported in the hhr file. HHblits default is
+        500. NB: The relevant HHblits flag is -Z not -z.
 
     Raises:
       RuntimeError: If HHblits binary not found within the path.
@@ -105,16 +108,17 @@ class HHBlits:
         db_cmd.append(db_path)
       cmd = [
           self.binary_path,
-          '-i', input_fasta_path,
-          '-cpu', str(self.n_cpu),
-          '-oa3m', a3m_path,
-          '-o', '/dev/null',
-          '-n', str(self.n_iter),
-          '-e', str(self.e_value),
-          '-maxseq', str(self.maxseq),
-          '-realign_max', str(self.realign_max),
-          '-maxfilt', str(self.maxfilt),
-          '-min_prefilter_hits', str(self.min_prefilter_hits)]
+          *('-i', input_fasta_path),
+          *('-cpu', str(self.n_cpu)),
+          *('-oa3m', a3m_path),
+          *('-o', '/dev/null'),
+          *('-n', str(self.n_iter)),
+          *('-e', str(self.e_value)),
+          *('-maxseq', str(self.maxseq)),
+          *('-realign_max', str(self.realign_max)),
+          *('-maxfilt', str(self.maxfilt)),
+          *('-min_prefilter_hits', str(self.min_prefilter_hits)),
+      ]
       if self.all_seqs:
         cmd += ['-all']
       if self.alt:
@@ -127,7 +131,8 @@ class HHBlits:
 
       logging.info('Launching subprocess "%s"', ' '.join(cmd))
       process = subprocess.Popen(
-          cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+          cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+      )
 
       with utils.timing('HHblits query'):
         stdout, stderr = process.communicate()
@@ -140,8 +145,10 @@ class HHBlits:
           if error_line.strip():
             logging.error(error_line.strip())
         logging.error('HHblits stderr end')
-        raise RuntimeError('HHblits failed\nstdout:\n%s\n\nstderr:\n%s\n' % (
-            stdout.decode('utf-8'), stderr[:500_000].decode('utf-8')))
+        raise RuntimeError(
+            'HHblits failed\nstdout:\n%s\n\nstderr:\n%s\n'
+            % (stdout.decode('utf-8'), stderr[:500_000].decode('utf-8'))
+        )
 
       with open(a3m_path) as f:
         a3m = f.read()
@@ -151,5 +158,6 @@ class HHBlits:
         output=stdout,
         stderr=stderr,
         n_iter=self.n_iter,
-        e_value=self.e_value)
+        e_value=self.e_value,
+    )
     return [raw_output]

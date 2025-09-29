@@ -23,6 +23,7 @@ def shape_list(x):
 
   Args:
     x: A tensor.
+
   Returns:
     A list with length equal to the rank of the tensor. The n-th element of the
     list is an integer when that dimension is statically known otherwise it is
@@ -44,4 +45,3 @@ def shape_list(x):
       dim = shape[i]
     ret.append(dim)
   return ret
-

@@ -16,11 +16,13 @@
 import jax.numpy as jnp
 
 
-def lddt(predicted_points,
-         true_points,
-         true_points_mask,
-         cutoff=15.,
-         per_residue=False):
+def lddt(
+    predicted_points,
+    true_points,
+    true_points_mask,
+    cutoff=15.0,
+    per_residue=False,
+):
   """Measure (approximate) lDDT for a batch of coordinates.
 
   lDDT reference:
@@ -57,17 +59,26 @@ def lddt(predicted_points,
   assert len(true_points_mask.shape) == 3
 
   # Compute true and predicted distance matrices.
-  dmat_true = jnp.sqrt(1e-10 + jnp.sum(
-      (true_points[:, :, None] - true_points[:, None, :])**2, axis=-1))
+  dmat_true = jnp.sqrt(
+      1e-10
+      + jnp.sum(
+          (true_points[:, :, None] - true_points[:, None, :]) ** 2, axis=-1
+      )
+  )
 
-  dmat_predicted = jnp.sqrt(1e-10 + jnp.sum(
-      (predicted_points[:, :, None] -
-       predicted_points[:, None, :])**2, axis=-1))
+  dmat_predicted = jnp.sqrt(
+      1e-10
+      + jnp.sum(
+          (predicted_points[:, :, None] - predicted_points[:, None, :]) ** 2,
+          axis=-1,
+      )
+  )
 
   dists_to_score = (
-      (dmat_true < cutoff).astype(jnp.float32) * true_points_mask *
-      jnp.transpose(true_points_mask, [0, 2, 1]) *
-      (1. - jnp.eye(dmat_true.shape[1]))  # Exclude self-interaction.
+      (dmat_true < cutoff).astype(jnp.float32)
+      * true_points_mask
+      * jnp.transpose(true_points_mask, [0, 2, 1])
+      * (1.0 - jnp.eye(dmat_true.shape[1]))  # Exclude self-interaction.
   )
 
   # Shift unscored distances to be far away.
@@ -75,14 +86,16 @@ def lddt(predicted_points,
 
   # True lDDT uses a number of fixed bins.
   # We ignore the physical plausibility correction to lDDT, though.
-  score = 0.25 * ((dist_l1 < 0.5).astype(jnp.float32) +
-                  (dist_l1 < 1.0).astype(jnp.float32) +
-                  (dist_l1 < 2.0).astype(jnp.float32) +
-                  (dist_l1 < 4.0).astype(jnp.float32))
+  score = 0.25 * (
+      (dist_l1 < 0.5).astype(jnp.float32)
+      + (dist_l1 < 1.0).astype(jnp.float32)
+      + (dist_l1 < 2.0).astype(jnp.float32)
+      + (dist_l1 < 4.0).astype(jnp.float32)
+  )
 
   # Normalize over the appropriate axes.
   reduce_axes = (-1,) if per_residue else (-2, -1)
-  norm = 1. / (1e-10 + jnp.sum(dists_to_score, axis=reduce_axes))
+  norm = 1.0 / (1e-10 + jnp.sum(dists_to_score, axis=reduce_axes))
   score = norm * (1e-10 + jnp.sum(dists_to_score * score, axis=reduce_axes))
 
   return score

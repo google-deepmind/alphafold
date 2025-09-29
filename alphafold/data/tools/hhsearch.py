@@ -20,21 +20,23 @@ import subprocess
 from typing import Sequence
 
 from absl import logging
-
 from alphafold.data import parsers
 from alphafold.data.tools import utils
+
 # Internal import (7716).
 
 
 class HHSearch:
   """Python wrapper of the HHsearch binary."""
 
-  def __init__(self,
-               *,
-               binary_path: str,
-               databases: Sequence[str],
-               maxseq: int = 1_000_000,
-               cpu: int = 8):
+  def __init__(
+      self,
+      *,
+      binary_path: str,
+      databases: Sequence[str],
+      maxseq: int = 1_000_000,
+      cpu: int = 8,
+  ):
     """Initializes the Python HHsearch wrapper.
 
     Args:
@@ -79,16 +81,18 @@ class HHSearch:
       for db_path in self.databases:
         db_cmd.append('-d')
         db_cmd.append(db_path)
-      cmd = [self.binary_path,
-             '-i', input_path,
-             '-o', hhr_path,
-             '-maxseq', str(self.maxseq),
-             '-cpu', str(self.cpu),
-             ] + db_cmd
+      cmd = [
+          self.binary_path,
+          *('-i', input_path),
+          *('-o', hhr_path),
+          *('-maxseq', str(self.maxseq)),
+          *('-cpu', str(self.cpu)),
+      ] + db_cmd
 
       logging.info('Launching subprocess "%s"', ' '.join(cmd))
       process = subprocess.Popen(
-          cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+          cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+      )
       with utils.timing('HHsearch query'):
         stdout, stderr = process.communicate()
         retcode = process.wait()
@@ -96,16 +100,17 @@ class HHSearch:
       if retcode:
         # Stderr is truncated to prevent proto size errors in Beam.
         raise RuntimeError(
-            'HHSearch failed:\nstdout:\n%s\n\nstderr:\n%s\n' % (
-                stdout.decode('utf-8'), stderr[:100_000].decode('utf-8')))
+            'HHSearch failed:\nstdout:\n%s\n\nstderr:\n%s\n'
+            % (stdout.decode('utf-8'), stderr[:100_000].decode('utf-8'))
+        )
 
       with open(hhr_path) as f:
         hhr = f.read()
     return hhr
 
-  def get_template_hits(self,
-                        output_string: str,
-                        input_sequence: str) -> Sequence[parsers.TemplateHit]:
+  def get_template_hits(
+      self, output_string: str, input_sequence: str
+  ) -> Sequence[parsers.TemplateHit]:
     """Gets parsed template hits from the raw string output by the tool."""
     del input_sequence  # Used by hmmseach but not needed for hhsearch.
     return parsers.parse_hhr(output_string)

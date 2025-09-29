@@ -45,9 +45,9 @@ Vecs = collections.namedtuple('Vecs', ['x', 'y', 'z'])
 
 # Array of 3x3 rotation matrices, stored as individual array for
 # each component.
-Rots = collections.namedtuple('Rots', ['xx', 'xy', 'xz',
-                                       'yx', 'yy', 'yz',
-                                       'zx', 'zy', 'zz'])
+Rots = collections.namedtuple(
+    'Rots', ['xx', 'xy', 'xz', 'yx', 'yy', 'yz', 'zx', 'zy', 'zz']
+)
 # Array of rigid 3D transformations, stored as array of rotations and
 # array of translations.
 Rigids = collections.namedtuple('Rigids', ['rot', 'trans'])
@@ -67,9 +67,7 @@ def invert_rigids(r: Rigids) -> Rigids:
 
 def invert_rots(m: Rots) -> Rots:
   """Computes inverse of rotations 'm'."""
-  return Rots(m.xx, m.yx, m.zx,
-              m.xy, m.yy, m.zy,
-              m.xz, m.yz, m.zz)
+  return Rots(m.xx, m.yx, m.zx, m.xy, m.yy, m.zy, m.xz, m.yz, m.zz)
 
 
 def rigids_from_3_points(
@@ -87,13 +85,15 @@ def rigids_from_3_points(
     point_on_neg_x_axis: Vecs corresponding to points on the negative x axis
     origin: Origin of resulting rigid transformations
     point_on_xy_plane: Vecs corresponding to points in the xy plane
+
   Returns:
     Rigid transformations from global frame to local frames derived from
     the input points.
   """
   m = rots_from_two_vecs(
       e0_unnormalized=vecs_sub(origin, point_on_neg_x_axis),
-      e1_unnormalized=vecs_sub(point_on_xy_plane, origin))
+      e1_unnormalized=vecs_sub(point_on_xy_plane, origin),
+  )
 
   return Rigids(rot=m, trans=origin)
 
@@ -110,7 +110,7 @@ def rigids_from_quataffine(a: quat_affine.QuatAffine) -> Rigids:
 
 
 def rigids_from_tensor4x4(
-    m: jnp.ndarray  # shape (..., 4, 4)
+    m: jnp.ndarray,  # shape (..., 4, 4)
 ) -> Rigids:  # shape (...)
   """Construct Rigids object from an 4x4 array.
 
@@ -118,32 +118,41 @@ def rigids_from_tensor4x4(
 
   Args:
     m: Array representing transformations in homogeneous coordinates.
+
   Returns:
     Rigids object corresponding to transformations m
   """
   assert m.shape[-1] == 4
   assert m.shape[-2] == 4
   return Rigids(
-      Rots(m[..., 0, 0], m[..., 0, 1], m[..., 0, 2],
-           m[..., 1, 0], m[..., 1, 1], m[..., 1, 2],
-           m[..., 2, 0], m[..., 2, 1], m[..., 2, 2]),
-      Vecs(m[..., 0, 3], m[..., 1, 3], m[..., 2, 3]))
+      Rots(
+          m[..., 0, 0],
+          m[..., 0, 1],
+          m[..., 0, 2],
+          m[..., 1, 0],
+          m[..., 1, 1],
+          m[..., 1, 2],
+          m[..., 2, 0],
+          m[..., 2, 1],
+          m[..., 2, 2],
+      ),
+      Vecs(m[..., 0, 3], m[..., 1, 3], m[..., 2, 3]),
+  )
 
 
 def rigids_from_tensor_flat9(
-    m: jnp.ndarray  # shape (..., 9)
+    m: jnp.ndarray,  # shape (..., 9)
 ) -> Rigids:  # shape (...)
   """Flat9 encoding: first two columns of rotation matrix + translation."""
   assert m.shape[-1] == 9
   e0 = Vecs(m[..., 0], m[..., 1], m[..., 2])
   e1 = Vecs(m[..., 3], m[..., 4], m[..., 5])
   trans = Vecs(m[..., 6], m[..., 7], m[..., 8])
-  return Rigids(rot=rots_from_two_vecs(e0, e1),
-                trans=trans)
+  return Rigids(rot=rots_from_two_vecs(e0, e1), trans=trans)
 
 
 def rigids_from_tensor_flat12(
-    m: jnp.ndarray  # shape (..., 12)
+    m: jnp.ndarray,  # shape (..., 12)
 ) -> Rigids:  # shape (...)
   """Flat12 encoding: rotation matrix (9 floats) + translation (3 floats)."""
   assert m.shape[-1] == 12
@@ -155,7 +164,8 @@ def rigids_mul_rigids(a: Rigids, b: Rigids) -> Rigids:
   """Group composition of Rigids 'a' and 'b'."""
   return Rigids(
       rots_mul_rots(a.rot, b.rot),
-      vecs_add(a.trans, rots_mul_vecs(a.rot, b.trans)))
+      vecs_add(a.trans, rots_mul_vecs(a.rot, b.trans)),
+  )
 
 
 def rigids_mul_rots(r: Rigids, m: Rots) -> Rigids:
@@ -177,23 +187,28 @@ def rigids_to_quataffine(r: Rigids) -> quat_affine.QuatAffine:
   """Convert Rigids r into QuatAffine, inverse of 'rigids_from_quataffine'."""
   return quat_affine.QuatAffine(
       quaternion=None,
-      rotation=[[r.rot.xx, r.rot.xy, r.rot.xz],
-                [r.rot.yx, r.rot.yy, r.rot.yz],
-                [r.rot.zx, r.rot.zy, r.rot.zz]],
-      translation=[r.trans.x, r.trans.y, r.trans.z])
+      rotation=[
+          [r.rot.xx, r.rot.xy, r.rot.xz],
+          [r.rot.yx, r.rot.yy, r.rot.yz],
+          [r.rot.zx, r.rot.zy, r.rot.zz],
+      ],
+      translation=[r.trans.x, r.trans.y, r.trans.z],
+  )
 
 
 def rigids_to_tensor_flat9(
-    r: Rigids  # shape (...)
+    r: Rigids,  # shape (...)
 ) -> jnp.ndarray:  # shape (..., 9)
   """Flat9 encoding: first two columns of rotation matrix + translation."""
   return jnp.stack(
       [r.rot.xx, r.rot.yx, r.rot.zx, r.rot.xy, r.rot.yy, r.rot.zy]
-      + list(r.trans), axis=-1)
+      + list(r.trans),
+      axis=-1,
+  )
 
 
 def rigids_to_tensor_flat12(
-    r: Rigids  # shape (...)
+    r: Rigids,  # shape (...)
 ) -> jnp.ndarray:  # shape (..., 12)
   """Flat12 encoding: rotation matrix (9 floats) + translation (3 floats)."""
   return jnp.stack(list(r.rot) + list(r.trans), axis=-1)
@@ -205,9 +220,17 @@ def rots_from_tensor3x3(
   """Convert rotations represented as (3, 3) array to Rots."""
   assert m.shape[-1] == 3
   assert m.shape[-2] == 3
-  return Rots(m[..., 0, 0], m[..., 0, 1], m[..., 0, 2],
-              m[..., 1, 0], m[..., 1, 1], m[..., 1, 2],
-              m[..., 2, 0], m[..., 2, 1], m[..., 2, 2])
+  return Rots(
+      m[..., 0, 0],
+      m[..., 0, 1],
+      m[..., 0, 2],
+      m[..., 1, 0],
+      m[..., 1, 1],
+      m[..., 1, 2],
+      m[..., 2, 0],
+      m[..., 2, 1],
+      m[..., 2, 2],
+  )
 
 
 def rots_from_two_vecs(e0_unnormalized: Vecs, e1_unnormalized: Vecs) -> Rots:
@@ -219,6 +242,7 @@ def rots_from_two_vecs(e0_unnormalized: Vecs, e1_unnormalized: Vecs) -> Rots:
   Args:
     e0_unnormalized: vectors lying along x-axis of resulting rotation
     e1_unnormalized: vectors lying in xy-plane of resulting rotation
+
   Returns:
     Rotations resulting from Gram-Schmidt procedure.
   """
@@ -227,9 +251,11 @@ def rots_from_two_vecs(e0_unnormalized: Vecs, e1_unnormalized: Vecs) -> Rots:
 
   # make e1 perpendicular to e0.
   c = vecs_dot_vecs(e1_unnormalized, e0)
-  e1 = Vecs(e1_unnormalized.x - c * e0.x,
-            e1_unnormalized.y - c * e0.y,
-            e1_unnormalized.z - c * e0.z)
+  e1 = Vecs(
+      e1_unnormalized.x - c * e0.x,
+      e1_unnormalized.y - c * e0.y,
+      e1_unnormalized.z - c * e0.z,
+  )
   e1 = vecs_robust_normalize(e1)
 
   # Compute e2 as cross product of e0 and e1.
@@ -248,9 +274,11 @@ def rots_mul_rots(a: Rots, b: Rots) -> Rots:
 
 def rots_mul_vecs(m: Rots, v: Vecs) -> Vecs:
   """Apply rotations 'm' to vectors 'v'."""
-  return Vecs(m.xx * v.x + m.xy * v.y + m.xz * v.z,
-              m.yx * v.x + m.yy * v.y + m.yz * v.z,
-              m.zx * v.x + m.zy * v.y + m.zz * v.z)
+  return Vecs(
+      m.xx * v.x + m.xy * v.y + m.xz * v.z,
+      m.yx * v.x + m.yy * v.y + m.yz * v.z,
+      m.zx * v.x + m.zy * v.y + m.zz * v.z,
+  )
 
 
 def vecs_add(v1: Vecs, v2: Vecs) -> Vecs:
@@ -265,13 +293,14 @@ def vecs_dot_vecs(v1: Vecs, v2: Vecs) -> jnp.ndarray:
 
 def vecs_cross_vecs(v1: Vecs, v2: Vecs) -> Vecs:
   """Cross product of vectors 'v1' and 'v2'."""
-  return Vecs(v1.y * v2.z - v1.z * v2.y,
-              v1.z * v2.x - v1.x * v2.z,
-              v1.x * v2.y - v1.y * v2.x)
+  return Vecs(
+      v1.y * v2.z - v1.z * v2.y,
+      v1.z * v2.x - v1.x * v2.z,
+      v1.x * v2.y - v1.y * v2.x,
+  )
 
 
-def vecs_from_tensor(x: jnp.ndarray  # shape (..., 3)
-                    ) -> Vecs:  # shape (...)
+def vecs_from_tensor(x: jnp.ndarray) -> Vecs:  # shape (..., 3)  # shape (...)
   """Converts from tensor of shape (3,) to Vecs."""
   num_components = x.shape[-1]
   assert num_components == 3
@@ -284,6 +313,7 @@ def vecs_robust_normalize(v: Vecs, epsilon: float = 1e-8) -> Vecs:
   Args:
     v: vectors to be normalized.
     epsilon: small regularizer added to squared norm before taking square root.
+
   Returns:
     normalized vectors
   """
@@ -297,6 +327,7 @@ def vecs_robust_norm(v: Vecs, epsilon: float = 1e-8) -> jnp.ndarray:
   Args:
     v: vectors to be normalized.
     epsilon: small regularizer added to squared norm before taking square root.
+
   Returns:
     norm of 'v'
   """
@@ -310,12 +341,13 @@ def vecs_sub(v1: Vecs, v2: Vecs) -> Vecs:
 
 def vecs_squared_distance(v1: Vecs, v2: Vecs) -> jnp.ndarray:
   """Computes squared euclidean difference between 'v1' and 'v2'."""
-  return (squared_difference(v1.x, v2.x) +
-          squared_difference(v1.y, v2.y) +
-          squared_difference(v1.z, v2.z))
+  return (
+      squared_difference(v1.x, v2.x)
+      + squared_difference(v1.y, v2.y)
+      + squared_difference(v1.z, v2.z)
+  )
 
 
-def vecs_to_tensor(v: Vecs  # shape (...)
-                  ) -> jnp.ndarray:  # shape(..., 3)
+def vecs_to_tensor(v: Vecs) -> jnp.ndarray:  # shape (...)  # shape(..., 3)
   """Converts 'v' to tensor with shape 3, inverse of 'vecs_from_tensor'."""
   return jnp.stack([v.x, v.y, v.z], axis=-1)

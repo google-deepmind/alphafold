@@ -21,7 +21,6 @@ from absl.testing import parameterized
 from alphafold.data import parsers
 from alphafold.data import templates
 from alphafold.notebooks import notebook_utils
-
 import numpy as np
 
 
@@ -30,11 +29,13 @@ ONLY_QUERY_HIT = {
         '# STOCKHOLM 1.0\n'
         '#=GF ID query-i1\n'
         'query   MAAHKGAEHHHKAAEHHEQAAKHHHAAAEHHEKGEHEQAAHHADTAYAHHKHAEEH\n'
-        '//\n'),
+        '//\n'
+    ),
     'tbl': '',
     'stderr': b'',
     'n_iter': 1,
-    'e_value': 0.0001}
+    'e_value': 0.0001,
+}
 
 # pylint: disable=line-too-long
 MULTI_SEQUENCE_HIT_1 = {
@@ -44,18 +45,29 @@ MULTI_SEQUENCE_HIT_1 = {
         '#=GS ERR1700680_4602609/41-109  DE [subseq from] ERR1700680_4602609\n'
         '#=GS ERR1019366_5760491/40-105  DE [subseq from] ERR1019366_5760491\n'
         '#=GS SRR5580704_12853319/61-125 DE [subseq from] SRR5580704_12853319\n'
-        'query                              MAAHKGAEHHHKAAEHHEQAAKHHHAAAEHHEKGEHEQAAHHADTAYAHHKHAEEHAAQAAKHDAEHHAPKPH\n'
-        'ERR1700680_4602609/41-109          --INKGAEYHKKAAEHHELAAKHHREAAKHHEAGSHEKAAHHSEIAAGHGLTAVHHTEEATK-HHPEEHTEK--\n'
-        'ERR1019366_5760491/40-105          ---RSGAQHHDAAAQHYEEAARHHRMAAKQYQASHHEKAAHYAQLAYAHHMYAEQHAAEAAK-AHAKNHG----\n'
-        'SRR5580704_12853319/61-125         ----PAADHHMKAAEHHEEAAKHHRAAAEHHTAGDHQKAGHHAHVANGHHVNAVHHAEEASK-HHATDHS----\n'
-        '//\n'),
+        'query                             '
+        ' MAAHKGAEHHHKAAEHHEQAAKHHHAAAEHHEKGEHEQAAHHADTAYAHHKHAEEHAAQAAKHDAEHHAPKPH\n'
+        'ERR1700680_4602609/41-109         '
+        ' --INKGAEYHKKAAEHHELAAKHHREAAKHHEAGSHEKAAHHSEIAAGHGLTAVHHTEEATK-HHPEEHTEK--\n'
+        'ERR1019366_5760491/40-105         '
+        ' ---RSGAQHHDAAAQHYEEAARHHRMAAKQYQASHHEKAAHYAQLAYAHHMYAEQHAAEAAK-AHAKNHG----\n'
+        'SRR5580704_12853319/61-125        '
+        ' ----PAADHHMKAAEHHEEAAKHHRAAAEHHTAGDHQKAGHHAHVANGHHVNAVHHAEEASK-HHATDHS----\n'
+        '//\n'
+    ),
     'tbl': (
-        'ERR1700680_4602609   -          query                -            7.7e-09   47.7  33.8   1.1e-08   47.2  33.8   1.2   1   0   0   1   1   1   1 -\n'
-        'ERR1019366_5760491   -          query                -            1.7e-08   46.6  33.1   2.5e-08   46.1  33.1   1.3   1   0   0   1   1   1   1 -\n'
-        'SRR5580704_12853319  -          query                -            1.1e-07   44.0  41.6     2e-07   43.1  41.6   1.4   1   0   0   1   1   1   1 -\n'),
-        'stderr': b'',
-        'n_iter': 1,
-        'e_value': 0.0001}
+        'ERR1700680_4602609   -          query                -           '
+        ' 7.7e-09   47.7  33.8   1.1e-08   47.2  33.8   1.2   1   0   0   1   1'
+        '   1   1 -\nERR1019366_5760491   -          query                -    '
+        '        1.7e-08   46.6  33.1   2.5e-08   46.1  33.1   1.3   1   0   0 '
+        '  1   1   1   1 -\nSRR5580704_12853319  -          query              '
+        '  -            1.1e-07   44.0  41.6     2e-07   43.1  41.6   1.4   1  '
+        ' 0   0   1   1   1   1 -\n'
+    ),
+    'stderr': b'',
+    'n_iter': 1,
+    'e_value': 0.0001,
+}
 
 MULTI_SEQUENCE_HIT_2 = {
     'sto': (
@@ -64,29 +76,45 @@ MULTI_SEQUENCE_HIT_2 = {
         '#=GS ERR1700719_3476944/70-137  DE [subseq from] ERR1700719_3476944\n'
         '#=GS ERR1700761_4254522/72-138  DE [subseq from] ERR1700761_4254522\n'
         '#=GS SRR5438477_9761204/64-132  DE [subseq from] SRR5438477_9761204\n'
-        'query                              MAAHKGAEHHHKAAEHHEQAAKHHHAAAEHHEKGEHEQAAHHADTAYAHHKHAEEHAAQAAKHDAEHHAPKPH\n'
-        'ERR1700719_3476944/70-137          ---KQAAEHHHQAAEHHEHAARHHREAAKHHEAGDHESAAHHAHTAQGHLHQATHHASEAAKLHVEHHGQK--\n'
-        'ERR1700761_4254522/72-138          ----QASEHHNLAAEHHEHAARHHRDAAKHHKAGDHEKAAHHAHVAHGHHLHATHHATEAAKHHVEAHGEK--\n'
-        'SRR5438477_9761204/64-132          MPKHEGAEHHKKAAEHNEHAARHHKEAARHHEEGSHEKVGHHAHIAHGHHLHATHHAEEAAKTHSNQHE----\n'
-        '//\n'),
+        'query                             '
+        ' MAAHKGAEHHHKAAEHHEQAAKHHHAAAEHHEKGEHEQAAHHADTAYAHHKHAEEHAAQAAKHDAEHHAPKPH\n'
+        'ERR1700719_3476944/70-137         '
+        ' ---KQAAEHHHQAAEHHEHAARHHREAAKHHEAGDHESAAHHAHTAQGHLHQATHHASEAAKLHVEHHGQK--\n'
+        'ERR1700761_4254522/72-138         '
+        ' ----QASEHHNLAAEHHEHAARHHRDAAKHHKAGDHEKAAHHAHVAHGHHLHATHHATEAAKHHVEAHGEK--\n'
+        'SRR5438477_9761204/64-132         '
+        ' MPKHEGAEHHKKAAEHNEHAARHHKEAARHHEEGSHEKVGHHAHIAHGHHLHATHHAEEAAKTHSNQHE----\n'
+        '//\n'
+    ),
     'tbl': (
-        'ERR1700719_3476944   -          query                -              2e-07   43.2  47.5   3.5e-07   42.4  47.5   1.4   1   0   0   1   1   1   1 -\n'
-        'ERR1700761_4254522   -          query                -            6.1e-07   41.6  48.1   8.1e-07   41.3  48.1   1.2   1   0   0   1   1   1   1 -\n'
-        'SRR5438477_9761204   -          query                -            1.8e-06   40.2  46.9   2.3e-06   39.8  46.9   1.2   1   0   0   1   1   1   1 -\n'),
-        'stderr': b'',
-        'n_iter': 1,
-        'e_value': 0.0001}
+        'ERR1700719_3476944   -          query                -             '
+        ' 2e-07   43.2  47.5   3.5e-07   42.4  47.5   1.4   1   0   0   1   1  '
+        ' 1   1 -\nERR1700761_4254522   -          query                -      '
+        '      6.1e-07   41.6  48.1   8.1e-07   41.3  48.1   1.2   1   0   0  '
+        ' 1   1   1   1 -\nSRR5438477_9761204   -          query               '
+        ' -            1.8e-06   40.2  46.9   2.3e-06   39.8  46.9   1.2   1  '
+        ' 0   0   1   1   1   1 -\n'
+    ),
+    'stderr': b'',
+    'n_iter': 1,
+    'e_value': 0.0001,
+}
 # pylint: enable=line-too-long
 
 
 class NotebookUtilsTest(parameterized.TestCase):
 
   @parameterized.parameters(
-      ('DeepMind', 'DEEPMIND'), ('A ', 'A'), ('\tA', 'A'), (' A\t\n', 'A'),
-      ('ACDEFGHIKLMNPQRSTVWY', 'ACDEFGHIKLMNPQRSTVWY'))
+      ('DeepMind', 'DEEPMIND'),
+      ('A ', 'A'),
+      ('\tA', 'A'),
+      (' A\t\n', 'A'),
+      ('ACDEFGHIKLMNPQRSTVWY', 'ACDEFGHIKLMNPQRSTVWY'),
+  )
   def test_clean_and_validate_sequence_ok(self, sequence, exp_clean):
     clean = notebook_utils.clean_and_validate_single_sequence(
-        sequence, min_length=1, max_length=100)
+        sequence, min_length=1, max_length=100
+    )
     self.assertEqual(clean, exp_clean)
 
   @parameterized.named_parameters(
@@ -97,92 +125,114 @@ class NotebookUtilsTest(parameterized.TestCase):
       ('bad_amino_acids_O', 'OOOO', 'non-amino acid'),
       ('bad_amino_acids_U', 'UUUU', 'non-amino acid'),
       ('bad_amino_acids_X', 'XXXX', 'non-amino acid'),
-      ('bad_amino_acids_Z', 'ZZZZ', 'non-amino acid'))
+      ('bad_amino_acids_Z', 'ZZZZ', 'non-amino acid'),
+  )
   def test_clean_and_validate_sequence_bad(self, sequence, exp_error):
     with self.assertRaisesRegex(ValueError, f'.*{exp_error}.*'):
       notebook_utils.clean_and_validate_single_sequence(
-          sequence, min_length=4, max_length=8)
+          sequence, min_length=4, max_length=8
+      )
 
   @parameterized.parameters(
       (['A', '', '', ' ', '\t', ' \t\n', '', ''], ['A']),
       (['', 'A'], ['A']),
       (['A', 'C ', ''], ['A', 'C']),
-      (['', 'A', '', 'C '], ['A', 'C']))
+      (['', 'A', '', 'C '], ['A', 'C']),
+  )
   def test_validate_input_ok(self, input_sequences, exp_sequences):
     sequences = notebook_utils.clean_and_validate_input_sequences(
         input_sequences=input_sequences,
-        min_sequence_length=1, max_sequence_length=100)
+        min_sequence_length=1,
+        max_sequence_length=100,
+    )
     self.assertSequenceEqual(sequences, exp_sequences)
 
   @parameterized.named_parameters(
       ('no_input_sequence', ['', '\t', '\n'], 'No input amino acid sequence'),
       ('too_long_single', ['AAAAAAAAA', 'AAAA'], 'Input sequence is too long'),
-      ('too_short_single', ['AAA', 'AAAA'], 'Input sequence is too short'))
+      ('too_short_single', ['AAA', 'AAAA'], 'Input sequence is too short'),
+  )
   def test_validate_input_bad(self, input_sequences, exp_error):
     with self.assertRaisesRegex(ValueError, f'.*{exp_error}.*'):
       notebook_utils.clean_and_validate_input_sequences(
-          input_sequences=input_sequences, min_sequence_length=4,
-          max_sequence_length=8)
+          input_sequences=input_sequences,
+          min_sequence_length=4,
+          max_sequence_length=8,
+      )
 
   def test_merge_chunked_msa_no_hits(self):
     results = [ONLY_QUERY_HIT, ONLY_QUERY_HIT]
-    merged_msa = notebook_utils.merge_chunked_msa(
-        results=results)
+    merged_msa = notebook_utils.merge_chunked_msa(results=results)
     self.assertSequenceEqual(
         merged_msa.sequences,
-        ('MAAHKGAEHHHKAAEHHEQAAKHHHAAAEHHEKGEHEQAAHHADTAYAHHKHAEEH',))
+        ('MAAHKGAEHHHKAAEHHEQAAKHHHAAAEHHEKGEHEQAAHHADTAYAHHKHAEEH',),
+    )
     self.assertSequenceEqual(merged_msa.deletion_matrix, ([0] * 56,))
 
   def test_merge_chunked_msa(self):
     results = [MULTI_SEQUENCE_HIT_1, MULTI_SEQUENCE_HIT_2]
-    merged_msa = notebook_utils.merge_chunked_msa(
-        results=results)
+    merged_msa = notebook_utils.merge_chunked_msa(results=results)
     self.assertLen(merged_msa.sequences, 7)
     # The 1st one is the query.
     self.assertEqual(
         merged_msa.sequences[0],
         'MAAHKGAEHHHKAAEHHEQAAKHHHAAAEHHEKGEHEQAAHHADTAYAHHKHAEEHAAQAAKHDAEHHAP'
-        'KPH')
+        'KPH',
+    )
     # The 2nd one is the one with the lowest e-value: ERR1700680_4602609.
     self.assertEqual(
         merged_msa.sequences[1],
         '--INKGAEYHKKAAEHHELAAKHHREAAKHHEAGSHEKAAHHSEIAAGHGLTAVHHTEEATK-HHPEEHT'
-        'EK-')
+        'EK-',
+    )
     # The last one is the one with the largest e-value: SRR5438477_9761204.
     self.assertEqual(
         merged_msa.sequences[-1],
         'MPKHEGAEHHKKAAEHNEHAARHHKEAARHHEEGSHEKVGHHAHIAHGHHLHATHHAEEAAKTHSNQHE-'
-        '---')
+        '---',
+    )
     self.assertLen(merged_msa.deletion_matrix, 7)
 
   @mock.patch('sys.stdout', new_callable=io.StringIO)
   def test_show_msa_info(self, mocked_stdout):
     single_chain_msas = [
-        parsers.Msa(sequences=['A', 'B', 'C', 'C'],
-                    deletion_matrix=[[0]] * 4,
-                    descriptions=[''] * 4),
-        parsers.Msa(sequences=['A', 'A', 'A', 'D'],
-                    deletion_matrix=[[0]] * 4,
-                    descriptions=[''] * 4)
+        parsers.Msa(
+            sequences=['A', 'B', 'C', 'C'],
+            deletion_matrix=[[0]] * 4,
+            descriptions=[''] * 4,
+        ),
+        parsers.Msa(
+            sequences=['A', 'A', 'A', 'D'],
+            deletion_matrix=[[0]] * 4,
+            descriptions=[''] * 4,
+        ),
     ]
     notebook_utils.show_msa_info(
-        single_chain_msas=single_chain_msas, sequence_index=1)
-    self.assertEqual(mocked_stdout.getvalue(),
-                     '\n4 unique sequences found in total for sequence 1\n\n')
+        single_chain_msas=single_chain_msas, sequence_index=1
+    )
+    self.assertEqual(
+        mocked_stdout.getvalue(),
+        '\n4 unique sequences found in total for sequence 1\n\n',
+    )
 
-  @parameterized.named_parameters(
-      ('some_templates', 4), ('no_templates', 0))
+  @parameterized.named_parameters(('some_templates', 4), ('no_templates', 0))
   def test_empty_placeholder_template_features(self, num_templates):
     template_features = notebook_utils.empty_placeholder_template_features(
-        num_templates=num_templates, num_res=16)
-    self.assertCountEqual(template_features.keys(),
-                          templates.TEMPLATE_FEATURES.keys())
+        num_templates=num_templates, num_res=16
+    )
+    self.assertCountEqual(
+        template_features.keys(), templates.TEMPLATE_FEATURES.keys()
+    )
     self.assertSameElements(
-        [v.shape[0] for v in template_features.values()], [num_templates])
+        [v.shape[0] for v in template_features.values()], [num_templates]
+    )
     self.assertSequenceEqual(
         [t.dtype for t in template_features.values()],
-        [np.array([], dtype=templates.TEMPLATE_FEATURES[feat_name]).dtype
-         for feat_name in template_features])
+        [
+            np.array([], dtype=templates.TEMPLATE_FEATURES[feat_name]).dtype
+            for feat_name in template_features
+        ],
+    )
 
   def test_check_cell_execution_order_correct(self):
     notebook_utils.check_cell_execution_order({1, 2}, 3)
@@ -192,7 +242,8 @@ class NotebookUtilsTest(parameterized.TestCase):
       ('Two missing', 5, {1, 2}, '3, 4'),
   )
   def test_check_cell_execution_order_missing(
-      self, cell_num, cells_ran, cells_missing):
+      self, cell_num, cells_ran, cells_missing
+  ):
     with self.assertRaisesRegex(ValueError, f'.+{cells_missing}'):
       notebook_utils.check_cell_execution_order(cells_ran, cell_num)
 

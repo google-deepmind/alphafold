@@ -65,5 +65,5 @@ def _safe_key_unflatten(aux_data, children):
 
 
 jax.tree_util.register_pytree_node(
-    SafeKey, _safe_key_flatten, _safe_key_unflatten)
-
+    SafeKey, _safe_key_flatten, _safe_key_unflatten
+)

@@ -22,21 +22,25 @@ import jax.numpy as jnp
 import numpy as np
 
 
-def assert_rotation_matrix_equal(matrix1: rotation_matrix.Rot3Array,
-                                 matrix2: rotation_matrix.Rot3Array):
+def assert_rotation_matrix_equal(
+    matrix1: rotation_matrix.Rot3Array, matrix2: rotation_matrix.Rot3Array
+):
   for field in dataclasses.fields(rotation_matrix.Rot3Array):
     field = field.name
     np.testing.assert_array_equal(
-        getattr(matrix1, field), getattr(matrix2, field))
+        getattr(matrix1, field), getattr(matrix2, field)
+    )
 
 
-def assert_rotation_matrix_close(mat1: rotation_matrix.Rot3Array,
-                                 mat2: rotation_matrix.Rot3Array):
+def assert_rotation_matrix_close(
+    mat1: rotation_matrix.Rot3Array, mat2: rotation_matrix.Rot3Array
+):
   np.testing.assert_array_almost_equal(mat1.to_array(), mat2.to_array(), 6)
 
 
-def assert_array_equal_to_rotation_matrix(array: jnp.ndarray,
-                                          matrix: rotation_matrix.Rot3Array):
+def assert_array_equal_to_rotation_matrix(
+    array: jnp.ndarray, matrix: rotation_matrix.Rot3Array
+):
   """Check that array and Matrix match."""
   np.testing.assert_array_equal(matrix.xx, array[..., 0, 0])
   np.testing.assert_array_equal(matrix.xy, array[..., 0, 1])
@@ -49,8 +53,9 @@ def assert_array_equal_to_rotation_matrix(array: jnp.ndarray,
   np.testing.assert_array_equal(matrix.zz, array[..., 2, 2])
 
 
-def assert_array_close_to_rotation_matrix(array: jnp.ndarray,
-                                          matrix: rotation_matrix.Rot3Array):
+def assert_array_close_to_rotation_matrix(
+    array: jnp.ndarray, matrix: rotation_matrix.Rot3Array
+):
   np.testing.assert_array_almost_equal(matrix.to_array(), array, 6)
 
 
@@ -61,38 +66,46 @@ def assert_vectors_equal(vec1: vector.Vec3Array, vec2: vector.Vec3Array):
 
 
 def assert_vectors_close(vec1: vector.Vec3Array, vec2: vector.Vec3Array):
-  np.testing.assert_allclose(vec1.x, vec2.x, atol=1e-5, rtol=0.)
-  np.testing.assert_allclose(vec1.y, vec2.y, atol=1e-5, rtol=0.)
-  np.testing.assert_allclose(vec1.z, vec2.z, atol=1e-5, rtol=0.)
+  np.testing.assert_allclose(vec1.x, vec2.x, atol=1e-5, rtol=0.0)
+  np.testing.assert_allclose(vec1.y, vec2.y, atol=1e-5, rtol=0.0)
+  np.testing.assert_allclose(vec1.z, vec2.z, atol=1e-5, rtol=0.0)
 
 
 def assert_array_close_to_vector(array: jnp.ndarray, vec: vector.Vec3Array):
-  np.testing.assert_allclose(vec.to_array(), array, atol=1e-6, rtol=0.)
+  np.testing.assert_allclose(vec.to_array(), array, atol=1e-6, rtol=0.0)
 
 
 def assert_array_equal_to_vector(array: jnp.ndarray, vec: vector.Vec3Array):
   np.testing.assert_array_equal(vec.to_array(), array)
 
 
-def assert_rigid_equal_to_rigid(rigid1: rigid_matrix_vector.Rigid3Array,
-                                rigid2: rigid_matrix_vector.Rigid3Array):
+def assert_rigid_equal_to_rigid(
+    rigid1: rigid_matrix_vector.Rigid3Array,
+    rigid2: rigid_matrix_vector.Rigid3Array,
+):
   assert_rot_trans_equal_to_rigid(rigid1.rotation, rigid1.translation, rigid2)
 
 
-def assert_rigid_close_to_rigid(rigid1: rigid_matrix_vector.Rigid3Array,
-                                rigid2: rigid_matrix_vector.Rigid3Array):
+def assert_rigid_close_to_rigid(
+    rigid1: rigid_matrix_vector.Rigid3Array,
+    rigid2: rigid_matrix_vector.Rigid3Array,
+):
   assert_rot_trans_close_to_rigid(rigid1.rotation, rigid1.translation, rigid2)
 
 
-def assert_rot_trans_equal_to_rigid(rot: rotation_matrix.Rot3Array,
-                                    trans: vector.Vec3Array,
-                                    rigid: rigid_matrix_vector.Rigid3Array):
+def assert_rot_trans_equal_to_rigid(
+    rot: rotation_matrix.Rot3Array,
+    trans: vector.Vec3Array,
+    rigid: rigid_matrix_vector.Rigid3Array,
+):
   assert_rotation_matrix_equal(rot, rigid.rotation)
   assert_vectors_equal(trans, rigid.translation)
 
 
-def assert_rot_trans_close_to_rigid(rot: rotation_matrix.Rot3Array,
-                                    trans: vector.Vec3Array,
-                                    rigid: rigid_matrix_vector.Rigid3Array):
+def assert_rot_trans_close_to_rigid(
+    rot: rotation_matrix.Rot3Array,
+    trans: vector.Vec3Array,
+    rigid: rigid_matrix_vector.Rigid3Array,
+):
   assert_rotation_matrix_close(rot, rigid.rotation)
   assert_vectors_close(trans, rigid.translation)

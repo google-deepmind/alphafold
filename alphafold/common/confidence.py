@@ -84,19 +84,19 @@ def _calculate_bin_centers(breaks: np.ndarray):
   Returns:
     bin_centers: [num_bins] the error bin centers.
   """
-  step = (breaks[1] - breaks[0])
+  step = breaks[1] - breaks[0]
 
   # Add half-step to get the center
   bin_centers = breaks + step / 2
   # Add a catch-all bin at the end.
-  bin_centers = np.concatenate([bin_centers, [bin_centers[-1] + step]],
-                               axis=0)
+  bin_centers = np.concatenate([bin_centers, [bin_centers[-1] + step]], axis=0)
   return bin_centers
 
 
 def _calculate_expected_aligned_error(
     alignment_confidence_breaks: np.ndarray,
-    aligned_distance_error_probs: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    aligned_distance_error_probs: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray]:
   """Calculates expected aligned distance errors for every pair of residues.
 
   Args:
@@ -112,13 +112,15 @@ def _calculate_expected_aligned_error(
   bin_centers = _calculate_bin_centers(alignment_confidence_breaks)
 
   # Tuple of expected aligned distance error and max possible error.
-  return (np.sum(aligned_distance_error_probs * bin_centers, axis=-1),
-          np.asarray(bin_centers[-1]))
+  return (
+      np.sum(aligned_distance_error_probs * bin_centers, axis=-1),
+      np.asarray(bin_centers[-1]),
+  )
 
 
 def compute_predicted_aligned_error(
-    logits: np.ndarray,
-    breaks: np.ndarray) -> Dict[str, np.ndarray]:
+    logits: np.ndarray, breaks: np.ndarray
+) -> Dict[str, np.ndarray]:
   """Computes aligned confidence metrics from logits.
 
   Args:
@@ -133,13 +135,13 @@ def compute_predicted_aligned_error(
       error for each pair of residues.
     max_predicted_aligned_error: The maximum predicted error possible.
   """
-  aligned_confidence_probs = scipy.special.softmax(
-      logits,
-      axis=-1)
+  aligned_confidence_probs = scipy.special.softmax(logits, axis=-1)
   predicted_aligned_error, max_predicted_aligned_error = (
       _calculate_expected_aligned_error(
           alignment_confidence_breaks=breaks,
-          aligned_distance_error_probs=aligned_confidence_probs))
+          aligned_distance_error_probs=aligned_confidence_probs,
+      )
+  )
   return {
       'aligned_confidence_probs': aligned_confidence_probs,
       'predicted_aligned_error': predicted_aligned_error,
@@ -178,7 +180,8 @@ def predicted_tm_score(
     breaks: np.ndarray,
     residue_weights: Optional[np.ndarray] = None,
     asym_id: Optional[np.ndarray] = None,
-    interface: bool = False) -> np.ndarray:
+    interface: bool = False,
+) -> np.ndarray:
   """Computes predicted TM alignment or predicted interface TM alignment score.
 
   Args:
@@ -209,13 +212,13 @@ def predicted_tm_score(
   # Compute d_0(num_res) as defined by TM-score, eqn. (5) in Yang & Skolnick
   # "Scoring function for automated assessment of protein structure template
   # quality", 2004: http://zhanglab.ccmb.med.umich.edu/papers/2004_3.pdf
-  d0 = 1.24 * (clipped_num_res - 15) ** (1./3) - 1.8
+  d0 = 1.24 * (clipped_num_res - 15) ** (1.0 / 3) - 1.8
 
   # Convert logits to probs.
   probs = scipy.special.softmax(logits, axis=-1)
 
   # TM-Score term for every bin.
-  tm_per_bin = 1. / (1 + np.square(bin_centers) / np.square(d0))
+  tm_per_bin = 1.0 / (1 + np.square(bin_centers) / np.square(d0))
   # E_distances tm(distance).
   predicted_tm_term = np.sum(probs * tm_per_bin, axis=-1)
 
@@ -226,8 +229,10 @@ def predicted_tm_score(
   predicted_tm_term *= pair_mask
 
   pair_residue_weights = pair_mask * (
-      residue_weights[None, :] * residue_weights[:, None])
-  normed_residue_mask = pair_residue_weights / (1e-8 + np.sum(
-      pair_residue_weights, axis=-1, keepdims=True))
+      residue_weights[None, :] * residue_weights[:, None]
+  )
+  normed_residue_mask = pair_residue_weights / (
+      1e-8 + np.sum(pair_residue_weights, axis=-1, keepdims=True)
+  )
   per_alignment = np.sum(predicted_tm_term * normed_residue_mask, axis=-1)
   return np.asarray(per_alignment[(per_alignment * residue_weights).argmax()])

@@ -53,7 +53,7 @@ def nonensembled_map_fns(data_config):
     map_fns.extend([
         data_transforms.fix_templates_aatype,
         data_transforms.make_template_mask,
-        data_transforms.make_pseudo_beta('template_')
+        data_transforms.make_pseudo_beta('template_'),
     ])
   map_fns.extend([
       data_transforms.make_atom14_masks,
@@ -77,18 +77,17 @@ def ensembled_map_fns(data_config):
   max_msa_clusters = pad_msa_clusters
   max_extra_msa = common_cfg.max_extra_msa
 
-  map_fns.append(
-      data_transforms.sample_msa(
-          max_msa_clusters,
-          keep_extra=True))
+  map_fns.append(data_transforms.sample_msa(max_msa_clusters, keep_extra=True))
 
   if 'masked_msa' in common_cfg:
     # Masked MSA should come *before* MSA clustering so that
     # the clustering and full MSA profile do not leak information about
     # the masked locations and secret corrupted locations.
     map_fns.append(
-        data_transforms.make_masked_msa(common_cfg.masked_msa,
-                                        eval_cfg.masked_msa_replace_fraction))
+        data_transforms.make_masked_msa(
+            common_cfg.masked_msa, eval_cfg.masked_msa_replace_fraction
+        )
+    )
 
   if common_cfg.msa_cluster_features:
     map_fns.append(data_transforms.nearest_neighbor_clusters())
@@ -106,17 +105,23 @@ def ensembled_map_fns(data_config):
 
   if eval_cfg.fixed_size:
     map_fns.append(data_transforms.select_feat(list(crop_feats)))
-    map_fns.append(data_transforms.random_crop_to_size(
-        eval_cfg.crop_size,
-        eval_cfg.max_templates,
-        crop_feats,
-        eval_cfg.subsample_templates))
-    map_fns.append(data_transforms.make_fixed_size(
-        crop_feats,
-        pad_msa_clusters,
-        common_cfg.max_extra_msa,
-        eval_cfg.crop_size,
-        eval_cfg.max_templates))
+    map_fns.append(
+        data_transforms.random_crop_to_size(
+            eval_cfg.crop_size,
+            eval_cfg.max_templates,
+            crop_feats,
+            eval_cfg.subsample_templates,
+        )
+    )
+    map_fns.append(
+        data_transforms.make_fixed_size(
+            crop_feats,
+            pad_msa_clusters,
+            common_cfg.max_extra_msa,
+            eval_cfg.crop_size,
+            eval_cfg.max_templates,
+        )
+    )
   else:
     map_fns.append(data_transforms.crop_templates(eval_cfg.max_templates))
 
@@ -135,10 +140,7 @@ def process_tensors_from_config(tensors, data_config):
     return fn(d)
 
   eval_cfg = data_config.eval
-  tensors = compose(
-      nonensembled_map_fns(
-          data_config))(
-              tensors)
+  tensors = compose(nonensembled_map_fns(data_config))(tensors)
 
   tensors_0 = wrap_ensemble_fn(tensors, tf.constant(0))
   num_ensemble = eval_cfg.num_ensemble
@@ -147,13 +149,13 @@ def process_tensors_from_config(tensors, data_config):
     num_ensemble *= data_config.common.num_recycle + 1
 
   if isinstance(num_ensemble, tf.Tensor) or num_ensemble > 1:
-    fn_output_signature = tree.map(
-        tf.TensorSpec.from_tensor, tensors_0)
+    fn_output_signature = tree.map(tf.TensorSpec.from_tensor, tensors_0)
     tensors = tf.map_fn(
         lambda x: wrap_ensemble_fn(tensors, x),
         tf.range(num_ensemble),
         parallel_iterations=1,
-        fn_output_signature=fn_output_signature)
+        fn_output_signature=fn_output_signature,
+    )
   else:
     tensors = tree.map(lambda x: x[None], tensors_0)
   return tensors

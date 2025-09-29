@@ -64,8 +64,10 @@ def get_dtype(instance):
     field_value = getattr(instance, fields[0].name)
   else:
     # Should this be Value Error?
-    raise AttributeError('Trying to access Dtype on Struct of Array without'
-                         'either "same_dtype" or field setting dtype')
+    raise AttributeError(
+        'Trying to access Dtype on Struct of Array without'
+        'either "same_dtype" or field setting dtype'
+    )
 
   if hasattr(field_value, 'dtype'):
     return field_value.dtype
@@ -100,14 +102,18 @@ def post_init(instance):
       if num_trailing_dims:
         array_shape = array.shape
         field_shape = array_shape[:-num_trailing_dims]
-        msg = (f'field {field} should have number of trailing dims'
-               ' {num_trailing_dims}')
+        msg = (
+            f'field {field} should have number of trailing dims'
+            ' {num_trailing_dims}'
+        )
         assert len(array_shape) == len(first_shape) + num_trailing_dims, msg
       else:
         field_shape = array.shape
 
-      shape_msg = (f"Stripped Shape {field_shape} of field {field} doesn't "
-                   f"match shape {first_shape} of field {first_field}")
+      shape_msg = (
+          f"Stripped Shape {field_shape} of field {field} doesn't "
+          f'match shape {first_shape} of field {first_field}'
+      )
       assert field_shape == first_shape, shape_msg
 
       field_dtype = array.dtype
@@ -143,13 +149,15 @@ def flatten(instance):
 
 
 def make_metadata_class(cls):
-  metadata_fields = get_fields(cls,
-                               lambda x: x.metadata.get('is_metadata', False))
+  metadata_fields = get_fields(
+      cls, lambda x: x.metadata.get('is_metadata', False)
+  )
   metadata_cls = dataclasses.make_dataclass(
       cls_name='Meta' + cls.__name__,
       fields=[(field.name, field.type, field) for field in metadata_fields],
       frozen=True,
-      eq=True)
+      eq=True,
+  )
   return metadata_cls
 
 
@@ -168,14 +176,16 @@ def get_array_fields(cls, return_values=False):
   return get_fields(
       cls,
       lambda x: not x.metadata.get('is_metadata', False),
-      return_values=return_values)
+      return_values=return_values,
+  )
 
 
 def get_metadata_fields(cls, return_values=False):
   return get_fields(
       cls,
       lambda x: x.metadata.get('is_metadata', False),
-      return_values=return_values)
+      return_values=return_values,
+  )
 
 
 class StructOfArray:
@@ -203,11 +213,12 @@ class StructOfArray:
       array_fields = [field.name for field in get_array_fields(new_cls)]
       value_dict = {}
       array_start = 0
-      for num_array, inner_treedef, array_field in zip(num_arrays,
-                                                       inner_treedefs,
-                                                       array_fields):
+      for num_array, inner_treedef, array_field in zip(
+          num_arrays, inner_treedefs, array_fields
+      ):
         value_dict[array_field] = jax.tree_util.tree_unflatten(
-            inner_treedef, data[array_start:array_start + num_array])
+            inner_treedef, data[array_start : array_start + num_array]
+        )
         array_start += num_array
       metadata_fields = get_metadata_fields(new_cls)
       for field in metadata_fields:
@@ -216,5 +227,6 @@ class StructOfArray:
       return new_cls(**value_dict)
 
     jax.tree_util.register_pytree_node(
-        nodetype=new_cls, flatten_func=flatten, unflatten_func=unflatten)
+        nodetype=new_cls, flatten_func=flatten, unflatten_func=unflatten
+    )
     return new_cls

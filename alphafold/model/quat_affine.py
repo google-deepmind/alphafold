@@ -40,6 +40,7 @@ import jax.numpy as jnp
 import numpy as np
 
 # pylint: disable=bad-whitespace
+# pyformat: disable
 QUAT_TO_ROT = np.zeros((4, 4, 3, 3), dtype=np.float32)
 
 QUAT_TO_ROT[0, 0] = [[ 1, 0, 0], [ 0, 1, 0], [ 0, 0, 1]]  # rr
@@ -56,25 +57,34 @@ QUAT_TO_ROT[0, 2] = [[ 0, 0, 2], [ 0, 0, 0], [-2, 0, 0]]  # jr
 QUAT_TO_ROT[0, 3] = [[ 0,-2, 0], [ 2, 0, 0], [ 0, 0, 0]]  # kr
 
 QUAT_MULTIPLY = np.zeros((4, 4, 4), dtype=np.float32)
-QUAT_MULTIPLY[:, :, 0] = [[ 1, 0, 0, 0],
-                          [ 0,-1, 0, 0],
-                          [ 0, 0,-1, 0],
-                          [ 0, 0, 0,-1]]
+QUAT_MULTIPLY[:, :, 0] = [
+    [1,  0,  0,  0],
+    [0, -1,  0,  0],
+    [0,  0, -1,  0],
+    [0,  0,  0, -1],
+]
 
-QUAT_MULTIPLY[:, :, 1] = [[ 0, 1, 0, 0],
-                          [ 1, 0, 0, 0],
-                          [ 0, 0, 0, 1],
-                          [ 0, 0,-1, 0]]
+QUAT_MULTIPLY[:, :, 1] = [
+    [0,  1,  0,  0],
+    [1,  0,  0,  0],
+    [0,  0,  0,  1],
+    [0,  0, -1,  0],
+]
 
-QUAT_MULTIPLY[:, :, 2] = [[ 0, 0, 1, 0],
-                          [ 0, 0, 0,-1],
-                          [ 1, 0, 0, 0],
-                          [ 0, 1, 0, 0]]
+QUAT_MULTIPLY[:, :, 2] = [
+    [0,  0,  1,  0],
+    [0,  0,  0, -1],
+    [1,  0,  0,  0],
+    [0,  1,  0,  0],
+]
 
-QUAT_MULTIPLY[:, :, 3] = [[ 0, 0, 0, 1],
-                          [ 0, 0, 1, 0],
-                          [ 0,-1, 0, 0],
-                          [ 1, 0, 0, 0]]
+QUAT_MULTIPLY[:, :, 3] = [
+    [0,  0,  0,  1],
+    [0,  0,  1,  0],
+    [0, -1,  0,  0],
+    [1,  0,  0,  0],
+]
+# pyformat: enable
 
 QUAT_MULTIPLY_BY_VEC = QUAT_MULTIPLY[:, 1:, :]
 # pylint: enable=bad-whitespace
@@ -100,14 +110,15 @@ def rot_to_quat(rot, unstack_inputs=False):
   [[xx, xy, xz], [yx, yy, yz], [zx, zy, zz]] = rot
 
   # pylint: disable=bad-whitespace
+  # pyformat: disable
   k = [[ xx + yy + zz,      zy - yz,      xz - zx,      yx - xy,],
        [      zy - yz, xx - yy - zz,      xy + yx,      xz + zx,],
        [      xz - zx,      xy + yx, yy - xx - zz,      yz + zy,],
        [      yx - xy,      xz + zx,      yz + zy, zz - xx - yy,]]
+  # pyformat: enable
   # pylint: enable=bad-whitespace
 
-  k = (1./3.) * jnp.stack([jnp.stack(x, axis=-1) for x in k],
-                          axis=-2)
+  k = (1.0 / 3.0) * jnp.stack([jnp.stack(x, axis=-1) for x in k], axis=-2)
 
   # Get eigenvalues in non-decreasing order and associated.
   _, qs = jnp.linalg.eigh(k)
@@ -117,10 +128,13 @@ def rot_to_quat(rot, unstack_inputs=False):
 def rot_list_to_tensor(rot_list):
   """Convert list of lists to rotation tensor."""
   return jnp.stack(
-      [jnp.stack(rot_list[0], axis=-1),
-       jnp.stack(rot_list[1], axis=-1),
-       jnp.stack(rot_list[2], axis=-1)],
-      axis=-2)
+      [
+          jnp.stack(rot_list[0], axis=-1),
+          jnp.stack(rot_list[1], axis=-1),
+          jnp.stack(rot_list[2], axis=-1),
+      ],
+      axis=-2,
+  )
 
 
 def vec_list_to_tensor(vec_list):
@@ -131,32 +145,33 @@ def vec_list_to_tensor(vec_list):
 def quat_to_rot(normalized_quat):
   """Convert a normalized quaternion to a rotation matrix."""
   rot_tensor = jnp.sum(
-      np.reshape(QUAT_TO_ROT, (4, 4, 9)) *
-      normalized_quat[..., :, None, None] *
-      normalized_quat[..., None, :, None],
-      axis=(-3, -2))
+      np.reshape(QUAT_TO_ROT, (4, 4, 9))
+      * normalized_quat[..., :, None, None]
+      * normalized_quat[..., None, :, None],
+      axis=(-3, -2),
+  )
   rot = jnp.moveaxis(rot_tensor, -1, 0)  # Unstack.
-  return [[rot[0], rot[1], rot[2]],
-          [rot[3], rot[4], rot[5]],
-          [rot[6], rot[7], rot[8]]]
+  return [
+      [rot[0], rot[1], rot[2]],
+      [rot[3], rot[4], rot[5]],
+      [rot[6], rot[7], rot[8]],
+  ]
 
 
 def quat_multiply_by_vec(quat, vec):
   """Multiply a quaternion by a pure-vector quaternion."""
   return jnp.sum(
-      QUAT_MULTIPLY_BY_VEC *
-      quat[..., :, None, None] *
-      vec[..., None, :, None],
-      axis=(-3, -2))
+      QUAT_MULTIPLY_BY_VEC * quat[..., :, None, None] * vec[..., None, :, None],
+      axis=(-3, -2),
+  )
 
 
 def quat_multiply(quat1, quat2):
   """Multiply a quaternion by another quaternion."""
   return jnp.sum(
-      QUAT_MULTIPLY *
-      quat1[..., :, None, None] *
-      quat2[..., None, :, None],
-      axis=(-3, -2))
+      QUAT_MULTIPLY * quat1[..., :, None, None] * quat2[..., None, :, None],
+      axis=(-3, -2),
+  )
 
 
 def apply_rot_to_vec(rot, vec, unstack=False):
@@ -165,29 +180,39 @@ def apply_rot_to_vec(rot, vec, unstack=False):
     x, y, z = [vec[:, i] for i in range(3)]
   else:
     x, y, z = vec
-  return [rot[0][0] * x + rot[0][1] * y + rot[0][2] * z,
-          rot[1][0] * x + rot[1][1] * y + rot[1][2] * z,
-          rot[2][0] * x + rot[2][1] * y + rot[2][2] * z]
+  return [
+      rot[0][0] * x + rot[0][1] * y + rot[0][2] * z,
+      rot[1][0] * x + rot[1][1] * y + rot[1][2] * z,
+      rot[2][0] * x + rot[2][1] * y + rot[2][2] * z,
+  ]
 
 
 def apply_inverse_rot_to_vec(rot, vec):
   """Multiply the inverse of a rotation matrix by a vector."""
   # Inverse rotation is just transpose
-  return [rot[0][0] * vec[0] + rot[1][0] * vec[1] + rot[2][0] * vec[2],
-          rot[0][1] * vec[0] + rot[1][1] * vec[1] + rot[2][1] * vec[2],
-          rot[0][2] * vec[0] + rot[1][2] * vec[1] + rot[2][2] * vec[2]]
+  return [
+      rot[0][0] * vec[0] + rot[1][0] * vec[1] + rot[2][0] * vec[2],
+      rot[0][1] * vec[0] + rot[1][1] * vec[1] + rot[2][1] * vec[2],
+      rot[0][2] * vec[0] + rot[1][2] * vec[1] + rot[2][2] * vec[2],
+  ]
 
 
 class QuatAffine(object):
   """Affine transformation represented by quaternion and vector."""
 
-  def __init__(self, quaternion, translation, rotation=None, normalize=True,
-               unstack_inputs=False):
+  def __init__(
+      self,
+      quaternion,
+      translation,
+      rotation=None,
+      normalize=True,
+      unstack_inputs=False,
+  ):
     """Initialize from quaternion and translation.
 
     Args:
-      quaternion: Rotation represented by a quaternion, to be applied
-        before translation.  Must be a unit quaternion unless normalize==True.
+      quaternion: Rotation represented by a quaternion, to be applied before
+        translation.  Must be a unit quaternion unless normalize==True.
       translation: Translation represented as a vector.
       rotation: Same rotation as the quaternion, represented as a (..., 3, 3)
         tensor.  If None, rotation will be calculated from the quaternion.
@@ -200,13 +225,16 @@ class QuatAffine(object):
 
     if unstack_inputs:
       if rotation is not None:
-        rotation = [jnp.moveaxis(x, -1, 0)   # Unstack.
-                    for x in jnp.moveaxis(rotation, -2, 0)]  # Unstack.
+        rotation = [
+            jnp.moveaxis(x, -1, 0)  # Unstack.
+            for x in jnp.moveaxis(rotation, -2, 0)
+        ]  # Unstack.
       translation = jnp.moveaxis(translation, -1, 0)  # Unstack.
 
     if normalize and quaternion is not None:
-      quaternion = quaternion / jnp.linalg.norm(quaternion, axis=-1,
-                                                keepdims=True)
+      quaternion = quaternion / jnp.linalg.norm(
+          quaternion, axis=-1, keepdims=True
+      )
 
     if rotation is None:
       rotation = quat_to_rot(quaternion)
@@ -220,9 +248,10 @@ class QuatAffine(object):
 
   def to_tensor(self):
     return jnp.concatenate(
-        [self.quaternion] +
-        [jnp.expand_dims(x, axis=-1) for x in self.translation],
-        axis=-1)
+        [self.quaternion]
+        + [jnp.expand_dims(x, axis=-1) for x in self.translation],
+        axis=-1,
+    )
 
   def apply_tensor_fn(self, tensor_fn):
     """Return a new QuatAffine with tensor_fn applied (e.g. stop_gradient)."""
@@ -230,7 +259,8 @@ class QuatAffine(object):
         tensor_fn(self.quaternion),
         [tensor_fn(x) for x in self.translation],
         rotation=[[tensor_fn(x) for x in row] for row in self.rotation],
-        normalize=False)
+        normalize=False,
+    )
 
   def apply_rotation_tensor_fn(self, tensor_fn):
     """Return a new QuatAffine with tensor_fn applied to the rotation part."""
@@ -238,7 +268,8 @@ class QuatAffine(object):
         tensor_fn(self.quaternion),
         [x for x in self.translation],
         rotation=[[tensor_fn(x) for x in row] for row in self.rotation],
-        normalize=False)
+        normalize=False,
+    )
 
   def scale_translation(self, position_scale):
     """Return a new quat affine with a different scale for translation."""
@@ -247,14 +278,15 @@ class QuatAffine(object):
         self.quaternion,
         [x * position_scale for x in self.translation],
         rotation=[[x for x in row] for row in self.rotation],
-        normalize=False)
+        normalize=False,
+    )
 
   @classmethod
   def from_tensor(cls, tensor, normalize=False):
     quaternion, tx, ty, tz = jnp.split(tensor, [4, 5, 6], axis=-1)
-    return cls(quaternion,
-               [tx[..., 0], ty[..., 0], tz[..., 0]],
-               normalize=normalize)
+    return cls(
+        quaternion, [tx[..., 0], ty[..., 0], tz[..., 0]], normalize=normalize
+    )
 
   def pre_compose(self, update):
     """Return a new QuatAffine which applies the transformation update first.
@@ -268,19 +300,22 @@ class QuatAffine(object):
       New QuatAffine object.
     """
     vector_quaternion_update, x, y, z = jnp.split(update, [3, 4, 5], axis=-1)
-    trans_update = [jnp.squeeze(x, axis=-1),
-                    jnp.squeeze(y, axis=-1),
-                    jnp.squeeze(z, axis=-1)]
+    trans_update = [
+        jnp.squeeze(x, axis=-1),
+        jnp.squeeze(y, axis=-1),
+        jnp.squeeze(z, axis=-1),
+    ]
 
-    new_quaternion = (self.quaternion +
-                      quat_multiply_by_vec(self.quaternion,
-                                           vector_quaternion_update))
+    new_quaternion = self.quaternion + quat_multiply_by_vec(
+        self.quaternion, vector_quaternion_update
+    )
 
     trans_update = apply_rot_to_vec(self.rotation, trans_update)
     new_translation = [
         self.translation[0] + trans_update[0],
         self.translation[1] + trans_update[1],
-        self.translation[2] + trans_update[2]]
+        self.translation[2] + trans_update[2],
+    ]
 
     return QuatAffine(new_quaternion, new_translation)
 
@@ -308,7 +343,8 @@ class QuatAffine(object):
     return [
         rot_point[0] + translation[0],
         rot_point[1] + translation[1],
-        rot_point[2] + translation[2]]
+        rot_point[2] + translation[2],
+    ]
 
   def invert_point(self, transformed_point, extra_dims=0):
     """Apply inverse of transformation to a point.
@@ -333,7 +369,8 @@ class QuatAffine(object):
     rot_point = [
         transformed_point[0] - translation[0],
         transformed_point[1] - translation[1],
-        transformed_point[2] - translation[2]]
+        transformed_point[2] - translation[2],
+    ]
 
     return apply_inverse_rot_to_vec(rotation, rot_point)
 
@@ -343,23 +380,27 @@ class QuatAffine(object):
 
 def _multiply(a, b):
   return jnp.stack([
-      jnp.array([a[0][0]*b[0][0] + a[0][1]*b[1][0] + a[0][2]*b[2][0],
-                 a[0][0]*b[0][1] + a[0][1]*b[1][1] + a[0][2]*b[2][1],
-                 a[0][0]*b[0][2] + a[0][1]*b[1][2] + a[0][2]*b[2][2]]),
-
-      jnp.array([a[1][0]*b[0][0] + a[1][1]*b[1][0] + a[1][2]*b[2][0],
-                 a[1][0]*b[0][1] + a[1][1]*b[1][1] + a[1][2]*b[2][1],
-                 a[1][0]*b[0][2] + a[1][1]*b[1][2] + a[1][2]*b[2][2]]),
-
-      jnp.array([a[2][0]*b[0][0] + a[2][1]*b[1][0] + a[2][2]*b[2][0],
-                 a[2][0]*b[0][1] + a[2][1]*b[1][1] + a[2][2]*b[2][1],
-                 a[2][0]*b[0][2] + a[2][1]*b[1][2] + a[2][2]*b[2][2]])])
+      jnp.array([
+          a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0],
+          a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1],
+          a[0][0] * b[0][2] + a[0][1] * b[1][2] + a[0][2] * b[2][2],
+      ]),
+      jnp.array([
+          a[1][0] * b[0][0] + a[1][1] * b[1][0] + a[1][2] * b[2][0],
+          a[1][0] * b[0][1] + a[1][1] * b[1][1] + a[1][2] * b[2][1],
+          a[1][0] * b[0][2] + a[1][1] * b[1][2] + a[1][2] * b[2][2],
+      ]),
+      jnp.array([
+          a[2][0] * b[0][0] + a[2][1] * b[1][0] + a[2][2] * b[2][0],
+          a[2][0] * b[0][1] + a[2][1] * b[1][1] + a[2][2] * b[2][1],
+          a[2][0] * b[0][2] + a[2][1] * b[1][2] + a[2][2] * b[2][2],
+      ]),
+  ])
 
 
 def make_canonical_transform(
-    n_xyz: jnp.ndarray,
-    ca_xyz: jnp.ndarray,
-    c_xyz: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    n_xyz: jnp.ndarray, ca_xyz: jnp.ndarray, c_xyz: jnp.ndarray
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
   """Returns translation and rotation matrices to canonicalize residue atoms.
 
   Note that this method does not take care of symmetries. If you provide the
@@ -384,7 +425,10 @@ def make_canonical_transform(
   assert len(n_xyz.shape) == 2, n_xyz.shape
   assert n_xyz.shape[-1] == 3, n_xyz.shape
   assert n_xyz.shape == ca_xyz.shape == c_xyz.shape, (
-      n_xyz.shape, ca_xyz.shape, c_xyz.shape)
+      n_xyz.shape,
+      ca_xyz.shape,
+      c_xyz.shape,
+  )
 
   # Place CA at the origin.
   translation = -ca_xyz
@@ -399,17 +443,22 @@ def make_canonical_transform(
   zeros = jnp.zeros_like(sin_c1)
   ones = jnp.ones_like(sin_c1)
   # pylint: disable=bad-whitespace
-  c1_rot_matrix = jnp.stack([jnp.array([cos_c1, -sin_c1, zeros]),
-                             jnp.array([sin_c1,  cos_c1, zeros]),
-                             jnp.array([zeros,    zeros,  ones])])
+  c1_rot_matrix = jnp.stack([
+      jnp.array([cos_c1, -sin_c1, zeros]),
+      jnp.array([sin_c1, cos_c1, zeros]),
+      jnp.array([zeros, zeros, ones]),
+  ])
 
   # Rotate by angle c2 in the x-z plane (around the y-axis).
   sin_c2 = c_z / jnp.sqrt(1e-20 + c_x**2 + c_y**2 + c_z**2)
   cos_c2 = jnp.sqrt(c_x**2 + c_y**2) / jnp.sqrt(
-      1e-20 + c_x**2 + c_y**2 + c_z**2)
-  c2_rot_matrix = jnp.stack([jnp.array([cos_c2,  zeros, sin_c2]),
-                             jnp.array([zeros,    ones,  zeros]),
-                             jnp.array([-sin_c2, zeros, cos_c2])])
+      1e-20 + c_x**2 + c_y**2 + c_z**2
+  )
+  c2_rot_matrix = jnp.stack([
+      jnp.array([cos_c2, zeros, sin_c2]),
+      jnp.array([zeros, ones, zeros]),
+      jnp.array([-sin_c2, zeros, cos_c2]),
+  ])
 
   c_rot_matrix = _multiply(c2_rot_matrix, c1_rot_matrix)
   n_xyz = jnp.stack(apply_rot_to_vec(c_rot_matrix, n_xyz, unstack=True)).T
@@ -419,19 +468,22 @@ def make_canonical_transform(
   # Rotate by angle alpha in the y-z plane (around the x-axis).
   sin_n = -n_z / jnp.sqrt(1e-20 + n_y**2 + n_z**2)
   cos_n = n_y / jnp.sqrt(1e-20 + n_y**2 + n_z**2)
-  n_rot_matrix = jnp.stack([jnp.array([ones,  zeros,  zeros]),
-                            jnp.array([zeros, cos_n, -sin_n]),
-                            jnp.array([zeros, sin_n,  cos_n])])
+  n_rot_matrix = jnp.stack([
+      jnp.array([ones, zeros, zeros]),
+      jnp.array([zeros, cos_n, -sin_n]),
+      jnp.array([zeros, sin_n, cos_n]),
+  ])
   # pylint: enable=bad-whitespace
 
-  return (translation,
-          jnp.transpose(_multiply(n_rot_matrix, c_rot_matrix), [2, 0, 1]))
+  return (
+      translation,
+      jnp.transpose(_multiply(n_rot_matrix, c_rot_matrix), [2, 0, 1]),
+  )
 
 
 def make_transform_from_reference(
-    n_xyz: jnp.ndarray,
-    ca_xyz: jnp.ndarray,
-    c_xyz: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    n_xyz: jnp.ndarray, ca_xyz: jnp.ndarray, c_xyz: jnp.ndarray
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
   """Returns rotation and translation matrices to convert from reference.
 
   Note that this method does not take care of symmetries. If you provide the

@@ -14,6 +14,7 @@
 """Rigid3Array Transformations represented by a Matrix and a Vector."""
 
 from __future__ import annotations
+
 from typing import Union
 
 from alphafold.model.geometry import rotation_matrix
@@ -56,8 +57,9 @@ class Rigid3Array:
 
   def compose_rotation(self, other_rotation):
     rot = self.rotation @ other_rotation
-    trans = jax.tree.map(lambda x: jnp.broadcast_to(x, rot.shape),
-                         self.translation)
+    trans = jax.tree.map(
+        lambda x: jnp.broadcast_to(x, rot.shape), self.translation
+    )
     return Rigid3Array(rot, trans)
 
   @classmethod
@@ -65,7 +67,8 @@ class Rigid3Array:
     """Return identity Rigid3Array of given shape."""
     return cls(
         rotation_matrix.Rot3Array.identity(shape, dtype=dtype),
-        vector.Vec3Array.zeros(shape, dtype=dtype))  # pytype: disable=wrong-arg-count  # trace-all-classes
+        vector.Vec3Array.zeros(shape, dtype=dtype),
+    )  # pytype: disable=wrong-arg-count  # trace-all-classes
 
   def scale_translation(self, factor: Float) -> Rigid3Array:
     """Scale translation in Rigid3Array by 'factor'."""
@@ -88,12 +91,13 @@ class Rigid3Array:
     assert array.shape[-1] == 4
     assert array.shape[-2] == 4
     rotation = rotation_matrix.Rot3Array(
-        array[..., 0, 0], array[..., 0, 1], array[..., 0, 2],
-        array[..., 1, 0], array[..., 1, 1], array[..., 1, 2],
-        array[..., 2, 0], array[..., 2, 1], array[..., 2, 2]
-        )
+        *(array[..., 0, 0], array[..., 0, 1], array[..., 0, 2]),
+        *(array[..., 1, 0], array[..., 1, 1], array[..., 1, 2]),
+        *(array[..., 2, 0], array[..., 2, 1], array[..., 2, 2]),
+    )
     translation = vector.Vec3Array(
-        array[..., 0, 3], array[..., 1, 3], array[..., 2, 3])
+        array[..., 0, 3], array[..., 1, 3], array[..., 2, 3]
+    )
     return cls(rotation, translation)  # pytype: disable=wrong-arg-count  # trace-all-classes
 
   def __getstate__(self):

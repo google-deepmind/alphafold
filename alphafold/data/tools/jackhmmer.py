@@ -22,31 +22,33 @@ from typing import Any, Callable, Mapping, Optional, Sequence
 from urllib import request
 
 from absl import logging
-
 from alphafold.data import parsers
 from alphafold.data.tools import utils
+
 # Internal import (7716).
 
 
 class Jackhmmer:
   """Python wrapper of the Jackhmmer binary."""
 
-  def __init__(self,
-               *,
-               binary_path: str,
-               database_path: str,
-               n_cpu: int = 8,
-               n_iter: int = 1,
-               e_value: float = 0.0001,
-               z_value: Optional[int] = None,
-               get_tblout: bool = False,
-               filter_f1: float = 0.0005,
-               filter_f2: float = 0.00005,
-               filter_f3: float = 0.0000005,
-               incdom_e: Optional[float] = None,
-               dom_e: Optional[float] = None,
-               num_streamed_chunks: Optional[int] = None,
-               streaming_callback: Optional[Callable[[int], None]] = None):
+  def __init__(
+      self,
+      *,
+      binary_path: str,
+      database_path: str,
+      n_cpu: int = 8,
+      n_iter: int = 1,
+      e_value: float = 0.0001,
+      z_value: Optional[int] = None,
+      get_tblout: bool = False,
+      filter_f1: float = 0.0005,
+      filter_f2: float = 0.00005,
+      filter_f3: float = 0.0000005,
+      incdom_e: Optional[float] = None,
+      dom_e: Optional[float] = None,
+      num_streamed_chunks: Optional[int] = None,
+      streaming_callback: Optional[Callable[[int], None]] = None,
+  ):
     """Initializes the Python Jackhmmer wrapper.
 
     Args:
@@ -87,10 +89,12 @@ class Jackhmmer:
     self.get_tblout = get_tblout
     self.streaming_callback = streaming_callback
 
-  def _query_chunk(self,
-                   input_fasta_path: str,
-                   database_path: str,
-                   max_sequences: Optional[int] = None) -> Mapping[str, Any]:
+  def _query_chunk(
+      self,
+      input_fasta_path: str,
+      database_path: str,
+      max_sequences: Optional[int] = None,
+  ) -> Mapping[str, Any]:
     """Queries the database chunk using Jackhmmer."""
     with utils.tmpdir_manager() as query_tmp_dir:
       sto_path = os.path.join(query_tmp_dir, 'output.sto')
@@ -102,17 +106,17 @@ class Jackhmmer:
       # amount of time.
       cmd_flags = [
           # Don't pollute stdout with Jackhmmer output.
-          '-o', '/dev/null',
-          '-A', sto_path,
+          *('-o', '/dev/null'),
+          *('-A', sto_path),
           '--noali',
-          '--F1', str(self.filter_f1),
-          '--F2', str(self.filter_f2),
-          '--F3', str(self.filter_f3),
-          '--incE', str(self.e_value),
+          *('--F1', str(self.filter_f1)),
+          *('--F2', str(self.filter_f2)),
+          *('--F3', str(self.filter_f3)),
+          *('--incE', str(self.e_value)),
           # Report only sequences with E-values <= x in per-sequence output.
-          '-E', str(self.e_value),
-          '--cpu', str(self.n_cpu),
-          '-N', str(self.n_iter)
+          *('-E', str(self.e_value)),
+          *('--cpu', str(self.n_cpu)),
+          *('-N', str(self.n_iter)),
       ]
       if self.get_tblout:
         tblout_path = os.path.join(query_tmp_dir, 'tblout.txt')
@@ -127,20 +131,20 @@ class Jackhmmer:
       if self.incdom_e is not None:
         cmd_flags.extend(['--incdomE', str(self.incdom_e)])
 
-      cmd = [self.binary_path] + cmd_flags + [input_fasta_path,
-                                              database_path]
+      cmd = [self.binary_path] + cmd_flags + [input_fasta_path, database_path]
 
       logging.info('Launching subprocess "%s"', ' '.join(cmd))
       process = subprocess.Popen(
-          cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-      with utils.timing(
-          f'Jackhmmer ({os.path.basename(database_path)}) query'):
+          cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+      )
+      with utils.timing(f'Jackhmmer ({os.path.basename(database_path)}) query'):
         _, stderr = process.communicate()
         retcode = process.wait()
 
       if retcode:
         raise RuntimeError(
-            'Jackhmmer failed\nstderr:\n%s\n' % stderr.decode('utf-8'))
+            'Jackhmmer failed\nstderr:\n%s\n' % stderr.decode('utf-8')
+        )
 
       # Get e-values for each target name
       tbl = ''
@@ -159,13 +163,14 @@ class Jackhmmer:
         tbl=tbl,
         stderr=stderr,
         n_iter=self.n_iter,
-        e_value=self.e_value)
+        e_value=self.e_value,
+    )
 
     return raw_output
 
-  def query(self,
-            input_fasta_path: str,
-            max_sequences: Optional[int] = None) -> Sequence[Mapping[str, Any]]:
+  def query(
+      self, input_fasta_path: str, max_sequences: Optional[int] = None
+  ) -> Sequence[Mapping[str, Any]]:
     """Queries the database using Jackhmmer."""
     return self.query_multiple([input_fasta_path], max_sequences)[0]
 
@@ -173,13 +178,16 @@ class Jackhmmer:
       self,
       input_fasta_paths: Sequence[str],
       max_sequences: Optional[int] = None,
-    ) -> Sequence[Sequence[Mapping[str, Any]]]:
+  ) -> Sequence[Sequence[Mapping[str, Any]]]:
     """Queries the database for multiple queries using Jackhmmer."""
     if self.num_streamed_chunks is None:
       single_chunk_results = []
       for input_fasta_path in input_fasta_paths:
-        single_chunk_results.append([self._query_chunk(
-            input_fasta_path, self.database_path, max_sequences)])
+        single_chunk_results.append([
+            self._query_chunk(
+                input_fasta_path, self.database_path, max_sequences
+            )
+        ])
       return single_chunk_results
 
     db_basename = os.path.basename(self.database_path)
@@ -200,16 +208,21 @@ class Jackhmmer:
         # Copy the chunk locally
         if i == 1:
           future = executor.submit(
-              request.urlretrieve, db_remote_chunk(i), db_local_chunk(i))
+              request.urlretrieve, db_remote_chunk(i), db_local_chunk(i)
+          )
         if i < self.num_streamed_chunks:
           next_future = executor.submit(
-              request.urlretrieve, db_remote_chunk(i+1), db_local_chunk(i+1))
+              request.urlretrieve, db_remote_chunk(i + 1), db_local_chunk(i + 1)
+          )
 
         # Run Jackhmmer with the chunk
         future.result()
         for fasta_index, input_fasta_path in enumerate(input_fasta_paths):
-          chunked_outputs[fasta_index].append(self._query_chunk(
-              input_fasta_path, db_local_chunk(i), max_sequences))
+          chunked_outputs[fasta_index].append(
+              self._query_chunk(
+                  input_fasta_path, db_local_chunk(i), max_sequences
+              )
+          )
         # Remove the local copy of the chunk
         os.remove(db_local_chunk(i))
         # Do not set next_future for the last chunk so that this works even for

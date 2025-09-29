@@ -23,14 +23,16 @@ import numpy as np
 class AmberRelaxation(object):
   """Amber relaxation."""
 
-  def __init__(self,
-               *,
-               max_iterations: int,
-               tolerance: float,
-               stiffness: float,
-               exclude_residues: Sequence[int],
-               max_outer_iterations: int,
-               use_gpu: bool):
+  def __init__(
+      self,
+      *,
+      max_iterations: int,
+      tolerance: float,
+      stiffness: float,
+      exclude_residues: Sequence[int],
+      max_outer_iterations: int,
+      use_gpu: bool
+  ):
     """Initialize Amber Relaxer.
 
     Args:
@@ -41,10 +43,10 @@ class AmberRelaxation(object):
       exclude_residues: Residues to exclude from per-atom restraining.
         Zero-indexed.
       max_outer_iterations: Maximum number of violation-informed relax
-       iterations. A value of 1 will run the non-iterative procedure used in
-       CASP14. Use 20 so that >95% of the bad cases are relaxed. Relax finishes
-       as soon as there are no violations, hence in most cases this causes no
-       slowdown. In the worst case we do 20 outer iterations.
+        iterations. A value of 1 will run the non-iterative procedure used in
+        CASP14. Use 20 so that >95% of the bad cases are relaxed. Relax finishes
+        as soon as there are no violations, hence in most cases this causes no
+        slowdown. In the worst case we do 20 outer iterations.
       use_gpu: Whether to run on GPU.
     """
 
@@ -55,30 +57,34 @@ class AmberRelaxation(object):
     self._max_outer_iterations = max_outer_iterations
     self._use_gpu = use_gpu
 
-  def process(self, *,
-              prot: protein.Protein
-              ) -> Tuple[str, Dict[str, Any], Sequence[float]]:
+  def process(
+      self, *, prot: protein.Protein
+  ) -> Tuple[str, Dict[str, Any], Sequence[float]]:
     """Runs Amber relax on a prediction, adds hydrogens, returns PDB string."""
     out = amber_minimize.run_pipeline(
-        prot=prot, max_iterations=self._max_iterations,
-        tolerance=self._tolerance, stiffness=self._stiffness,
+        prot=prot,
+        max_iterations=self._max_iterations,
+        tolerance=self._tolerance,
+        stiffness=self._stiffness,
         exclude_residues=self._exclude_residues,
         max_outer_iterations=self._max_outer_iterations,
-        use_gpu=self._use_gpu)
+        use_gpu=self._use_gpu,
+    )
     min_pos = out['pos']
     start_pos = out['posinit']
-    rmsd = np.sqrt(np.sum((start_pos - min_pos)**2) / start_pos.shape[0])
+    rmsd = np.sqrt(np.sum((start_pos - min_pos) ** 2) / start_pos.shape[0])
     debug_data = {
         'initial_energy': out['einit'],
         'final_energy': out['efinal'],
         'attempts': out['min_attempts'],
-        'rmsd': rmsd
+        'rmsd': rmsd,
     }
     min_pdb = out['min_pdb']
     min_pdb = utils.overwrite_b_factors(min_pdb, prot.b_factors)
     utils.assert_equal_nonterminal_atom_types(
-        protein.from_pdb_string(min_pdb).atom_mask,
-        prot.atom_mask)
+        protein.from_pdb_string(min_pdb).atom_mask, prot.atom_mask
+    )
     violations = out['structural_violations'][
-        'total_per_residue_violations_mask'].tolist()
+        'total_per_residue_violations_mask'
+    ].tolist()
     return min_pdb, debug_data, violations

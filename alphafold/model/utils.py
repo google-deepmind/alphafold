@@ -90,10 +90,11 @@ def mask_mean(mask, value, axis=None, drop_mask_channel=False, eps=1e-10):
     axis = [axis]
   elif axis is None:
     axis = list(range(len(mask_shape)))
-  assert isinstance(axis, collections.abc.Iterable), (
-      'axis needs to be either an iterable, integer or "None"')
+  assert isinstance(
+      axis, collections.abc.Iterable
+  ), 'axis needs to be either an iterable, integer or "None"'
 
-  broadcast_factor = 1.
+  broadcast_factor = 1.0
   for axis_ in axis:
     value_size = value_shape[axis_]
     mask_size = mask_shape[axis_]
@@ -102,8 +103,9 @@ def mask_mean(mask, value, axis=None, drop_mask_channel=False, eps=1e-10):
     else:
       assert mask_size == value_size
 
-  return (jnp.sum(mask * value, axis=axis) /
-          (jnp.sum(mask, axis=axis) * broadcast_factor + eps))
+  return jnp.sum(mask * value, axis=axis) / (
+      jnp.sum(mask, axis=axis) * broadcast_factor + eps
+  )
 
 
 def flat_params_to_haiku(params: Mapping[str, np.ndarray]) -> hk.Params:
@@ -140,6 +142,7 @@ def padding_consistent_rng(f):
     An equivalent function to f, that is now consistent for different amounts of
     padding.
   """
+
   def grid_keys(key, shape):
     """Generate a grid of rng keys that is consistent with different padding.
 
@@ -156,7 +159,8 @@ def padding_consistent_rng(f):
     if not shape:
       return key
     new_keys = jax.vmap(functools.partial(jax.random.fold_in, key))(
-        jnp.arange(shape[0]))
+        jnp.arange(shape[0])
+    )
     return jax.vmap(functools.partial(grid_keys, shape=shape[1:]))(new_keys)
 
   def inner(key, shape, **kwargs):

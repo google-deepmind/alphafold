@@ -25,8 +25,9 @@ import jax
 import jax.numpy as jnp
 
 LayerStackCarry = collections.namedtuple('LayerStackCarry', ['x', 'rng'])
-LayerStackScanned = collections.namedtuple('LayerStackScanned',
-                                           ['i', 'args_ys'])
+LayerStackScanned = collections.namedtuple(
+    'LayerStackScanned', ['i', 'args_ys']
+)
 
 # WrappedFn should take in arbitrarily nested `jnp.ndarray`, and return the
 # exact same type. We cannot express this with `typing`. So we just use it
@@ -36,12 +37,15 @@ WrappedFn = Callable[..., Union[NestedArray, Tuple[NestedArray]]]
 
 
 def _check_no_varargs(f):
-  if list(inspect.signature(
-      f).parameters.values())[0].kind == inspect.Parameter.VAR_POSITIONAL:
+  if (
+      list(inspect.signature(f).parameters.values())[0].kind
+      == inspect.Parameter.VAR_POSITIONAL
+  ):
     raise ValueError(
         'The function `f` should not have any `varargs` (that is *args) '
         'argument. Instead, it should only use explicit positional'
-        'arguments.')
+        'arguments.'
+    )
 
 
 @contextlib.contextmanager
@@ -66,10 +70,7 @@ def maybe_fold_in(key, data):
 class _LayerStack(hk.Module):
   """Module to compose parameterized functions, implemented as a scan."""
 
-  def __init__(self,
-               count: int,
-               unroll: int,
-               name: Optional[str] = None):
+  def __init__(self, count: int, unroll: int, name: Optional[str] = None):
     """Iterate a function `f` `count` times, with non-shared parameters."""
     super().__init__(name=name)
     self._count = count
@@ -100,11 +101,13 @@ class _LayerStack(hk.Module):
       def getter(next_getter, value, context):
         trailing_dims = len(context.original_shape) + 1
         sliced_value = jax.lax.index_in_dim(
-            value, index=0, axis=value.ndim - trailing_dims, keepdims=False)
+            value, index=0, axis=value.ndim - trailing_dims, keepdims=False
+        )
         return next_getter(sliced_value)
 
       with hk.experimental.custom_creator(
-          creator), hk.experimental.custom_getter(getter):
+          creator
+      ), hk.experimental.custom_getter(getter):
         if len(args_ys) == 1 and args_ys[0] is None:
           args0 = (None,)
         else:
@@ -119,7 +122,9 @@ class _LayerStack(hk.Module):
         # Broadcast state to hold each layer state.
         def broadcast_state(layer_state):
           return jnp.broadcast_to(
-              layer_state, [count,] + list(layer_state.shape))
+              layer_state, [count] + list(layer_state.shape)
+          )
+
         zs = jax.tree_util.tree_map(broadcast_state, z)
         return x, zs
     else:
@@ -132,12 +137,14 @@ class _LayerStack(hk.Module):
           # Getter slices the full param at the current loop index.
           trailing_dims = len(context.original_shape) + 1
           assert value.shape[value.ndim - trailing_dims] == count, (
-              f'Attempting to use a parameter stack of size '
+              'Attempting to use a parameter stack of size '
               f'{value.shape[value.ndim - trailing_dims]} for a LayerStack of '
-              f'size {count}.')
+              f'size {count}.'
+          )
 
           sliced_value = jax.lax.dynamic_index_in_dim(
-              value, scanned.i, axis=value.ndim - trailing_dims, keepdims=False)
+              value, scanned.i, axis=value.ndim - trailing_dims, keepdims=False
+          )
           return next_getter(sliced_value)
 
         with hk.experimental.custom_getter(getter):
@@ -150,28 +157,29 @@ class _LayerStack(hk.Module):
         return LayerStackCarry(x=out_x, rng=rng), z
 
       carry = LayerStackCarry(x=x, rng=hk.maybe_next_rng_key())
-      scanned = LayerStackScanned(i=jnp.arange(count, dtype=jnp.int32),
-                                  args_ys=args_ys)
+      scanned = LayerStackScanned(
+          i=jnp.arange(count, dtype=jnp.int32), args_ys=args_ys
+      )
 
       carry, zs = hk.scan(
-          layer, carry, scanned, length=count, unroll=self._unroll)
+          layer, carry, scanned, length=count, unroll=self._unroll
+      )
       return carry.x, zs
 
-  def _call_wrapped(self,
-                    x: jnp.ndarray,
-                    *args,
-                    ) -> Tuple[jnp.ndarray, Optional[jnp.ndarray]]:
+  def _call_wrapped(
+      self,
+      x: jnp.ndarray,
+      *args,
+  ) -> Tuple[jnp.ndarray, Optional[jnp.ndarray]]:
     raise NotImplementedError()
 
 
 class _LayerStackNoState(_LayerStack):
   """_LayerStack impl with no per-layer state provided to the function."""
 
-  def __init__(self,
-               f: WrappedFn,
-               count: int,
-               unroll: int,
-               name: Optional[str] = None):
+  def __init__(
+      self, f: WrappedFn, count: int, unroll: int, name: Optional[str] = None
+  ):
     super().__init__(count=count, unroll=unroll, name=name)
     _check_no_varargs(f)
     self._f = f
@@ -190,11 +198,9 @@ class _LayerStackNoState(_LayerStack):
 class _LayerStackWithState(_LayerStack):
   """_LayerStack impl with per-layer state provided to the function."""
 
-  def __init__(self,
-               f: WrappedFn,
-               count: int,
-               unroll: int,
-               name: Optional[str] = None):
+  def __init__(
+      self, f: WrappedFn, count: int, unroll: int, name: Optional[str] = None
+  ):
     super().__init__(count=count, unroll=unroll, name=name)
     self._f = f
 
@@ -203,10 +209,12 @@ class _LayerStackWithState(_LayerStack):
     return self._f(x, *args)
 
 
-def layer_stack(num_layers: int,
-                with_state=False,
-                unroll: int = 1,
-                name: Optional[str] = None):
+def layer_stack(
+    num_layers: int,
+    with_state=False,
+    unroll: int = 1,
+    name: Optional[str] = None,
+):
   """Utility to wrap a Haiku function and recursively apply it to an input.
 
   A function is valid if it uses only explicit position parameters, and
@@ -250,20 +258,26 @@ def layer_stack(num_layers: int,
   Returns:
     Callable that will produce a layer stack when called with a valid function.
   """
+
   def iterate(f):
     if with_state:
+
       @functools.wraps(f)
       def wrapped(x, *args):
         for ys in args:
           assert ys.shape[0] == num_layers
-        return _LayerStackWithState(
-            f, num_layers, unroll=unroll, name=name)(x, *args)
+        return _LayerStackWithState(f, num_layers, unroll=unroll, name=name)(
+            x, *args
+        )
+
     else:
       _check_no_varargs(f)
+
       @functools.wraps(f)
       def wrapped(*args):
-        ret = _LayerStackNoState(
-            f, num_layers, unroll=unroll, name=name)(args, None)[0]
+        ret = _LayerStackNoState(f, num_layers, unroll=unroll, name=name)(
+            args, None
+        )[0]
         if len(args) == 1:
           # If the function takes a single argument, we must also return a
           # single value, and not a tuple of length 1.
@@ -271,4 +285,5 @@ def layer_stack(num_layers: int,
         return ret
 
     return wrapped
+
   return iterate

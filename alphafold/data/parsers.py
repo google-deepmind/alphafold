@@ -18,7 +18,7 @@ import dataclasses
 import itertools
 import re
 import string
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Set
+from typing import Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 # Internal import (7716).
 
@@ -29,32 +29,39 @@ DeletionMatrix = Sequence[Sequence[int]]
 @dataclasses.dataclass(frozen=True)
 class Msa:
   """Class representing a parsed MSA file."""
+
   sequences: Sequence[str]
   deletion_matrix: DeletionMatrix
   descriptions: Sequence[str]
 
   def __post_init__(self):
-    if not (len(self.sequences) ==
-            len(self.deletion_matrix) ==
-            len(self.descriptions)):
+    if not (
+        len(self.sequences)
+        == len(self.deletion_matrix)
+        == len(self.descriptions)
+    ):
       raise ValueError(
           'All fields for an MSA must have the same length. '
           f'Got {len(self.sequences)} sequences, '
           f'{len(self.deletion_matrix)} rows in the deletion matrix and '
-          f'{len(self.descriptions)} descriptions.')
+          f'{len(self.descriptions)} descriptions.'
+      )
 
   def __len__(self):
     return len(self.sequences)
 
   def truncate(self, max_seqs: int):
-    return Msa(sequences=self.sequences[:max_seqs],
-               deletion_matrix=self.deletion_matrix[:max_seqs],
-               descriptions=self.descriptions[:max_seqs])
+    return Msa(
+        sequences=self.sequences[:max_seqs],
+        deletion_matrix=self.deletion_matrix[:max_seqs],
+        descriptions=self.descriptions[:max_seqs],
+    )
 
 
 @dataclasses.dataclass(frozen=True)
 class TemplateHit:
   """Class representing a template hit."""
+
   index: int
   name: str
   aligned_cols: int
@@ -149,9 +156,11 @@ def parse_stockholm(stockholm_string: str) -> Msa:
           deletion_count = 0
     deletion_matrix.append(deletion_vec)
 
-  return Msa(sequences=msa,
-             deletion_matrix=deletion_matrix,
-             descriptions=list(name_to_sequence.keys()))
+  return Msa(
+      sequences=msa,
+      deletion_matrix=deletion_matrix,
+      descriptions=list(name_to_sequence.keys()),
+  )
 
 
 def parse_a3m(a3m_string: str) -> Msa:
@@ -186,13 +195,16 @@ def parse_a3m(a3m_string: str) -> Msa:
   # Make the MSA matrix out of aligned (deletion-free) sequences.
   deletion_table = str.maketrans('', '', string.ascii_lowercase)
   aligned_sequences = [s.translate(deletion_table) for s in sequences]
-  return Msa(sequences=aligned_sequences,
-             deletion_matrix=deletion_matrix,
-             descriptions=descriptions)
+  return Msa(
+      sequences=aligned_sequences,
+      deletion_matrix=deletion_matrix,
+      descriptions=descriptions,
+  )
 
 
 def _convert_sto_seq_to_a3m(
-    query_non_gaps: Sequence[bool], sto_seq: str) -> Iterable[str]:
+    query_non_gaps: Sequence[bool], sto_seq: str
+) -> Iterable[str]:
   for is_query_res_non_gap, sequence_res in zip(query_non_gaps, sto_seq):
     if is_query_res_non_gap:
       yield sequence_res
@@ -200,9 +212,11 @@ def _convert_sto_seq_to_a3m(
       yield sequence_res.lower()
 
 
-def convert_stockholm_to_a3m(stockholm_format: str,
-                             max_sequences: Optional[int] = None,
-                             remove_first_row_gaps: bool = True) -> str:
+def convert_stockholm_to_a3m(
+    stockholm_format: str,
+    max_sequences: Optional[int] = None,
+    remove_first_row_gaps: bool = True,
+) -> str:
   """Converts MSA in Stockholm format to the A3M format."""
   descriptions = {}
   sequences = {}
@@ -246,11 +260,14 @@ def convert_stockholm_to_a3m(stockholm_format: str,
     out_sequence = sto_sequence.replace('.', '')
     if remove_first_row_gaps:
       out_sequence = ''.join(
-          _convert_sto_seq_to_a3m(query_non_gaps, out_sequence))
+          _convert_sto_seq_to_a3m(query_non_gaps, out_sequence)
+      )
     a3m_sequences[seqname] = out_sequence
 
-  fasta_chunks = (f">{k} {descriptions.get(k, '')}\n{a3m_sequences[k]}"
-                  for k in a3m_sequences)
+  fasta_chunks = (
+      f">{k} {descriptions.get(k, '')}\n{a3m_sequences[k]}"
+      for k in a3m_sequences
+  )
   return '\n'.join(fasta_chunks) + '\n'  # Include terminating newline.
 
 
@@ -373,7 +390,8 @@ def deduplicate_stockholm_msa(stockholm_msa: str) -> str:
 
 
 def _get_hhr_line_regex_groups(
-    regex_pattern: str, line: str) -> Sequence[Optional[str]]:
+    regex_pattern: str, line: str
+) -> Sequence[Optional[str]]:
   match = re.match(regex_pattern, line)
   if match is None:
     raise RuntimeError(f'Could not parse query line {line}')
@@ -381,7 +399,8 @@ def _get_hhr_line_regex_groups(
 
 
 def _update_hhr_residue_indices_list(
-    sequence: str, start_index: int, indices_list: List[int]):
+    sequence: str, start_index: int, indices_list: List[int]
+):
   """Computes the relative indices for each residue with respect to the original sequence."""
   counter = start_index
   for symbol in sequence:
@@ -415,14 +434,17 @@ def _parse_hhr_hit(detailed_lines: Sequence[str]) -> TemplateHit:
   pattern = (
       'Probab=(.*)[\t ]*E-value=(.*)[\t ]*Score=(.*)[\t ]*Aligned_cols=(.*)[\t'
       ' ]*Identities=(.*)%[\t ]*Similarity=(.*)[\t ]*Sum_probs=(.*)[\t '
-      ']*Template_Neff=(.*)')
+      ']*Template_Neff=(.*)'
+  )
   match = re.match(pattern, detailed_lines[2])
   if match is None:
     raise RuntimeError(
-        'Could not parse section: %s. Expected this: \n%s to contain summary.' %
-        (detailed_lines, detailed_lines[2]))
-  (_, _, _, aligned_cols, _, _, sum_probs, _) = [float(x)
-                                                 for x in match.groups()]
+        'Could not parse section: %s. Expected this: \n%s to contain summary.'
+        % (detailed_lines, detailed_lines[2])
+    )
+  (_, _, _, aligned_cols, _, _, sum_probs, _) = [
+      float(x) for x in match.groups()
+  ]
 
   # The next section reads the detailed comparisons. These are in a 'human
   # readable' format which has a fixed length. The strategy employed is to
@@ -436,9 +458,12 @@ def _parse_hhr_hit(detailed_lines: Sequence[str]) -> TemplateHit:
 
   for line in detailed_lines[3:]:
     # Parse the query sequence line
-    if (line.startswith('Q ') and not line.startswith('Q ss_dssp') and
-        not line.startswith('Q ss_pred') and
-        not line.startswith('Q Consensus')):
+    if (
+        line.startswith('Q ')
+        and not line.startswith('Q ss_dssp')
+        and not line.startswith('Q ss_pred')
+        and not line.startswith('Q Consensus')
+    ):
       # Thus the first 17 characters must be 'Q <query_name> ', and we can parse
       # everything after that.
       #              start    sequence       end       total_sequence_length
@@ -460,9 +485,11 @@ def _parse_hhr_hit(detailed_lines: Sequence[str]) -> TemplateHit:
 
     elif line.startswith('T '):
       # Parse the hit sequence.
-      if (not line.startswith('T ss_dssp') and
-          not line.startswith('T ss_pred') and
-          not line.startswith('T Consensus')):
+      if (
+          not line.startswith('T ss_dssp')
+          and not line.startswith('T ss_pred')
+          and not line.startswith('T Consensus')
+      ):
         # Thus the first 17 characters must be 'T <hit_name> ', and we can
         # parse everything after that.
         #              start    sequence       end     total_sequence_length
@@ -502,7 +529,7 @@ def parse_hhr(hhr_string: str) -> Sequence[TemplateHit]:
   if block_starts:
     block_starts.append(len(lines))  # Add the end of the final block.
     for i in range(len(block_starts) - 1):
-      hits.append(_parse_hhr_hit(lines[block_starts[i]:block_starts[i + 1]]))
+      hits.append(_parse_hhr_hit(lines[block_starts[i] : block_starts[i + 1]]))
   return hits
 
 
@@ -555,7 +582,8 @@ def _parse_hmmsearch_description(description: str) -> HitMetadata:
   # Example 2: >5g3r_A/1-55 [subseq from] mol:protein length:352
   match = re.match(
       r'^>?([a-z0-9]+)_(\w+)/([0-9]+)-([0-9]+).*protein length:([0-9]+) *(.*)$',
-      description.strip())
+      description.strip(),
+  )
 
   if not match:
     raise ValueError(f'Could not parse description: "{description}".')
@@ -566,12 +594,13 @@ def _parse_hmmsearch_description(description: str) -> HitMetadata:
       start=int(match[3]),
       end=int(match[4]),
       length=int(match[5]),
-      text=match[6])
+      text=match[6],
+  )
 
 
-def parse_hmmsearch_a3m(query_sequence: str,
-                        a3m_string: str,
-                        skip_first: bool = True) -> Sequence[TemplateHit]:
+def parse_hmmsearch_a3m(
+    query_sequence: str, a3m_string: str, skip_first: bool = True
+) -> Sequence[TemplateHit]:
   """Parses an a3m string produced by hmmsearch.
 
   Args:

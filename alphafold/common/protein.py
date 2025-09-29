@@ -93,7 +93,8 @@ class Protein:
     if len(np.unique(self.chain_index)) > PDB_MAX_CHAINS:
       raise ValueError(
           f'Cannot build an instance with more than {PDB_MAX_CHAINS} chains '
-          'because these cannot be written to PDB format.')
+          'because these cannot be written to PDB format.'
+      )
 
 
 def _from_bio_structure(
@@ -142,7 +143,8 @@ def _from_bio_structure(
         )
       res_shortname = residue_constants.restype_3to1.get(res.resname, 'X')
       restype_idx = residue_constants.restype_order.get(
-          res_shortname, residue_constants.restype_num)
+          res_shortname, residue_constants.restype_num
+      )
       pos = np.zeros((residue_constants.atom_type_num, 3))
       mask = np.zeros((residue_constants.atom_type_num,))
       res_b_factors = np.zeros((residue_constants.atom_type_num,))
@@ -150,7 +152,7 @@ def _from_bio_structure(
         if atom.name not in residue_constants.atom_types:
           continue
         pos[residue_constants.atom_order[atom.name]] = atom.coord
-        mask[residue_constants.atom_order[atom.name]] = 1.
+        mask[residue_constants.atom_order[atom.name]] = 1.0
         res_b_factors[residue_constants.atom_order[atom.name]] = atom.bfactor
       if np.sum(mask) < 0.5:
         # If no known atom positions are reported for the residue then skip it.
@@ -173,7 +175,8 @@ def _from_bio_structure(
       aatype=np.array(aatype),
       residue_index=np.array(residue_index),
       chain_index=chain_index,
-      b_factors=np.array(b_factors))
+      b_factors=np.array(b_factors),
+  )
 
 
 def from_pdb_string(pdb_str: str, chain_id: Optional[str] = None) -> Protein:
@@ -220,8 +223,10 @@ def from_mmcif_string(
 
 def _chain_end(atom_index, end_resname, chain_name, residue_index) -> str:
   chain_end = 'TER'
-  return (f'{chain_end:<6}{atom_index:>5}      {end_resname:>3} '
-          f'{chain_name:>1}{residue_index:>4}')
+  return (
+      f'{chain_end:<6}{atom_index:>5}      {end_resname:>3} '
+      f'{chain_name:>1}{residue_index:>4}'
+  )
 
 
 def to_pdb(prot: Protein) -> str:
@@ -254,7 +259,8 @@ def to_pdb(prot: Protein) -> str:
   for i in np.unique(chain_index):  # np.unique gives sorted output.
     if i >= PDB_MAX_CHAINS:
       raise ValueError(
-          f'The PDB format supports at most {PDB_MAX_CHAINS} chains.')
+          f'The PDB format supports at most {PDB_MAX_CHAINS} chains.'
+      )
     chain_ids[i] = PDB_CHAIN_IDS[i]
 
   pdb_lines.append('MODEL     1')
@@ -264,15 +270,21 @@ def to_pdb(prot: Protein) -> str:
   for i in range(aatype.shape[0]):
     # Close the previous chain if in a multichain PDB.
     if last_chain_index != chain_index[i]:
-      pdb_lines.append(_chain_end(
-          atom_index, res_1to3(aatype[i - 1]), chain_ids[chain_index[i - 1]],
-          residue_index[i - 1]))
+      pdb_lines.append(
+          _chain_end(
+              atom_index,
+              res_1to3(aatype[i - 1]),
+              chain_ids[chain_index[i - 1]],
+              residue_index[i - 1],
+          )
+      )
       last_chain_index = chain_index[i]
       atom_index += 1  # Atom index increases at the TER symbol.
 
     res_name_3 = res_1to3(aatype[i])
     for atom_name, pos, mask, b_factor in zip(
-        atom_types, atom_positions[i], atom_mask[i], b_factors[i]):
+        atom_types, atom_positions[i], atom_mask[i], b_factors[i]
+    ):
       if mask < 0.5:
         continue
 
@@ -284,18 +296,26 @@ def to_pdb(prot: Protein) -> str:
       element = atom_name[0]  # Protein supports only C, N, O, S, this works.
       charge = ''
       # PDB is a columnar format, every space matters here!
-      atom_line = (f'{record_type:<6}{atom_index:>5} {name:<4}{alt_loc:>1}'
-                   f'{res_name_3:>3} {chain_ids[chain_index[i]]:>1}'
-                   f'{residue_index[i]:>4}{insertion_code:>1}   '
-                   f'{pos[0]:>8.3f}{pos[1]:>8.3f}{pos[2]:>8.3f}'
-                   f'{occupancy:>6.2f}{b_factor:>6.2f}          '
-                   f'{element:>2}{charge:>2}')
+      atom_line = (
+          f'{record_type:<6}{atom_index:>5} {name:<4}{alt_loc:>1}'
+          f'{res_name_3:>3} {chain_ids[chain_index[i]]:>1}'
+          f'{residue_index[i]:>4}{insertion_code:>1}   '
+          f'{pos[0]:>8.3f}{pos[1]:>8.3f}{pos[2]:>8.3f}'
+          f'{occupancy:>6.2f}{b_factor:>6.2f}          '
+          f'{element:>2}{charge:>2}'
+      )
       pdb_lines.append(atom_line)
       atom_index += 1
 
   # Close the final chain.
-  pdb_lines.append(_chain_end(atom_index, res_1to3(aatype[-1]),
-                              chain_ids[chain_index[-1]], residue_index[-1]))
+  pdb_lines.append(
+      _chain_end(
+          atom_index,
+          res_1to3(aatype[-1]),
+          chain_ids[chain_index[-1]],
+          residue_index[-1],
+      )
+  )
   pdb_lines.append('ENDMDL')
   pdb_lines.append('END')
 
@@ -324,15 +344,16 @@ def from_prediction(
     features: FeatureDict,
     result: ModelOutput,
     b_factors: Optional[np.ndarray] = None,
-    remove_leading_feature_dimension: bool = True) -> Protein:
+    remove_leading_feature_dimension: bool = True,
+) -> Protein:
   """Assembles a protein from a prediction.
 
   Args:
     features: Dictionary holding model inputs.
     result: Dictionary holding model outputs.
     b_factors: (Optional) B-factors to use for the protein.
-    remove_leading_feature_dimension: Whether to remove the leading dimension
-      of the `features` values.
+    remove_leading_feature_dimension: Whether to remove the leading dimension of
+      the `features` values.
 
   Returns:
     A protein instance.
@@ -356,7 +377,8 @@ def from_prediction(
       atom_mask=fold_output['final_atom_mask'],
       residue_index=_maybe_remove_leading_dim(features['residue_index']) + 1,
       chain_index=chain_index,
-      b_factors=b_factors)
+      b_factors=b_factors,
+  )
 
 
 def to_mmcif(

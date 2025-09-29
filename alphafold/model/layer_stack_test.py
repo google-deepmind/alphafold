@@ -150,7 +150,8 @@ class LayerStackTest(parameterized.TestCase):
 
     build_and_init_stack(NoVarArgsModule)
     with self.assertRaisesRegex(
-        ValueError, 'The function `f` should not have any `varargs`'):
+        ValueError, 'The function `f` should not have any `varargs`'
+    ):
       build_and_init_stack(VarArgsModule)
 
   @parameterized.parameters([1, 2, 4])
@@ -191,15 +192,19 @@ class LayerStackTest(parameterized.TestCase):
     sliced_params = _slice_layers_params(params)
 
     unrolled_grad = jax.grad(
-        lambda p, x: jnp.mean(unrolled_fn.apply(p, None, x)))(sliced_params, x)
+        lambda p, x: jnp.mean(unrolled_fn.apply(p, None, x))
+    )(sliced_params, x)
     layer_stack_grad = jax.grad(
-        lambda p, x: jnp.mean(layer_stack_fn.apply(p, None, x)))(params, x)
+        lambda p, x: jnp.mean(layer_stack_fn.apply(p, None, x))
+    )(params, x)
 
     assert_fn = functools.partial(
-        np.testing.assert_allclose, atol=1e-4, rtol=1e-4)
+        np.testing.assert_allclose, atol=1e-4, rtol=1e-4
+    )
 
-    jax.tree.map(assert_fn, unrolled_grad,
-                 _slice_layers_params(layer_stack_grad))
+    jax.tree.map(
+        assert_fn, unrolled_grad, _slice_layers_params(layer_stack_grad)
+    )
 
   def test_random(self):
     """Random numbers should be handled correctly."""
@@ -213,9 +218,9 @@ class LayerStackTest(parameterized.TestCase):
 
     # Evaluate a bunch of times
     key, *keys = jax.random.split(jax.random.PRNGKey(7), 1024 + 1)
-    params = add_random.init(key, 0.)
+    params = add_random.init(key, 0.0)
     apply_fn = jax.jit(add_random.apply)
-    values = [apply_fn(params, key, 0.) for key in keys]
+    values = [apply_fn(params, key, 0.0) for key in keys]
 
     # Should be roughly N(0, sqrt(n))
     cdf = scipy.stats.norm(scale=np.sqrt(n)).cdf
@@ -244,7 +249,7 @@ class LayerStackTest(parameterized.TestCase):
     ys = np.arange(n).astype(np.float32)
     params = g.init(rng, x, ys)
     x, zs = g.apply(params, x, ys)
-    self.assertTrue(np.allclose(x, [0, .1, .2, .3, .4]))
+    self.assertTrue(np.allclose(x, [0, 0.1, 0.2, 0.3, 0.4]))
     self.assertTrue(np.all(zs == 2 * ys))
 
   def test_nested_stacks(self):
@@ -264,7 +269,7 @@ class LayerStackTest(parameterized.TestCase):
 
     hk_mod.apply(params, apply_rng, jnp.zeros([10, 100]))
 
-    p, = params.values()
+    (p,) = params.values()
 
     assert p['w'].shape == (10, 20, 100, 100)
     assert p['b'].shape == (10, 20, 100)
@@ -276,17 +281,19 @@ class LayerStackTest(parameterized.TestCase):
     stack_height = 3
 
     def f_with_multi_args(x, a, b):
-      return hk.Linear(
-          width, w_init=hk.initializers.Constant(
-              jnp.eye(width)))(x) * a + b, None
+      return (
+          hk.Linear(width, w_init=hk.initializers.Constant(jnp.eye(width)))(x)
+          * a
+          + b,
+          None,
+      )
 
     @hk.without_apply_rng
     @hk.transform
     def hk_fn(x):
-      return layer_stack.layer_stack(
-          stack_height,
-          with_state=True)(f_with_multi_args)(x, jnp.full([stack_height], 2.),
-                                              jnp.ones([stack_height]))
+      return layer_stack.layer_stack(stack_height, with_state=True)(
+          f_with_multi_args
+      )(x, jnp.full([stack_height], 2.0), jnp.ones([stack_height]))
 
     x = jnp.zeros([batch_size, width])
     key_seq = hk.PRNGSequence(19)
@@ -294,7 +301,7 @@ class LayerStackTest(parameterized.TestCase):
     output, z = hk_fn.apply(params, x)
     self.assertIsNone(z)
     self.assertEqual(output.shape, (batch_size, width))
-    np.testing.assert_equal(output, np.full([batch_size, width], 7.))
+    np.testing.assert_equal(output, np.full([batch_size, width], 7.0))
 
   def test_with_container_state(self):
     width = 2
@@ -303,20 +310,21 @@ class LayerStackTest(parameterized.TestCase):
 
     def f_with_container_state(x):
       hk_layer = hk.Linear(
-          width, w_init=hk.initializers.Constant(jnp.eye(width)))
+          width, w_init=hk.initializers.Constant(jnp.eye(width))
+      )
       layer_output = hk_layer(x)
       layer_state = {
           'raw_output': layer_output,
-          'output_projection': jnp.sum(layer_output)
+          'output_projection': jnp.sum(layer_output),
       }
       return layer_output + jnp.ones_like(layer_output), layer_state
 
     @hk.without_apply_rng
     @hk.transform
     def hk_fn(x):
-      return layer_stack.layer_stack(
-          stack_height,
-          with_state=True)(f_with_container_state)(x)
+      return layer_stack.layer_stack(stack_height, with_state=True)(
+          f_with_container_state
+      )(x)
 
     x = jnp.zeros([batch_size, width])
     key_seq = hk.PRNGSequence(19)
@@ -325,10 +333,11 @@ class LayerStackTest(parameterized.TestCase):
     self.assertEqual(z['raw_output'].shape, (stack_height, batch_size, width))
     self.assertEqual(output.shape, (batch_size, width))
     self.assertEqual(z['output_projection'].shape, (stack_height,))
-    np.testing.assert_equal(np.sum(z['output_projection']), np.array(12.))
+    np.testing.assert_equal(np.sum(z['output_projection']), np.array(12.0))
     np.testing.assert_equal(
-        np.all(z['raw_output'] == np.array([0., 1., 2.])[..., None, None]),
-        np.array(True))
+        np.all(z['raw_output'] == np.array([0.0, 1.0, 2.0])[..., None, None]),
+        np.array(True),
+    )
 
 
 if __name__ == '__main__':

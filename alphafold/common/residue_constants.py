@@ -34,23 +34,40 @@ ca_ca = 3.80209737096
 chi_angles_atoms = {
     'ALA': [],
     # Chi5 in arginine is always 0 +- 5 degrees, so ignore it.
-    'ARG': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'CD'],
-            ['CB', 'CG', 'CD', 'NE'], ['CG', 'CD', 'NE', 'CZ']],
+    'ARG': [
+        ['N', 'CA', 'CB', 'CG'],
+        ['CA', 'CB', 'CG', 'CD'],
+        ['CB', 'CG', 'CD', 'NE'],
+        ['CG', 'CD', 'NE', 'CZ'],
+    ],
     'ASN': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'OD1']],
     'ASP': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'OD1']],
     'CYS': [['N', 'CA', 'CB', 'SG']],
-    'GLN': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'CD'],
-            ['CB', 'CG', 'CD', 'OE1']],
-    'GLU': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'CD'],
-            ['CB', 'CG', 'CD', 'OE1']],
+    'GLN': [
+        ['N', 'CA', 'CB', 'CG'],
+        ['CA', 'CB', 'CG', 'CD'],
+        ['CB', 'CG', 'CD', 'OE1'],
+    ],
+    'GLU': [
+        ['N', 'CA', 'CB', 'CG'],
+        ['CA', 'CB', 'CG', 'CD'],
+        ['CB', 'CG', 'CD', 'OE1'],
+    ],
     'GLY': [],
     'HIS': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'ND1']],
     'ILE': [['N', 'CA', 'CB', 'CG1'], ['CA', 'CB', 'CG1', 'CD1']],
     'LEU': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'CD1']],
-    'LYS': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'CD'],
-            ['CB', 'CG', 'CD', 'CE'], ['CG', 'CD', 'CE', 'NZ']],
-    'MET': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'SD'],
-            ['CB', 'CG', 'SD', 'CE']],
+    'LYS': [
+        ['N', 'CA', 'CB', 'CG'],
+        ['CA', 'CB', 'CG', 'CD'],
+        ['CB', 'CG', 'CD', 'CE'],
+        ['CG', 'CD', 'CE', 'NZ'],
+    ],
+    'MET': [
+        ['N', 'CA', 'CB', 'CG'],
+        ['CA', 'CB', 'CG', 'SD'],
+        ['CB', 'CG', 'SD', 'CE'],
+    ],
     'PHE': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'CD1']],
     'PRO': [['N', 'CA', 'CB', 'CG'], ['CA', 'CB', 'CG', 'CD']],
     'SER': [['N', 'CA', 'CB', 'OG']],
@@ -335,6 +352,8 @@ rigid_group_atom_positions = {
 }
 
 # A list of atoms (excluding hydrogen) for each AA type. PDB naming convention.
+# pylint: disable=line-too-long
+# pyformat: disable
 residue_atoms = {
     'ALA': ['C', 'CA', 'CB', 'N', 'O'],
     'ARG': ['C', 'CA', 'CB', 'CG', 'CD', 'CZ', 'N', 'NE', 'O', 'NH1', 'NH2'],
@@ -353,12 +372,12 @@ residue_atoms = {
     'PRO': ['C', 'CA', 'CB', 'CG', 'CD', 'N', 'O'],
     'SER': ['C', 'CA', 'CB', 'N', 'O', 'OG'],
     'THR': ['C', 'CA', 'CB', 'CG2', 'N', 'O', 'OG1'],
-    'TRP': ['C', 'CA', 'CB', 'CG', 'CD1', 'CD2', 'CE2', 'CE3', 'CZ2', 'CZ3',
-            'CH2', 'N', 'NE1', 'O'],
-    'TYR': ['C', 'CA', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'N', 'O',
-            'OH'],
+    'TRP': ['C', 'CA', 'CB', 'CG', 'CD1', 'CD2', 'CE2', 'CE3', 'CZ2', 'CZ3', 'CH2', 'N', 'NE1', 'O'],
+    'TYR': ['C', 'CA', 'CB', 'CG', 'CD1', 'CD2', 'CE1', 'CE2', 'CZ', 'N', 'O', 'OH'],
     'VAL': ['C', 'CA', 'CB', 'CG1', 'CG2', 'N', 'O']
 }
+# pyformat: enable
+# pylint: enable=line-too-long
 
 # Naming swaps for ambiguous atom names.
 # Due to symmetries in the amino acids the naming of atoms is ambiguous in
@@ -382,16 +401,20 @@ van_der_waals_radius = {
 }
 
 Bond = collections.namedtuple(
-    'Bond', ['atom1_name', 'atom2_name', 'length', 'stddev'])
+    'Bond', ['atom1_name', 'atom2_name', 'length', 'stddev']
+)
 BondAngle = collections.namedtuple(
     'BondAngle',
-    ['atom1_name', 'atom2_name', 'atom3name', 'angle_rad', 'stddev'])
+    ['atom1_name', 'atom2_name', 'atom3name', 'angle_rad', 'stddev'],
+)
 
 
 @functools.lru_cache(maxsize=None)
-def load_stereo_chemical_props() -> Tuple[Mapping[str, List[Bond]],
-                                          Mapping[str, List[Bond]],
-                                          Mapping[str, List[BondAngle]]]:
+def load_stereo_chemical_props() -> Tuple[
+    Mapping[str, List[Bond]],
+    Mapping[str, List[Bond]],
+    Mapping[str, List[BondAngle]],
+]:
   """Load stereo_chemical_props.txt into a nice structure.
 
   Load literature values for bond lengths and bond angles and translate
@@ -420,7 +443,8 @@ def load_stereo_chemical_props() -> Tuple[Mapping[str, List[Bond]],
     if resname not in residue_bonds:
       residue_bonds[resname] = []
     residue_bonds[resname].append(
-        Bond(atom1, atom2, float(length), float(stddev)))
+        Bond(atom1, atom2, float(length), float(stddev))
+    )
   residue_bonds['UNK'] = []
 
   # Load bond angles.
@@ -435,9 +459,14 @@ def load_stereo_chemical_props() -> Tuple[Mapping[str, List[Bond]],
     if resname not in residue_bond_angles:
       residue_bond_angles[resname] = []
     residue_bond_angles[resname].append(
-        BondAngle(atom1, atom2, atom3,
-                  float(angle_degree) / 180. * np.pi,
-                  float(stddev_degree) / 180. * np.pi))
+        BondAngle(
+            atom1,
+            atom2,
+            atom3,
+            float(angle_degree) / 180.0 * np.pi,
+            float(stddev_degree) / 180.0 * np.pi,
+        )
+    )
   residue_bond_angles['UNK'] = []
 
   def make_bond_key(atom1_name, atom2_name):
@@ -459,23 +488,27 @@ def load_stereo_chemical_props() -> Tuple[Mapping[str, List[Bond]],
       # Compute distance between atom1 and atom3 using the law of cosines
       # c^2 = a^2 + b^2 - 2ab*cos(gamma).
       gamma = ba.angle_rad
-      length = np.sqrt(bond1.length**2 + bond2.length**2
-                       - 2 * bond1.length * bond2.length * np.cos(gamma))
+      length = np.sqrt(
+          bond1.length**2
+          + bond2.length**2
+          - 2 * bond1.length * bond2.length * np.cos(gamma)
+      )
 
       # Propagation of uncertainty assuming uncorrelated errors.
       dl_outer = 0.5 / length
       dl_dgamma = (2 * bond1.length * bond2.length * np.sin(gamma)) * dl_outer
       dl_db1 = (2 * bond1.length - 2 * bond2.length * np.cos(gamma)) * dl_outer
       dl_db2 = (2 * bond2.length - 2 * bond1.length * np.cos(gamma)) * dl_outer
-      stddev = np.sqrt((dl_dgamma * ba.stddev)**2 +
-                       (dl_db1 * bond1.stddev)**2 +
-                       (dl_db2 * bond2.stddev)**2)
+      stddev = np.sqrt(
+          (dl_dgamma * ba.stddev) ** 2
+          + (dl_db1 * bond1.stddev) ** 2
+          + (dl_db2 * bond2.stddev) ** 2
+      )
       residue_virtual_bonds[resname].append(
-          Bond(ba.atom1_name, ba.atom3name, length, stddev))
+          Bond(ba.atom1_name, ba.atom3name, length, stddev)
+      )
 
-  return (residue_bonds,
-          residue_virtual_bonds,
-          residue_bond_angles)
+  return (residue_bonds, residue_virtual_bonds, residue_bond_angles)
 
 
 # Between-residue bond lengths for general bonds (first element) and for Proline
@@ -489,12 +522,14 @@ between_res_cos_angles_ca_c_n = [-0.4473, 0.0311]  # degrees: 116.568 +- 1.995
 
 # This mapping is used when we need to store atom data in a format that requires
 # fixed atom data size for every residue (e.g. a numpy array).
+# pyformat: disable
 atom_types = [
     'N', 'CA', 'C', 'CB', 'O', 'CG', 'CG1', 'CG2', 'OG', 'OG1', 'SG', 'CD',
     'CD1', 'CD2', 'ND1', 'ND2', 'OD1', 'OD2', 'SD', 'CE', 'CE1', 'CE2', 'CE3',
     'NE', 'NE1', 'NE2', 'OE1', 'OE2', 'CH2', 'NH1', 'NH2', 'OH', 'CZ', 'CZ2',
     'CZ3', 'NZ', 'OXT'
 ]
+# pyformat: enable
 atom_order = {atom_type: i for i, atom_type in enumerate(atom_types)}
 atom_type_num = len(atom_types)  # := 37.
 
@@ -502,6 +537,7 @@ atom_type_num = len(atom_types)  # := 37.
 # A compact atom encoding with 14 columns
 # pylint: disable=line-too-long
 # pylint: disable=bad-whitespace
+# pyformat: disable
 restype_name_to_atom14_names = {
     'ALA': ['N', 'CA', 'C', 'O', 'CB', '',    '',    '',    '',    '',    '',    '',    '',    ''],
     'ARG': ['N', 'CA', 'C', 'O', 'CB', 'CG',  'CD',  'NE',  'CZ',  'NH1', 'NH2', '',    '',    ''],
@@ -526,16 +562,20 @@ restype_name_to_atom14_names = {
     'UNK': ['',  '',   '',  '',  '',   '',    '',    '',    '',    '',    '',    '',    '',    ''],
 
 }
+# pyformat: enable
 # pylint: enable=line-too-long
 # pylint: enable=bad-whitespace
 
 
 # This is the standard residue order when coding AA type as a number.
 # Reproduce it by taking 3-letter AA codes and sorting them alphabetically.
+# pyformat: disable
 restypes = [
     'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M', 'F', 'P',
     'S', 'T', 'W', 'Y', 'V'
 ]
+# pyformat: enable
+
 restype_order = {restype: i for i, restype in enumerate(restypes)}
 restype_num = len(restypes)  # := 20.
 unk_restype_index = restype_num  # Catch-all index for unknown restypes.
@@ -545,18 +585,17 @@ restype_order_with_x = {restype: i for i, restype in enumerate(restypes_with_x)}
 
 
 def sequence_to_onehot(
-    sequence: str,
-    mapping: Mapping[str, int],
-    map_unknown_to_x: bool = False) -> np.ndarray:
+    sequence: str, mapping: Mapping[str, int], map_unknown_to_x: bool = False
+) -> np.ndarray:
   """Maps the given sequence into a one-hot encoded matrix.
 
   Args:
     sequence: An amino acid sequence.
     mapping: A dictionary mapping amino acids to integers.
     map_unknown_to_x: If True, any amino acid that is not in the mapping will be
-      mapped to the unknown amino acid 'X'. If the mapping doesn't contain
-      amino acid 'X', an error will be thrown. If False, any amino acid not in
-      the mapping will throw an error.
+      mapped to the unknown amino acid 'X'. If the mapping doesn't contain amino
+      acid 'X', an error will be thrown. If False, any amino acid not in the
+      mapping will throw an error.
 
   Returns:
     A numpy array of shape (seq_len, num_unique_aas) with one-hot encoding of
@@ -569,8 +608,11 @@ def sequence_to_onehot(
   num_entries = max(mapping.values()) + 1
 
   if sorted(set(mapping.values())) != list(range(num_entries)):
-    raise ValueError('The mapping must have values from 0 to num_unique_aas-1 '
-                     'without any gaps. Got: %s' % sorted(mapping.values()))
+    raise ValueError(
+        'The mapping must have values from 0 to num_unique_aas-1 '
+        'without any gaps. Got: %s'
+        % sorted(mapping.values())
+    )
 
   one_hot_arr = np.zeros((len(sequence), num_entries), dtype=np.int32)
 
@@ -719,7 +761,8 @@ ID_TO_HHBLITS_AA = {
 restypes_with_x_and_gap = restypes + ['X', '-']
 MAP_HHBLITS_AATYPE_TO_OUR_AATYPE = tuple(
     restypes_with_x_and_gap.index(ID_TO_HHBLITS_AA[i])
-    for i in range(len(restypes_with_x_and_gap)))
+    for i in range(len(restypes_with_x_and_gap))
+)
 
 
 def _make_standard_atom_mask() -> np.ndarray:
@@ -747,7 +790,7 @@ def chi_angle_atom(atom_index: int) -> np.ndarray:
 
   for k, v in chi_angles_atoms.items():
     indices = [atom_types.index(s[atom_index]) for s in v]
-    indices.extend([-1]*(4-len(indices)))
+    indices.extend([-1] * (4 - len(indices)))
     chi_angles_index[k] = indices
 
   for r in restypes:
@@ -761,16 +804,19 @@ def chi_angle_atom(atom_index: int) -> np.ndarray:
 
   return one_hot
 
+
 chi_atom_1_one_hot = chi_angle_atom(1)
 chi_atom_2_one_hot = chi_angle_atom(2)
 
 # An array like chi_angles_atoms but using indices rather than names.
 chi_angles_atom_indices = [chi_angles_atoms[restype_1to3[r]] for r in restypes]
 chi_angles_atom_indices = tree.map(
-    lambda atom_name: atom_order[atom_name], chi_angles_atom_indices)
+    lambda atom_name: atom_order[atom_name], chi_angles_atom_indices
+)
 chi_angles_atom_indices = np.array([
     chi_atoms + ([[0, 0, 0, 0]] * (4 - len(chi_atoms)))
-    for chi_atoms in chi_angles_atom_indices])
+    for chi_atoms in chi_angles_atom_indices
+])
 
 # Mapping from (res_name, atom_name) pairs to the atom's chi group index
 # and atom index within that group.
@@ -794,7 +840,7 @@ def _make_rigid_transformation_4x4(ex, ey, translation):
   # compute ez as cross product
   eznorm = np.cross(ex_normalized, ey_normalized)
   m = np.stack([ex_normalized, ey_normalized, eznorm, translation]).transpose()
-  m = np.concatenate([m, [[0., 0., 0., 1.]]], axis=0)
+  m = np.concatenate([m, [[0.0, 0.0, 0.0, 1.0]]], axis=0)
   return m
 
 
@@ -816,7 +862,8 @@ def _make_rigid_group_constants():
   for restype, restype_letter in enumerate(restypes):
     resname = restype_1to3[restype_letter]
     for atomname, group_idx, atom_position in rigid_group_atom_positions[
-        resname]:
+        resname
+    ]:
       atomtype = atom_order[atomname]
       restype_atom37_to_rigid_group[restype, atomtype] = group_idx
       restype_atom37_mask[restype, atomtype] = 1
@@ -825,13 +872,16 @@ def _make_rigid_group_constants():
       atom14idx = restype_name_to_atom14_names[resname].index(atomname)
       restype_atom14_to_rigid_group[restype, atom14idx] = group_idx
       restype_atom14_mask[restype, atom14idx] = 1
-      restype_atom14_rigid_group_positions[restype,
-                                           atom14idx, :] = atom_position
+      restype_atom14_rigid_group_positions[restype, atom14idx, :] = (
+          atom_position
+      )
 
   for restype, restype_letter in enumerate(restypes):
     resname = restype_1to3[restype_letter]
-    atom_positions = {name: np.array(pos) for name, _, pos
-                      in rigid_group_atom_positions[resname]}
+    atom_positions = {
+        name: np.array(pos)
+        for name, _, pos in rigid_group_atom_positions[resname]
+    }
 
     # backbone to backbone is the identity transform
     restype_rigid_group_default_frame[restype, 0, :, :] = np.eye(4)
@@ -842,15 +892,17 @@ def _make_rigid_group_constants():
     # phi-frame to backbone
     mat = _make_rigid_transformation_4x4(
         ex=atom_positions['N'] - atom_positions['CA'],
-        ey=np.array([1., 0., 0.]),
-        translation=atom_positions['N'])
+        ey=np.array([1.0, 0.0, 0.0]),
+        translation=atom_positions['N'],
+    )
     restype_rigid_group_default_frame[restype, 2, :, :] = mat
 
     # psi-frame to backbone
     mat = _make_rigid_transformation_4x4(
         ex=atom_positions['C'] - atom_positions['CA'],
         ey=atom_positions['CA'] - atom_positions['N'],
-        translation=atom_positions['C'])
+        translation=atom_positions['C'],
+    )
     restype_rigid_group_default_frame[restype, 3, :, :] = mat
 
     # chi1-frame to backbone
@@ -860,7 +912,8 @@ def _make_rigid_group_constants():
       mat = _make_rigid_transformation_4x4(
           ex=base_atom_positions[2] - base_atom_positions[1],
           ey=base_atom_positions[0] - base_atom_positions[1],
-          translation=base_atom_positions[2])
+          translation=base_atom_positions[2],
+      )
       restype_rigid_group_default_frame[restype, 4, :, :] = mat
 
     # chi2-frame to chi1-frame
@@ -874,16 +927,18 @@ def _make_rigid_group_constants():
         axis_end_atom_position = atom_positions[axis_end_atom_name]
         mat = _make_rigid_transformation_4x4(
             ex=axis_end_atom_position,
-            ey=np.array([-1., 0., 0.]),
-            translation=axis_end_atom_position)
+            ey=np.array([-1.0, 0.0, 0.0]),
+            translation=axis_end_atom_position,
+        )
         restype_rigid_group_default_frame[restype, 4 + chi_idx, :, :] = mat
 
 
 _make_rigid_group_constants()
 
 
-def make_atom14_dists_bounds(overlap_tolerance=1.5,
-                             bond_length_tolerance_factor=15):
+def make_atom14_dists_bounds(
+    overlap_tolerance=1.5, bond_length_tolerance_factor=15
+):
   """compute upper and lower bounds for bonds to assess violations."""
   restype_atom14_bond_lower_bound = np.zeros([21, 14, 14], np.float32)
   restype_atom14_bond_upper_bound = np.zeros([21, 14, 14], np.float32)
@@ -921,12 +976,14 @@ def make_atom14_dists_bounds(overlap_tolerance=1.5,
       restype_atom14_bond_upper_bound[restype, atom2_idx, atom1_idx] = upper
       restype_atom14_bond_stddev[restype, atom1_idx, atom2_idx] = b.stddev
       restype_atom14_bond_stddev[restype, atom2_idx, atom1_idx] = b.stddev
-  return {'lower_bound': restype_atom14_bond_lower_bound,  # shape (21,14,14)
-          'upper_bound': restype_atom14_bond_upper_bound,  # shape (21,14,14)
-          'stddev': restype_atom14_bond_stddev,  # shape (21,14,14)
-         }
+  return {
+      'lower_bound': restype_atom14_bond_lower_bound,  # shape (21,14,14)
+      'upper_bound': restype_atom14_bond_upper_bound,  # shape (21,14,14)
+      'stddev': restype_atom14_bond_stddev,  # shape (21,14,14)
+  }
 
 
+# pyformat: disable
 CCD_NAME_TO_ONE_LETTER: Mapping[str, str] = {
     '00C': 'C', '01W': 'X', '02K': 'A', '03Y': 'C', '07O': 'C', '08P': 'C',
     '0A0': 'D', '0A1': 'Y', '0A2': 'K', '0A8': 'C', '0AA': 'V', '0AB': 'V',
@@ -1137,3 +1194,4 @@ CCD_NAME_TO_ONE_LETTER: Mapping[str, str] = {
     'ZAL': 'A', 'ZBC': 'C', 'ZBU': 'U', 'ZCL': 'F', 'ZCY': 'C', 'ZDU': 'U',
     'ZFB': 'X', 'ZGU': 'G', 'ZHP': 'N', 'ZTH': 'T', 'ZU0': 'T', 'ZZJ': 'A',
 }
+# pyformat: enable

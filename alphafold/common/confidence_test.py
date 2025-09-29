@@ -26,8 +26,10 @@ class ConfidenceTest(absltest.TestCase):
     pae = np.array([[0.01, 13.12345], [20.0987, 0.0]])
     pae_json = confidence.pae_json(pae=pae, max_pae=31.75)
     self.assertEqual(
-        pae_json, '[{"predicted_aligned_error":[[0.0,13.1],[20.1,0.0]],'
-        '"max_predicted_aligned_error":31.75}]')
+        pae_json,
+        '[{"predicted_aligned_error":[[0.0,13.1],[20.1,0.0]],'
+        '"max_predicted_aligned_error":31.75}]',
+    )
 
   def test_confidence_json(self):
     plddt = np.array([42, 42.42])
@@ -38,9 +40,11 @@ class ConfidenceTest(absltest.TestCase):
 
     self.assertEqual(
         confidence_json,
-        ('{"residueNumber":[1,2],'
-         '"confidenceScore":[42.0,42.42],'
-         '"confidenceCategory":["D","D"]}'),
+        (
+            '{"residueNumber":[1,2],'
+            '"confidenceScore":[42.0,42.42],'
+            '"confidenceCategory":["D","D"]}'
+        ),
     )
 
 
