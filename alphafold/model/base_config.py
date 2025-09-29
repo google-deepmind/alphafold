@@ -15,11 +15,12 @@
 """Config for the protein folding model and experiment."""
 
 from collections.abc import Mapping
+import contextlib
 import copy
 import dataclasses
 import types
 import typing
-from typing import Any, ClassVar, TypeVar
+from typing import Any, ClassVar, Iterator, TypeVar
 
 
 _T = TypeVar('_T')
@@ -164,8 +165,8 @@ class BaseConfig(metaclass=ConfigMeta):
         else {k: v for k, v in result.items() if v is not None}
     )
 
-  def __setattr__(self, name, value):
-    if getattr(self, '_is_frozen', False):
+  def __setattr__(self, name: str, value: Any) -> None:
+    if getattr(self, '_is_frozen', False) and name != '_is_frozen':
       # If we are frozen, raise an error
       raise dataclasses.FrozenInstanceError(
           f"Cannot assign to field '{name}'; instance is frozen."
@@ -174,10 +175,25 @@ class BaseConfig(metaclass=ConfigMeta):
     # If not frozen, set the attribute normally
     super().__setattr__(name, value)
 
-  def freeze(self) -> None:
-    """Freezes the config and all subconfigs to prevent further changes."""
-    self._is_frozen = True
+  def _toggle_freeze(self, frozen: bool) -> None:
+    """Toggles the frozen state of the config and all subconfigs."""
+    self._is_frozen = frozen
     for field_name in self._coercable_fields:
       field_value = getattr(self, field_name, None)
       if isinstance(field_value, BaseConfig):
-        field_value.freeze()
+        field_value._toggle_freeze(frozen)
+
+  def freeze(self) -> None:
+    """Freezes the config and all subconfigs to prevent further changes."""
+    self._toggle_freeze(True)
+
+  @contextlib.contextmanager
+  def unfreeze(self: _ConfigT) -> Iterator[_ConfigT]:
+    """A context manager to temporarily unfreeze the config."""
+    was_frozen = self._is_frozen
+    self._toggle_freeze(False)
+    try:
+      yield self
+    finally:
+      if was_frozen:
+        self._toggle_freeze(True)

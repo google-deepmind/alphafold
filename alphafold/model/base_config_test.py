@@ -133,6 +133,46 @@ class ModelConfigTest(absltest.TestCase):
     with self.assertRaises(dataclasses.FrozenInstanceError):
       config.z.a = 1
 
+  def test_unfreeze(self):
+    config = OuterConfig(
+        x=5,
+        z=InnerConfig(a=2),
+        optional_z=None,
+        z_requires_a=InnerConfig(a=3),
+        z_default=None,
+    )
+    config.freeze()
+
+    # Check that we can modify the config within the unfrozen context.
+    with config.unfreeze() as mutable_config:
+      mutable_config.x = 1
+      mutable_config.z.a = 1
+    self.assertEqual(config.x, 1)
+    self.assertEqual(config.z.a, 1)
+
+    # Check that the config and all subconfigs are frozen again.
+    self.assertTrue(config._is_frozen)
+    self.assertTrue(config.z._is_frozen)
+    self.assertTrue(config.z_requires_a._is_frozen)
+    with self.assertRaises(dataclasses.FrozenInstanceError):
+      config.x = 2
+    with self.assertRaises(dataclasses.FrozenInstanceError):
+      config.z.a = 2
+
+    # Check that a config that was not frozen remains unfrozen.
+    unfrozen_config = OuterConfig(
+        x=5,
+        z=InnerConfig(a=2),
+        optional_z=None,
+        z_requires_a=InnerConfig(a=3),
+        z_default=None,
+    )
+    self.assertFalse(unfrozen_config._is_frozen)
+    with unfrozen_config.unfreeze() as mutable_config:
+      mutable_config.x = 1
+    self.assertEqual(unfrozen_config.x, 1)
+    self.assertFalse(unfrozen_config._is_frozen)
+
 
 if __name__ == '__main__':
   absltest.main()
