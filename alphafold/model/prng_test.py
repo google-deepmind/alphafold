@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for prng."""
-
 from absl.testing import absltest
 from alphafold.model import prng
 import jax

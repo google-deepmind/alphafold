@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for amber_minimize."""
 import os
 
 from absl.testing import absltest

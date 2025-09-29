@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for protein_features."""
 import uuid
 
 from absl.testing import absltest
