@@ -64,6 +64,7 @@ Please follow these steps:
     *   Install `aria2c`. On most Linux distributions it is available via the
         package manager as the `aria2` package (on Debian-based distributions
         this can be installed by running `sudo apt install aria2`).
+        Same for `rsync`.
 
     *   Please use the script `scripts/download_all_data.sh` to download and set
         up full databases. This may take substantial time (download size is 556
