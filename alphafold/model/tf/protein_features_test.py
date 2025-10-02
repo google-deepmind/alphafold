@@ -12,23 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import uuid
-
 from absl.testing import absltest
-from absl.testing import parameterized
 from alphafold.model.tf import protein_features
-import tensorflow.compat.v1 as tf
 
 
-def _random_bytes():
-  return str(uuid.uuid4()).encode('utf-8')
-
-
-class FeaturesTest(parameterized.TestCase, tf.test.TestCase):
-
-  def setUp(self):
-    super().setUp()
-    tf.disable_v2_behavior()
+class FeaturesTest(absltest.TestCase):
 
   def testFeatureNames(self):
     self.assertEqual(
@@ -37,7 +25,7 @@ class FeaturesTest(parameterized.TestCase, tf.test.TestCase):
     sorted_size_names = sorted(protein_features.FEATURE_SIZES.keys())
     sorted_type_names = sorted(protein_features.FEATURE_TYPES.keys())
     for i, size_name in enumerate(sorted_size_names):
-      self.assertEqual(size_name, sorted_type_names[i])
+      self.assertEqual(size_name, sorted_type_names[i], msg=size_name)
 
   def testReplacement(self):
     for name in protein_features.FEATURE_SIZES.keys():
