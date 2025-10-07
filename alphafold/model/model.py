@@ -14,7 +14,7 @@
 
 """Code for constructing the model."""
 
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional
 
 from absl import logging
 from alphafold.common import confidence
@@ -26,7 +26,6 @@ import jax
 from jax import tree
 import ml_collections
 import numpy as np
-import tensorflow.compat.v1 as tf
 
 
 def get_confidence_metrics(
