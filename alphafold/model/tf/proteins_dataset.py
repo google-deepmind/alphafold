@@ -21,35 +21,6 @@ import tensorflow.compat.v1 as tf
 TensorDict = Dict[str, tf.Tensor]
 
 
-def parse_tfexample(
-    raw_data: bytes,
-    features: protein_features.FeaturesMetadata,
-    key: Optional[str] = None,
-) -> Dict[str, tf.train.Feature]:
-  """Read a single TF Example proto and return a subset of its features.
-
-  Args:
-    raw_data: A serialized tf.Example proto.
-    features: A dictionary of features, mapping string feature names to a tuple
-      (dtype, shape). This dictionary should be a subset of
-      protein_features.FEATURES (or the dictionary itself for all features).
-    key: Optional string with the SSTable key of that tf.Example. This will be
-      added into features as a 'key' but only if requested in features.
-
-  Returns:
-    A dictionary of features mapping feature names to features. Only the given
-    features are returned, all other ones are filtered out.
-  """
-  feature_map = {
-      k: tf.io.FixedLenSequenceFeature(shape=(), dtype=v[0], allow_missing=True)
-      for k, v in features.items()
-  }
-  parsed_features = tf.io.parse_single_example(raw_data, feature_map)
-  reshaped_features = parse_reshape_logic(parsed_features, features, key=key)
-
-  return reshaped_features
-
-
 def _first(tensor: tf.Tensor) -> tf.Tensor:
   """Returns the 1st element - the input can be a tensor or a scalar."""
   return tf.reshape(tensor, shape=(-1,))[0]
@@ -133,27 +104,6 @@ def _make_features_metadata(
       name: protein_features.FEATURES[name] for name in feature_names
   }
   return features_metadata
-
-
-def create_tensor_dict(
-    raw_data: bytes,
-    features: Sequence[str],
-    key: Optional[str] = None,
-) -> TensorDict:
-  """Creates a dictionary of tensor features.
-
-  Args:
-    raw_data: A serialized tf.Example proto.
-    features: A list of strings of feature names to be returned in the dataset.
-    key: Optional string with the SSTable key of that tf.Example. This will be
-      added into features as a 'key' but only if requested in features.
-
-  Returns:
-    A dictionary of features mapping feature names to features. Only the given
-    features are returned, all other ones are filtered out.
-  """
-  features_metadata = _make_features_metadata(features)
-  return parse_tfexample(raw_data, features_metadata, key)
 
 
 def np_to_tensor_dict(
