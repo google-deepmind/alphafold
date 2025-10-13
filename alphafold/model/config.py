@@ -713,6 +713,7 @@ class EvalData(base_config.BaseConfig):
   max_msa_clusters: int
   max_templates: int
   num_ensemble: int
+  crop_size: Optional[int] = None
 
 
 class Data(base_config.BaseConfig):
