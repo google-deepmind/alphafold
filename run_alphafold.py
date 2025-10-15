@@ -598,6 +598,11 @@ def main(argv):
       'uniprot_database_path', 'model_preset', should_be_set=run_multimer_system
   )
 
+  if FLAGS.model_preset == 'monomer_casp14':
+    num_ensemble = 8
+  else:
+    num_ensemble = 1
+
   # Check for duplicate FASTA file names.
   fasta_names = [pathlib.Path(p).stem for p in FLAGS.fasta_paths]
   if len(fasta_names) != len(set(fasta_names)):
@@ -665,6 +670,10 @@ def main(argv):
   model_names = config.MODEL_PRESETS[FLAGS.model_preset]
   for model_name in model_names:
     model_config = config.model_config(model_name)
+    if run_multimer_system:
+      model_config.model.num_ensemble_eval = num_ensemble
+    else:
+      model_config.data.eval.num_ensemble = num_ensemble
     model_params = data.get_model_haiku_params(
         model_name=model_name, data_dir=FLAGS.data_dir
     )
