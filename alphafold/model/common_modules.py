@@ -25,6 +25,7 @@ import numpy as np
 TRUNCATED_NORMAL_STDDEV_FACTOR = np.asarray(
     0.87962566103423978, dtype=np.float32
 )
+LAYER_NORM_EPSILON = 1e-5
 
 
 def get_initializer_scale(initializer_name, input_shape):
@@ -103,9 +104,6 @@ class Linear(hk.Module):
     Returns:
       output of shape [...] + num_output.
     """
-
-    num_input_dims = self.num_input_dims
-
     if self.num_input_dims > 0:
       in_shape = inputs.shape[-self.num_input_dims :]
     else:
@@ -150,7 +148,7 @@ class LayerNorm(hk.LayerNorm):
       axis,
       create_scale: bool,
       create_offset: bool,
-      eps: float = 1e-5,
+      eps: float = LAYER_NORM_EPSILON,
       scale_init=None,
       offset_init=None,
       use_fast_variance: bool = False,
