@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Tests for run_alphafold module."""
+
 import json
 import os
 from unittest import mock
-
 from absl.testing import absltest
 from absl.testing import parameterized
 import run_alphafold
 import numpy as np
+
 
 # Internal import (7716).
 
@@ -27,13 +29,18 @@ TEST_DATA_DIR = 'alphafold/common/testdata/'
 
 
 class RunAlphafoldTest(parameterized.TestCase):
+  """Test suite for AlphaFold prediction pipeline."""
 
   @parameterized.named_parameters(
       ('relax', run_alphafold.ModelsToRelax.ALL),
       ('no_relax', run_alphafold.ModelsToRelax.NONE),
   )
   def test_end_to_end(self, models_to_relax):
-
+    """Tests end-to-end AlphaFold prediction with and without relaxation.
+    
+    Args:
+      models_to_relax: Configuration specifying which models should be relaxed.
+    """
     data_pipeline_mock = mock.Mock()
     model_runner_mock = mock.Mock()
     amber_relaxer_mock = mock.Mock()
@@ -66,6 +73,7 @@ class RunAlphafoldTest(parameterized.TestCase):
         )
     ) as f:
       pdb_string = f.read()
+
     amber_relaxer_mock.process.return_value = (
         pdb_string,
         None,
@@ -76,8 +84,8 @@ class RunAlphafoldTest(parameterized.TestCase):
     fasta_path = os.path.join(out_dir, 'target.fasta')
     with open(fasta_path, 'wt') as f:
       f.write('>A\nAAAAAAAAAAAAA')
-    fasta_name = 'test'
 
+    fasta_name = 'test'
     run_alphafold.predict_structure(
         fasta_path=fasta_path,
         fasta_name=fasta_name,
@@ -124,9 +132,10 @@ class RunAlphafoldTest(parameterized.TestCase):
           },
           relax_metrics,
       )
+
     self.assertCountEqual(expected_files, target_output_files)
 
-    # Check that pLDDT is set in the B-factor column.
+    # Check that pLDDT scores are correctly set in the B-factor column.
     with open(os.path.join(out_dir, 'test', 'unrelaxed_model1.pdb')) as f:
       for line in f:
         if line.startswith('ATOM'):
