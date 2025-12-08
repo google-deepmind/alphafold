@@ -19,10 +19,11 @@ import contextlib
 import functools
 import numbers
 from typing import Mapping
-
+from typing import Tuple
 import haiku as hk
 import jax
 import jax.numpy as jnp
+from jax.scipy.stats import norm
 import numpy as np
 
 
@@ -175,3 +176,59 @@ def padding_consistent_rng(f):
     )(keys)
 
   return inner
+
+
+def ks_normal_test(
+    sample: np.ndarray, mu: float = 0.0, sigma: float = 1.0
+) -> Tuple[float, float]:
+  """Kolmogorov–Smirnov normality test for N(mu, sigma).
+
+  This function performs a one-sample Kolmogorov-Smirnov test to check if a
+  given sample is drawn from a normal distribution with a specified mean (mu)
+  and standard deviation (sigma). It uses the JAX cumulative distribution
+  function (CDF) for the normal distribution.
+
+  Args:
+    sample: The sample data to be tested. Expected to be a 1D array-like
+      structure.
+    mu: The mean of the target normal distribution (default: 0.0).
+    sigma: The standard deviation of the target normal distribution (default:
+      1.0). Must be greater than 0.
+
+  Returns:
+    A tuple containing:
+      D: The KS statistic (float).
+      p_value: The asymptotic KS p-value (float). This value represents the
+        probability of observing a KS statistic as extreme as, or more extreme
+        than, the one calculated from the sample, assuming the sample is indeed
+        drawn from the specified normal distribution.
+
+  Raises:
+    ValueError: If sigma is not greater than 0.
+  """
+  if sigma <= 0:
+    raise ValueError('sigma must be > 0')
+  sample = np.sort(sample)
+  n = len(sample)
+
+  # Empirical CDF
+  ecdf = np.arange(1, n + 1) / n
+
+  # Normal CDF with given mu, sigma
+  z = (sample - mu) / sigma
+  cdf_vals = norm.cdf(z)
+
+  # KS statistic
+  d_plus = np.max(ecdf - cdf_vals)
+  d_minus = np.max(cdf_vals - (ecdf - 1 / n))
+  d_stat = max(d_plus, d_minus)
+
+  # Asymptotic KS p-value
+  x = d_stat * np.sqrt(n)
+  terms = 100
+  ks_sum = np.sum([
+      (-1) ** (k - 1) * np.exp(-2 * (k**2) * x**2) for k in range(1, terms + 1)
+  ])
+  p_value = float(min(max(2 * ks_sum, 0.0), 1.0))
+
+  return d_stat, p_value

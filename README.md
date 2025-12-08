@@ -740,7 +740,6 @@ and packages:
 *   [OpenMM](https://github.com/openmm/openmm)
 *   [OpenStructure](https://openstructure.org)
 *   [pymol3d](https://github.com/avirshup/py3dmol)
-*   [SciPy](https://scipy.org)
 *   [Sonnet](https://github.com/deepmind/sonnet)
 *   [TensorFlow](https://github.com/tensorflow/tensorflow)
 *   [Tree](https://github.com/deepmind/tree)

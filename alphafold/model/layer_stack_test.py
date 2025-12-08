@@ -16,11 +16,11 @@ import functools
 from absl.testing import absltest
 from absl.testing import parameterized
 from alphafold.model import layer_stack
+from alphafold.model import utils
 import haiku as hk
 import jax
 import jax.numpy as jnp
 import numpy as np
-import scipy.stats
 
 
 # Suffixes applied by Haiku for repeated module names.
@@ -221,8 +221,7 @@ class LayerStackTest(parameterized.TestCase):
     values = [apply_fn(params, key, 0.0) for key in keys]
 
     # Should be roughly N(0, sqrt(n))
-    cdf = scipy.stats.norm(scale=np.sqrt(n)).cdf
-    _, p = scipy.stats.kstest(values, cdf)
+    _, p = utils.ks_normal_test(sample=np.array(values), sigma=np.sqrt(n))
     self.assertLess(0.3, p)
 
   def test_threading(self):

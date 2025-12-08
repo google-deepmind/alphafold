@@ -17,8 +17,8 @@
 import json
 from typing import Dict, Optional, Tuple
 
+from jax.scipy import special
 import numpy as np
-import scipy.special
 
 
 def compute_plddt(logits: np.ndarray) -> np.ndarray:
@@ -33,7 +33,7 @@ def compute_plddt(logits: np.ndarray) -> np.ndarray:
   num_bins = logits.shape[-1]
   bin_width = 1.0 / num_bins
   bin_centers = np.arange(start=0.5 * bin_width, stop=1.0, step=bin_width)
-  probs = scipy.special.softmax(logits, axis=-1)
+  probs = np.array(special.softmax(logits, axis=-1))
   predicted_lddt_ca = np.sum(probs * bin_centers[None, :], axis=-1)
   return predicted_lddt_ca * 100
 
@@ -135,7 +135,7 @@ def compute_predicted_aligned_error(
       error for each pair of residues.
     max_predicted_aligned_error: The maximum predicted error possible.
   """
-  aligned_confidence_probs = scipy.special.softmax(logits, axis=-1)
+  aligned_confidence_probs = np.array(special.softmax(logits, axis=-1))
   predicted_aligned_error, max_predicted_aligned_error = (
       _calculate_expected_aligned_error(
           alignment_confidence_breaks=breaks,
@@ -215,7 +215,7 @@ def predicted_tm_score(
   d0 = 1.24 * (clipped_num_res - 15) ** (1.0 / 3) - 1.8
 
   # Convert logits to probs.
-  probs = scipy.special.softmax(logits, axis=-1)
+  probs = np.array(special.softmax(logits, axis=-1))
 
   # TM-Score term for every bin.
   tm_per_bin = 1.0 / (1 + np.square(bin_centers) / np.square(d0))

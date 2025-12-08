@@ -1,3 +1,70 @@
+# Copyright 2021 DeepMind Technologies Limited
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[build-system]
+requires = ["setuptools>=61.0.0,<72.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alphafold"
+dynamic = ["version"]
+requires-python = ">=3.8"
+description = "An implementation of the inference pipeline of AlphaFold v2.0. This is a completely new model that was entered as AlphaFold2 in CASP14 and published in Nature."
+authors = [
+    {name = "DeepMind", email = "alphafold@deepmind.com"},
+]
+license = {text = "Apache License, Version 2.0"}
+readme = "README.md"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "absl-py==1.0.0",
+    "biopython==1.79",
+    "dm-haiku==0.0.12",
+    "docker==5.0.0",
+    "jax==0.4.26",
+    "matplotlib==3.8.0",
+    "ml-collections==0.1.0",
+    "numpy==1.24.3",
+    "tensorflow-cpu==2.16.1",
+]
+
+[project.optional-dependencies]
+test = ["pytest<8.5.0"]
+
+[project.urls]
+Homepage = "https://github.com/deepmind/alphafold"
+
+[project.scripts]
+run_alphafold = "run_alphafold:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "alphafold.version.__version__"}
+
+[tool.setuptools]
+py-modules = ["run_alphafold"]
+
 [tool.pyink]
 line-length = 80
 unstable = true

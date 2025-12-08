@@ -20,8 +20,8 @@ from typing import Iterable, List, Mapping, Sequence
 
 from alphafold.common import residue_constants
 from alphafold.data import pipeline
+from jax.scipy import linalg
 import numpy as np
-import scipy.linalg
 
 
 MSA_GAP_IDX = residue_constants.restypes_with_x_and_gap.index('-')
@@ -349,8 +349,8 @@ def reorder_paired_rows(
 def block_diag(*arrs: np.ndarray, pad_value: float = 0.0) -> np.ndarray:
   """Like scipy.linalg.block_diag but with an optional padding value."""
   ones_arrs = [np.ones_like(x) for x in arrs]
-  off_diag_mask = 1.0 - scipy.linalg.block_diag(*ones_arrs)
-  diag = scipy.linalg.block_diag(*arrs)
+  off_diag_mask = 1.0 - np.array(linalg.block_diag(*ones_arrs))
+  diag = np.array(linalg.block_diag(*arrs))
   diag += (off_diag_mask * pad_value).astype(diag.dtype)
   return diag
 
