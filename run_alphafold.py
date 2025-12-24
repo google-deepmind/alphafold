@@ -234,7 +234,7 @@ flags.DEFINE_boolean(
 flags.DEFINE_integer(
     'jackhmmer_n_cpu',
     # Unfortunately, os.process_cpu_count() is only available in Python 3.13+.
-    min(len(os.sched_getaffinity(0)), 8),
+    min(os.cpu_count() or 8, 8),
     'Number of CPUs to use for Jackhmmer. Defaults to min(cpu_count, 8). Going'
     ' above 8 CPUs provides very little additional speedup.',
     lower_bound=0,
@@ -242,7 +242,7 @@ flags.DEFINE_integer(
 flags.DEFINE_integer(
     'hmmsearch_n_cpu',
     # Unfortunately, os.process_cpu_count() is only available in Python 3.13+.
-    min(len(os.sched_getaffinity(0)), 8),
+    min(os.cpu_count() or 8, 8),
     'Number of CPUs to use for HMMsearch. Defaults to min(cpu_count, 8). Going'
     ' above 8 CPUs provides very little additional speedup.',
     lower_bound=0,
@@ -250,7 +250,7 @@ flags.DEFINE_integer(
 flags.DEFINE_integer(
     'hhsearch_n_cpu',
     # Unfortunately, os.process_cpu_count() is only available in Python 3.13+.
-    min(len(os.sched_getaffinity(0)), 8),
+    min(os.cpu_count() or 8, 8),
     'Number of CPUs to use for HHsearch. Defaults to min(cpu_count, 8). Going'
     ' above 8 CPUs provides very little additional speedup.',
     lower_bound=0,
