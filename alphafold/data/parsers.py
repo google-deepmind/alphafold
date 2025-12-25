@@ -400,7 +400,7 @@ def _get_hhr_line_regex_groups(
 
 def _update_hhr_residue_indices_list(
     sequence: str, start_index: int, indices_list: List[int]
-):
+) -> None:
   """Computes the relative indices for each residue with respect to the original sequence."""
   counter = start_index
   for symbol in sequence:
