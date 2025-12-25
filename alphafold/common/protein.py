@@ -222,6 +222,17 @@ def from_mmcif_string(
 
 
 def _chain_end(atom_index, end_resname, chain_name, residue_index) -> str:
+  """Generates a PDB TER record string marking the end of a chain.
+
+  Args:
+    atom_index: The atom serial number for the TER record.
+    end_resname: The 3-letter residue name of the last residue.
+    chain_name: The single-character chain identifier.
+    residue_index: The residue sequence number.
+
+  Returns:
+    A formatted PDB TER record string.
+  """
   chain_end = 'TER'
   return (
       f'{chain_end:<6}{atom_index:>5}      {end_resname:>3} '
