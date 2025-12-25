@@ -106,7 +106,7 @@ class Jackhmmer:
       # amount of time.
       cmd_flags = [
           # Don't pollute stdout with Jackhmmer output.
-          *('-o', '/dev/null'),
+          *('-o', os.devnull),
           *('-A', sto_path),
           '--noali',
           *('--F1', str(self.filter_f1)),
