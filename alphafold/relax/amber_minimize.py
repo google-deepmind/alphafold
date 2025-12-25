@@ -43,7 +43,12 @@ def will_restrain(atom: openmm_app.Atom, rset: str) -> bool:
   if rset == "non_hydrogen":
     return atom.element.name != "hydrogen"
   elif rset == "c_alpha":
-    return atom.name == "CA"  # pytype: disable=bad-return-type
+    return bool(atom.name == "CA")
+  else:
+    raise ValueError(
+        f'Unknown restraint set: "{rset}". '
+        'Expected "non_hydrogen" or "c_alpha".'
+    )
 
 
 def _add_restraints(
