@@ -50,7 +50,12 @@ rsync --recursive --links --perms --times --compress --info=progress2 --delete -
   "${RAW_DIR}"
 
 echo "Unzipping all mmCIF files..."
-find "${RAW_DIR}/" -type f -iname "*.gz" -exec gunzip {} +
+if command -v parallel >/dev/null 2>&1
+then
+   find "${RAW_DIR}/" -type f -iname "*.gz" -print0 | parallel -0 -j -1 gunzip
+else
+   find "${RAW_DIR}/" -type f -iname "*.gz" -exec gunzip {} +
+fi
 
 echo "Flattening all mmCIF files..."
 mkdir --parents "${MMCIF_DIR}"
