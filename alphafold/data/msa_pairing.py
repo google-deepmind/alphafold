@@ -460,7 +460,7 @@ def _merge_features_from_multiple_chains(
     elif feature_name_split in TEMPLATE_FEATURES:
       merged_example[feature_name] = np.concatenate(feats, axis=1)
     elif feature_name_split in CHAIN_FEATURES:
-      merged_example[feature_name] = np.sum(x for x in feats).astype(np.int32)
+      merged_example[feature_name] = np.sum([x for x in feats]).astype(np.int32)
     else:
       merged_example[feature_name] = feats[0]
   return merged_example
