@@ -29,7 +29,7 @@ if ! command -v aria2c &> /dev/null ; then
     exit 1
 fi
 
-DOWNLOAD_DIR="$1"
+DOWNLOAD_DIR="$(realpath "$1")"
 ROOT_DIR="${DOWNLOAD_DIR}/params"
 SOURCE_URL="https://storage.googleapis.com/alphafold/alphafold_params_2022-12-06.tar"
 BASENAME=$(basename "${SOURCE_URL}")
