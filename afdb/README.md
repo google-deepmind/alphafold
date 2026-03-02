@@ -169,7 +169,7 @@ significantly faster than downloading all of the individual files because of
 large constant per-file latency.
 
 ```bash
-gsutil -m cp -r gs://public-datasets-deepmind-alphafold-v4/proteomes/ .
+gcloud storage cp --recursive gs://public-datasets-deepmind-alphafold-v4/proteomes/ .
 ```
 
 You will then have to un-tar all of the proteomes and un-gzip all of the
@@ -223,7 +223,7 @@ steps:
 
 1.  Find the [NCBI taxonomy ID](https://www.ncbi.nlm.nih.gov/taxonomy)
     (`[TAX_ID]`) of the species in question.
-2.  Run `gsutil -m cp
+2.  Run `gcloud storage cp
     gs://public-datasets-deepmind-alphafold-v4/proteomes/proteome-tax_id-[TAX
     ID]-*_v4.tar .` to download all shards for this proteome.
 3.  Un-tar all of the downloaded files and un-gzip all of the individual files.
@@ -239,7 +239,7 @@ One can also define their own list of files, for example created by BigQuery
 (see below). `gsutil` can be used to download these files with
 
 ```bash
-cat [manifest file] | gsutil -m cp -I .
+cat [manifest file] | gcloud storage cp --read-paths-from-stdin .
 ```
 
 This will be much slower than downloading the tar files (grouped by species)
