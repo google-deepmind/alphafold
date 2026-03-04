@@ -34,7 +34,7 @@ if ! command -v rsync &> /dev/null ; then
     exit 1
 fi
 
-DOWNLOAD_DIR="$1"
+DOWNLOAD_DIR="$(realpath "$1")"
 ROOT_DIR="${DOWNLOAD_DIR}/pdb_mmcif"
 RAW_DIR="${ROOT_DIR}/raw"
 MMCIF_DIR="${ROOT_DIR}/mmcif_files"
