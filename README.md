@@ -64,7 +64,7 @@ Please follow these steps:
     *   Install `aria2c`. On most Linux distributions it is available via the
         package manager as the `aria2` package (on Debian-based distributions
         this can be installed by running `sudo apt install aria2`).
-        Same for `rsync`.
+        Same for `rsync` and `parallel` (`sudo apt install rsync parallel`).
 
     *   Please use the script `scripts/download_all_data.sh` to download and set
         up full databases. This may take substantial time (download size is 556
@@ -150,7 +150,7 @@ Please follow these steps:
 
 ### Genetic databases
 
-This step requires `aria2c` to be installed on your machine.
+This step requires `aria2c` and `rsync` to be installed on your machine. `GNU Parallel` is also highly recommended to speed up the unzipping process.
 
 AlphaFold needs multiple genetic (sequence) databases to run:
 
@@ -731,6 +731,7 @@ and packages:
 *   [Docker](https://www.docker.com)
 *   [HH Suite](https://github.com/soedinglab/hh-suite)
 *   [HMMER Suite](http://eddylab.org/software/hmmer)
+*   [GNU Parallel](https://www.gnu.org/software/parallel/)
 *   [Haiku](https://github.com/deepmind/dm-haiku)
 *   [JAX](https://github.com/google/jax/)
 *   [Kalign](https://msa.sbc.su.se/cgi-bin/msa.cgi)
