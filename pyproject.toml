@@ -47,6 +47,8 @@ dependencies = [
     "matplotlib==3.8.0",
     "ml-collections==0.1.0",
     "numpy==1.24.3",
+    "openmm[cuda12]==8.2.0",
+    "pdbfixer==1.12.0",
     "tensorflow-cpu==2.16.1",
 ]
 
