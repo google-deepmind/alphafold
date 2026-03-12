@@ -1,5 +1,7 @@
 # AlphaFold v2.3.0
 
+Update (2026-03-11): Added note about cluster filtering change.
+
 This technical note describes updates in the code and model weights that were
 made to produce AlphaFold v2.3.0 including updated training data.
 
@@ -18,6 +20,12 @@ training crops (subsets of the structure used to train AlphaFold) from 384 to
 substantially more accurate on large protein complexes even though we use the
 same model architecture and training methodology as our previously released
 AlphaFold-Multimer paper.
+
+AlphaFold v2.3.0 training also used a modified self-distillation set compared to
+previous AF-Multimer versions. The original AF-Multimer self-distillation set
+was created using the clustered MGnify dataset filtered to clusters with more
+than 10 sequences. For v2.3.0, the same clustered MGnify dataset was used, but
+filtered to clusters with more than 2 sequences.
 
 These models were initially developed in response to a request from the CASP
 organizers to better understand baselines for the progress of structure
