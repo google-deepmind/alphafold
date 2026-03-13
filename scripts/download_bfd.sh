@@ -29,7 +29,7 @@ if ! command -v aria2c &> /dev/null ; then
     exit 1
 fi
 
-DOWNLOAD_DIR="$1"
+DOWNLOAD_DIR="$(realpath "$1")"
 ROOT_DIR="${DOWNLOAD_DIR}/bfd"
 # Mirror of:
 # https://bfd.mmseqs.com/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt.tar.gz.
