@@ -27,7 +27,8 @@
             }
           ],
           "count": 1,
-          "maxTemplateDate": "2018-01-20"
+          "maxTemplateDate": "2018-01-20",
+          "unpairedMsa": ">query\nPREACHINGS\n>unpaired seq 1\nPREA--INGS"
         }
       },
       {
