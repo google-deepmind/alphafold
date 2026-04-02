@@ -19,7 +19,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "alphafold"
 dynamic = ["version"]
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 description = "An implementation of the inference pipeline of AlphaFold v2.0. This is a completely new model that was entered as AlphaFold2 in CASP14 and published in Nature."
 authors = [
     {name = "DeepMind", email = "alphafold@deepmind.com"},
@@ -31,8 +31,6 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: POSIX :: Linux",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
