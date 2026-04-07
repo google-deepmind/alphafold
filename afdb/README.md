@@ -12,9 +12,9 @@ used under the terms of the
 [CC-BY 4.0 Licence](http://creativecommons.org/licenses/by/4.0/legalcode).
 
 This document provides an overview of how to access and download the dataset for
-different use cases. Please refer to the [AlphaFold database FAQ](https://www.alphafold.com/faq)
-for further information on what proteins are in the database and a changelog of
-releases.
+different use cases. Please refer to the
+[AlphaFold database FAQ](https://www.alphafold.com/faq) for further information
+on what proteins are in the database and a changelog of releases.
 
 :ledger: **Note: The full dataset is difficult to manipulate without significant
 computational resources (the size of the dataset is 23 TiB, 3 * 214M files).**
@@ -79,14 +79,13 @@ Three files are provided for each entry:
 *   **predicted_aligned_error_v4.json** – contains a confidence metric output by
     AlphaFold called PAE. This provides a number for every pair of residues,
     which is lower when AlphaFold is more confident in the relative position of
-    the two residues. PAE is more suitable than pLDDT for judging confidence in 
+    the two residues. PAE is more suitable than pLDDT for judging confidence in
     relative domain placements.
     [See here](https://alphafold.ebi.ac.uk/faq#faq-7) for a description of the
     format.
 
 Predictions grouped by NCBI taxonomy ID are available as
-`proteomes/proteome-tax_id-[TAX ID]-[SHARD ID]_v4.tar` within the same
-bucket.
+`proteomes/proteome-tax_id-[TAX ID]-[SHARD ID]_v4.tar` within the same bucket.
 
 There are also two extra files stored in the bucket:
 
@@ -138,9 +137,9 @@ for the services that you use to avoid any surprises.**
         1.  Select a project name.
         2.  For location, if your organization has a Cloud account then select
             this, otherwise leave as is.
-4.  Install `gsutil`:
+4.  Install the Google Cloud CLI to download the data from Google Cloud Storage:
     1.  Follow these
-        [instructions](https://cloud.google.com/storage/docs/gsutil_install).
+        [instructions](https://docs.cloud.google.com/sdk/docs/install-sdk).
 
 ## Accessing the dataset
 
@@ -169,7 +168,7 @@ significantly faster than downloading all of the individual files because of
 large constant per-file latency.
 
 ```bash
-gsutil -m cp -r gs://public-datasets-deepmind-alphafold-v4/proteomes/ .
+gcloud storage cp --recursive gs://public-datasets-deepmind-alphafold-v4/proteomes/ .
 ```
 
 You will then have to un-tar all of the proteomes and un-gzip all of the
@@ -223,7 +222,7 @@ steps:
 
 1.  Find the [NCBI taxonomy ID](https://www.ncbi.nlm.nih.gov/taxonomy)
     (`[TAX_ID]`) of the species in question.
-2.  Run `gsutil -m cp
+2.  Run `gcloud storage cp
     gs://public-datasets-deepmind-alphafold-v4/proteomes/proteome-tax_id-[TAX
     ID]-*_v4.tar .` to download all shards for this proteome.
 3.  Un-tar all of the downloaded files and un-gzip all of the individual files.
@@ -236,10 +235,10 @@ Note that these filenames do not include the bucket prefix, but this can be
 added once the files have been downloaded to your filesystem.
 
 One can also define their own list of files, for example created by BigQuery
-(see below). `gsutil` can be used to download these files with
+(see below). `gcloud storage cp` can be used to download these files with
 
 ```bash
-cat [manifest file] | gsutil -m cp -I .
+cat [manifest file] | gcloud storage cp --read-paths-from-stdin .
 ```
 
 This will be much slower than downloading the tar files (grouped by species)
@@ -370,9 +369,9 @@ sapiens* for which over half the residues are confident or better (>70 pLDDT).
 
 This creates a table with one column "files", where each row is the cloud
 location of one of the two file types that has been provided for each protein.
-There is an additional `confidence_v4.json` file which contains the
-per-residue pLDDT. This information is already in the CIF file but may be
-preferred if only this information is required.
+There is an additional `confidence_v4.json` file which contains the per-residue
+pLDDT. This information is already in the CIF file but may be preferred if only
+this information is required.
 
 This allows users to bulk download the exact proteins they need, without having
 to download the entire dataset. Other columns may also be used to select subsets
@@ -385,6 +384,7 @@ easier to download large files using [Colab](https://colab.research.google.com/)
 (e.g. pandas to_csv).
 
 #### Previous versions
+
 Previous versions of AFDB will remain available at
 [gs://public-datasets-deepmind-alphafold](https://console.cloud.google.com/storage/browser/public-datasets-deepmind-alphafold)
 to enable reproducible research. We recommend using the latest version (v4).
