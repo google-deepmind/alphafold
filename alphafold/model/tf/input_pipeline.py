@@ -37,7 +37,6 @@ def nonensembled_map_fns(data_config):
 
   map_fns = [
       data_transforms.correct_msa_restypes,
-      data_transforms.add_distillation_flag(False),
       data_transforms.cast_64bit_ints,
       data_transforms.squeeze_features,
       # Keep to not disrupt RNG.

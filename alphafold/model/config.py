@@ -189,7 +189,6 @@ CONFIG = ml_collections.ConfigDict({
                 'extra_msa': [NUM_EXTRA_SEQ, NUM_RES],
                 'extra_msa_mask': [NUM_EXTRA_SEQ, NUM_RES],
                 'extra_msa_row_mask': [NUM_EXTRA_SEQ],
-                'is_distillation': [],
                 'msa_feat': [NUM_MSA_SEQ, NUM_RES, None],
                 'msa_mask': [NUM_MSA_SEQ, NUM_RES],
                 'msa_row_mask': [NUM_MSA_SEQ],

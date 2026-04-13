@@ -74,14 +74,6 @@ def curry1(f):
   return fc
 
 
-@curry1
-def add_distillation_flag(protein, distillation):
-  protein['is_distillation'] = tf.constant(
-      float(distillation), shape=[], dtype=tf.float32
-  )
-  return protein
-
-
 def make_all_atom_aatype(protein):
   protein['all_atom_aatype'] = protein['aatype']
   return protein
