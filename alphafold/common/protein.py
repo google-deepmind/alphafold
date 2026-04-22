@@ -297,7 +297,8 @@ def to_pdb(prot: Protein) -> str:
       charge = ''
       # PDB is a columnar format, every space matters here!
       atom_line = (
-          f'{record_type:<6}{atom_index:>5} {name:<4}{alt_loc:>1}'
+          display_index = atom_index % 100000
+          f'{record_type:<6}{display_index:>5} {name:<4}{alt_loc:>1}'
           f'{res_name_3:>3} {chain_ids[chain_index[i]]:>1}'
           f'{residue_index[i]:>4}{insertion_code:>1}   '
           f'{pos[0]:>8.3f}{pos[1]:>8.3f}{pos[2]:>8.3f}'

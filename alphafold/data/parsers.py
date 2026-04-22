@@ -140,6 +140,11 @@ def parse_stockholm(stockholm_string: str) -> Msa:
       keep_columns = [i for i, res in enumerate(query) if res != '-']
 
     # Remove the columns with gaps in the query from all sequences.
+    if keep_columns and len(sequence) <= max(keep_columns):
+      raise ValueError(
+          f'Malformed MSA: Hit sequence length ({len(sequence)}) is strictly '
+          f'shorter than required columns ({max(keep_columns)}).'
+      )
     aligned_sequence = ''.join([sequence[c] for c in keep_columns])
 
     msa.append(aligned_sequence)
