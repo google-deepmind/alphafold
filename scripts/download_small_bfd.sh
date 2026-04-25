@@ -29,7 +29,7 @@ if ! command -v aria2c &> /dev/null ; then
     exit 1
 fi
 
-DOWNLOAD_DIR="$1"
+DOWNLOAD_DIR="$(realpath "$1")"
 ROOT_DIR="${DOWNLOAD_DIR}/small_bfd"
 SOURCE_URL="https://storage.googleapis.com/alphafold-databases/reduced_dbs/bfd-first_non_consensus_sequences.fasta.gz"
 BASENAME=$(basename "${SOURCE_URL}")

@@ -29,7 +29,7 @@ if ! command -v aria2c &> /dev/null ; then
     exit 1
 fi
 
-DOWNLOAD_DIR="$1"
+DOWNLOAD_DIR="$(realpath "$1")"
 ROOT_DIR="${DOWNLOAD_DIR}/uniref30"
 # Mirror of:
 # https://wwwuser.gwdg.de/~compbiol/uniclust/2021_03/UniRef30_2021_03.tar.gz
