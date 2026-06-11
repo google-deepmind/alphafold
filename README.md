@@ -268,8 +268,15 @@ update that will be significantly faster but will require a bit more work. Make
 sure you follow these steps in the exact order they are listed below:
 
 1.  **Update the code.**
-    *   Go to the directory with the cloned AlphaFold repository and run `git
-        fetch origin main` to get all code updates.
+    *   Go to the directory with the cloned AlphaFold repository and run:
+
+        ```bash
+        git checkout main
+        git pull --ff-only origin main
+        ```
+
+        This updates the local checkout to the latest `main` branch without
+        creating a merge commit.
 1.  **Update the UniProt, UniRef, MGnify and PDB seqres databases.**
     *   Remove `<DOWNLOAD_DIR>/uniprot`.
     *   Run `scripts/download_uniprot.sh <DOWNLOAD_DIR>`.
