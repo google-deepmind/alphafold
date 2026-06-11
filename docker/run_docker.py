@@ -116,6 +116,27 @@ flags.DEFINE_boolean(
     'WARNING: This will not check if the sequence, database or configuration '
     'have changed.',
 )
+flags.DEFINE_integer(
+    'jackhmmer_n_cpu',
+    None,
+    'Number of CPUs to use for Jackhmmer. If unset, run_alphafold.py uses its '
+    'default.',
+    lower_bound=0,
+)
+flags.DEFINE_integer(
+    'hmmsearch_n_cpu',
+    None,
+    'Number of CPUs to use for HMMsearch. If unset, run_alphafold.py uses its '
+    'default.',
+    lower_bound=0,
+)
+flags.DEFINE_integer(
+    'hhsearch_n_cpu',
+    None,
+    'Number of CPUs to use for HHsearch. If unset, run_alphafold.py uses its '
+    'default.',
+    lower_bound=0,
+)
 flags.DEFINE_string(
     'docker_user',
     f'{os.geteuid()}:{os.getegid()}',
@@ -275,6 +296,13 @@ def main(argv):
       f'--use_gpu_relax={use_gpu_relax}',
       '--logtostderr',
   ])
+
+  if FLAGS.jackhmmer_n_cpu is not None:
+    command_args.append(f'--jackhmmer_n_cpu={FLAGS.jackhmmer_n_cpu}')
+  if FLAGS.hmmsearch_n_cpu is not None:
+    command_args.append(f'--hmmsearch_n_cpu={FLAGS.hmmsearch_n_cpu}')
+  if FLAGS.hhsearch_n_cpu is not None:
+    command_args.append(f'--hhsearch_n_cpu={FLAGS.hhsearch_n_cpu}')
 
   client = docker.from_env()
   device_requests = (
