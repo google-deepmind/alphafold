@@ -2,6 +2,10 @@
 
 # AlphaFold
 
+<p align="center">
+  <b>English</b> · <a href="README.zh.md">简体中文</a>
+</p>
+
 This package provides an implementation of the inference pipeline of AlphaFold
 v2. For simplicity, we refer to this model as AlphaFold throughout the rest of
 this document.
