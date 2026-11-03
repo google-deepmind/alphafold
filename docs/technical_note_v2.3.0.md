@@ -51,7 +51,7 @@ is likely that single chain AlphaFold will be more accurate on average unless
 the chain has several thousand residues.
 
 The predicted structures used for the CASP15 baselines are available
-[here](https://github.com/deepmind/alphafold/blob/main/docs/casp15_predictions.zip).
+[here](https://github.com/google-deepmind/alphafold/blob/main/docs/casp15_predictions.zip).
 
 
 [^1]: wwPDB Consortium. "Protein Data Bank: the single global archive for 3D
