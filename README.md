@@ -55,7 +55,7 @@ Please follow these steps:
 1.  Clone this repository and `cd` into it.
 
     ```bash
-    git clone https://github.com/deepmind/alphafold.git
+    git clone https://github.com/google-deepmind/alphafold.git
     cd ./alphafold
     ```
 
@@ -97,8 +97,8 @@ Please follow these steps:
     If you wish to run AlphaFold using Singularity (a common containerization
     platform on HPC systems) we recommend using some of the third party
     Singularity setups as linked in
-    https://github.com/deepmind/alphafold/issues/10 or
-    https://github.com/deepmind/alphafold/issues/24.
+    https://github.com/google-deepmind/alphafold/issues/10 or
+    https://github.com/google-deepmind/alphafold/issues/24.
 
 1.  Build the Docker image:
 
@@ -114,7 +114,7 @@ Please follow these steps:
     ```
 
     use the workaround described in
-    https://github.com/deepmind/alphafold/issues/463#issuecomment-1124881779.
+    https://github.com/google-deepmind/alphafold/issues/463#issuecomment-1124881779.
 
 1.  Install the `run_docker.py` dependencies. Note: You may optionally wish to
     create a

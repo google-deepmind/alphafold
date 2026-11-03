@@ -389,7 +389,7 @@ class AlphaFoldIteration(hk.Module):
     ret = {}
     ret['representations'] = representations
 
-    for name, (head_config, module) in self.heads.items():
+    for name, (_, module) in self.heads.items():
       if name == 'structure_module' and structure_module_output is not None:
         ret[name] = structure_module_output
         representations['structure_module'] = structure_module_output.pop('act')

@@ -54,7 +54,7 @@ dependencies = [
 test = ["pytest<8.5.0"]
 
 [project.urls]
-Homepage = "https://github.com/deepmind/alphafold"
+Homepage = "https://github.com/google-deepmind/alphafold"
 
 [project.scripts]
 run_alphafold = "run_alphafold:main"
